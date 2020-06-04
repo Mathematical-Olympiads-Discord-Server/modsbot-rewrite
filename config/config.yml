@@ -1,0 +1,18 @@
+token: token.txt
+blacklist: blacklist.txt
+prefix: '\'
+cogs:
+  - cogs.config
+  - cogs.core
+  - cogs.general
+  - cogs.potd
+potd_sheet: '10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA'
+paradox_id: 419356082981568522
+potd_channel: 537763636161150976
+helper_lounge: 561813381716377610
+mods_guild: 533153217119387658
+log_channel: 559964001724006400
+active_role: 717919153092034641
+daily_active_threshold: 10
+weekly_active_threshold: 4
+activity_sheet: '1oxqhse2IJjPbSPy08PYs-iPLg-uRtE5oKqZ6WMurfFU'

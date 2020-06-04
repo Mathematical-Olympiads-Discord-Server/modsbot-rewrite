@@ -1,0 +1,6 @@
+/lib/
+/venv/
+/.idea/
+/config/credentials.json
+/config/token.txt
+*/__pycache__
