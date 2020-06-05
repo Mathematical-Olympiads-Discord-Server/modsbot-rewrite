@@ -1,6 +1,6 @@
 token: token.txt
 blacklist: blacklist.txt
-prefix: '\'
+prefix: '-'
 cogs:
   - cogs.config
   - cogs.core
@@ -12,6 +12,7 @@ potd_channel: 537763636161150976
 helper_lounge: 561813381716377610
 mods_guild: 533153217119387658
 log_channel: 559964001724006400
+suggestion_channel: 713659894745530479
 active_role: 717919153092034641
 daily_active_threshold: 10
 weekly_active_threshold: 4
