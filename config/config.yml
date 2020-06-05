@@ -4,7 +4,7 @@ prefix: '-'
 cogs:
   - cogs.config
   - cogs.core
-  - cogs.general
+  - cogs.misc
   - cogs.potd
 potd_sheet: '10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA'
 paradox_id: 419356082981568522
