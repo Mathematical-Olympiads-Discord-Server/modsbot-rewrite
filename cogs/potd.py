@@ -75,7 +75,8 @@ class Potd(Cog):
     async def on_message(self, message: discord.message):
         if message.channel.id == self.listening_in_channel and int(message.author.id) == cfg.Config.config[
             'paradox_id']:
-            await message.channel.send(self.to_send)
+            m = await message.channel.send(self.to_send)
+            await m.add_reaction("👍")
             self.listening_in_channel = -1
             self.to_send = ''
 
