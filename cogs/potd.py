@@ -23,6 +23,7 @@ class Potd(Cog):
         self.listening_in_channel = -1
         self.to_send = ''
         self.bot = bot
+        self.late = False
         schedule.every().day.at("12:00").do(asyncio.run_coroutine_threadsafe, self.check_potd(), bot.loop)
 
     async def check_potd(self):
@@ -77,8 +78,11 @@ class Potd(Cog):
             'paradox_id']:
             m = await message.channel.send(self.to_send)
             await m.add_reaction("👍")
+            if self.late:
+                await m.add_reaction('⏰')
             self.listening_in_channel = -1
             self.to_send = ''
+            self.late = False
 
     @commands.command(aliases=['potd'])
     @commands.check(is_pc)
@@ -118,6 +122,7 @@ class Potd(Cog):
         await ctx.send(to_tex, delete_after=1.5)
         self.to_send = source
         self.listening_in_channel = ctx.channel.id
+        self.late = True
 
 
 def setup(bot):
