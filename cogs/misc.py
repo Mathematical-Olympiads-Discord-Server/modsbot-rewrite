@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import discord
 from discord.ext import commands
 from discord.ext.commands import BucketType
@@ -22,6 +24,13 @@ class Misc(Cog):
         await self.bot.get_channel(cfg.Config.config['suggestion_channel']).send(
             '**Suggestion by <@!{}>**: \n{}'.format(ctx.author.id, suggestion))
 
+        r_body = {
+            'values': [[datetime.now().isoformat(), ctx.author.name, str(ctx.author.id), 'Pending', 0, suggestion]]
+        }
+        cfg.Config.service.spreadsheets().values().append(spreadsheetId=cfg.Config.config['suggestion_sheet'],
+                                                          range='Suggestions!A1', valueInputOption='RAW',
+                                                          insertDataOption='INSERT_ROWS', body=r_body).execute()
+
     @Cog.listener()
     async def on_raw_reaction_add(self, payload):
         if payload.channel_id != cfg.Config.config['welcome_channel']: return
@@ -45,7 +54,18 @@ class Misc(Cog):
                 f"<#{cfg.Config.config['roles_channel']}> and enjoy your time here. :smile:"
             )
 
-
+    @commands.command()
+    @commands.is_owner()
+    async def index_suggestions(self, ctx, *, channel: int):
+        messages = await self.bot.get_channel(channel).history(limit=200).flatten()
+        values = []
+        for message in messages:
+            values.append([message.created_at.isoformat(), message.author.name, str(message.author.id), 'Pending', 0,
+                           message.content])
+        r_body = {'values': values}
+        cfg.Config.service.spreadsheets().values().append(spreadsheetId=cfg.Config.config['suggestion_sheet'],
+                                                          range='Suggestions!A1', valueInputOption='RAW',
+                                                          insertDataOption='INSERT_ROWS', body=r_body).execute()
 
 
 def setup(bot):
