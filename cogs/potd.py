@@ -1,5 +1,4 @@
 import asyncio
-import time
 from datetime import datetime
 
 import discord
@@ -23,6 +22,7 @@ class Potd(Cog):
         self.listening_in_channel = -1
         self.to_send = ''
         self.bot = bot
+        self.ping_daily = False
         self.late = False
         schedule.every().day.at("12:00").do(asyncio.run_coroutine_threadsafe, self.check_potd(), bot.loop)
 
@@ -71,6 +71,7 @@ class Potd(Cog):
         await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=1.5)
         self.to_send = source
         self.listening_in_channel = cfg.Config.config['potd_channel']
+        self.ping_daily = True
 
     @Cog.listener()
     async def on_message(self, message: discord.message):
@@ -80,9 +81,14 @@ class Potd(Cog):
             await m.add_reaction("👍")
             if self.late:
                 await m.add_reaction('⏰')
+
+            if self.ping_daily:
+                await message.channel.send('<@!{}>'.format(cfg.Config.config['potd_role']))
+
             self.listening_in_channel = -1
             self.to_send = ''
             self.late = False
+            self.ping_daily = False
 
     @commands.command(aliases=['potd'])
     @commands.check(is_pc)
