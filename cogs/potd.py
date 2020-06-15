@@ -83,7 +83,10 @@ class Potd(Cog):
                 await m.add_reaction('⏰')
 
             if self.ping_daily:
-                await message.channel.send('<@!{}>'.format(cfg.Config.config['potd_role']))
+                r = self.bot.get_guild(cfg.Config.config['mods_guild']).get_role(cfg.Config.config['potd_role'])
+                await r.edit(mentionable=True)
+                await message.channel.send('<@&{}>'.format(cfg.Config.config['potd_role']))
+                await r.edit(mentionable=False)
 
             self.listening_in_channel = -1
             self.to_send = ''
