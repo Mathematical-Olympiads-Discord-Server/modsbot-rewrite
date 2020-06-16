@@ -41,6 +41,21 @@ class Misc(Cog):
                 f"<#{cfg.Config.config['roles_channel']}> and enjoy your time here. :smile:"
             )
 
+    @commands.command(aliases=['t'])
+    async def retrieve_tag(self, ctx, *, tag):
+        tags = cfg.Config.service.spreadsheets().values().get(
+            spreadsheetId=cfg.Config.config['tags_sheet'],
+            range='Tags!A2:D').execute().get('values', [])
+        tag_dict = {}
+        for t in tags:
+            tag_dict[t[0]] = t[3]
+            tag_dict[t[1]] = t[3]
+
+        if tag in tag_dict:
+            await ctx.send(tag_dict[tag])
+        else:
+            await ctx.send('I don\'t recognise that tag!')
+
 
 
 def setup(bot):
