@@ -8,6 +8,8 @@ import os
 from apiclient import discovery
 from google.oauth2 import service_account
 
+def is_staff(ctx):
+    return ctx.author.id in Config.config['staff']
 
 class Config(Cog):
     config = None
