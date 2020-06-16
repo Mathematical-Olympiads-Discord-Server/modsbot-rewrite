@@ -51,7 +51,9 @@ class Misc(Cog):
             tag_dict[t[0]] = t[3]
             tag_dict[t[1]] = t[3]
 
-        if tag in tag_dict:
+        if tag == 'all':
+            await ctx.send([[t[0], t[1]] for t in tags])
+        elif tag in tag_dict:
             await ctx.send(tag_dict[tag])
         else:
             await ctx.send('I don\'t recognise that tag!')
