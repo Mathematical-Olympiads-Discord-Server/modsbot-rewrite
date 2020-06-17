@@ -4,3 +4,4 @@
 /config/credentials.json
 /config/token.txt
 */__pycache__
+/data/
