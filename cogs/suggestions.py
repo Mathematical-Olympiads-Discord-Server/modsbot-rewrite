@@ -184,7 +184,7 @@ class Suggestions(Cog):
             # Spam people :_)
             member = ctx.guild.get_member(u)
             if member is None:
-                pass
+                ids_to_dm.remove(u)
             elif not member.bot:
                 await member.send(embed=embed)
 
