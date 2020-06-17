@@ -70,7 +70,7 @@ class Suggestions(Cog):
         suggestion_list.sort(key=lambda x: statuses.inverse[x.status])
         # print([str(x) for x in suggestion_list])
 
-    @commands.command()
+    @commands.command(brief='Suggest a change to the server. ')
     @commands.cooldown(1, 600, BucketType.user)
     async def suggest(self, ctx, *, suggestion):
         # Create message
@@ -113,7 +113,7 @@ class Suggestions(Cog):
             return
         await ctx.send('Finished!')
 
-    @commands.command(aliases=['sugg_change'])
+    @commands.command(aliases=['sugg_change'], brief='Updates the status of a given suggestion. ')
     @commands.check(cfg.is_staff)
     async def change_suggestion_status(self, ctx, sugg_id: int, new_status, *, reason):
         # Make sure not locked

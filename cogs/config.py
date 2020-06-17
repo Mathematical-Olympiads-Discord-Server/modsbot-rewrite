@@ -32,7 +32,7 @@ class Config(Cog):
             Config.config['pc_codes'][int(pc[0])] = pc[2]
         print(Config.config['pc_codes'])
 
-    @commands.command(aliases=['cfl'])
+    @commands.command(aliases=['cfl'], brief='Gets a config variable from the loaded config.yml file. ')
     async def config_load(self, ctx, name):
         if name not in Config.config:
             await ctx.send("No config with that name found!")

@@ -93,7 +93,7 @@ class Potd(Cog):
             self.late = False
             self.ping_daily = False
 
-    @commands.command(aliases=['potd'])
+    @commands.command(aliases=['potd'], brief='Displays the potd from the provided number. ')
     @commands.check(is_pc)
     async def potd_display(self, ctx, number: int):
         # It can only handle one at a time!

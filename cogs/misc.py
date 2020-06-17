@@ -41,7 +41,7 @@ class Misc(Cog):
                 f"<#{cfg.Config.config['roles_channel']}> and enjoy your time here. :smile:"
             )
 
-    @commands.command(aliases=['t'])
+    @commands.command(aliases=['t'], brief='Sends the message associated with the given tag. ')
     async def retrieve_tag(self, ctx, *, tag):
         tags = cfg.Config.service.spreadsheets().values().get(
             spreadsheetId=cfg.Config.config['tags_sheet'],
