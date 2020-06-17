@@ -94,7 +94,7 @@ class Potd(Cog):
         # Finish up
         print(source)
         await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=1.5)
-        self.latest_potd = potd_row[0]
+        self.latest_potd = int(potd_row[0])
         self.update_ratings()
         self.to_send = source
         self.listening_in_channel = cfg.Config.config['potd_channel']
@@ -156,7 +156,7 @@ class Potd(Cog):
         # Finish up
         print(source)
         await ctx.send(to_tex, delete_after=1.5)
-        self.latest_potd = potd_row[0]
+        self.latest_potd = int(potd_row[0])
         self.update_ratings()
         self.to_send = source
         self.listening_in_channel = ctx.channel.id
