@@ -183,7 +183,9 @@ class Suggestions(Cog):
         for u in ids_to_dm:
             # Spam people :_)
             member = ctx.guild.get_member(u)
-            if not member.bot:
+            if member is None:
+                pass
+            elif not member.bot:
                 await member.send(embed=embed)
 
         # Actually update the suggestion
