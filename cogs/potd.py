@@ -1,4 +1,6 @@
+import ast
 import asyncio
+import statistics
 from datetime import datetime
 
 import discord
@@ -25,6 +27,29 @@ class Potd(Cog):
         self.ping_daily = False
         self.late = False
         schedule.every().day.at("12:00").do(asyncio.run_coroutine_threadsafe, self.check_potd(), bot.loop)
+
+        # Initialise potd_ratings
+        try:
+            with open('data/potd_ratings.txt', 'r') as f:
+                self.latest_potd = int(f.readline())
+                self.potd_ratings = ast.literal_eval(f.read())
+        except FileNotFoundError as e:
+            self.latest_potd = 10000
+            self.potd_ratings = {}
+        except ValueError as e:
+            print("Corrupted potd_ratings file!")
+            self.latest_potd = 10000
+            self.potd_ratings = {}
+
+    def update_ratings(self):
+        with open('data/potd_ratings.txt', 'r+') as f:
+            # Clear
+            f.truncate()
+
+            # Re-write
+            f.write(str(self.latest_potd))
+            f.write('\n')
+            f.write(str(self.potd_ratings))
 
     async def check_potd(self):
         # Get the potds from the sheet (API call)
@@ -69,6 +94,8 @@ class Potd(Cog):
         # Finish up
         print(source)
         await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=1.5)
+        self.latest_potd = potd_row[0]
+        self.update_ratings()
         self.to_send = source
         self.listening_in_channel = cfg.Config.config['potd_channel']
         self.ping_daily = True
@@ -129,9 +156,33 @@ class Potd(Cog):
         # Finish up
         print(source)
         await ctx.send(to_tex, delete_after=1.5)
+        self.latest_potd = potd_row[0]
+        self.update_ratings()
         self.to_send = source
         self.listening_in_channel = ctx.channel.id
         self.late = True
+
+    @commands.command(aliases=['rate'], brief='Rates a potd based on difficulty. ')
+    async def potd_rate(self, ctx, potd: int, rating: int):
+        if potd > self.latest_potd:  # Sanitise potd number
+            await ctx.author.send('You cannot rate an un-released potd!')
+            return
+
+        if potd not in self.potd_ratings:
+            self.potd_ratings[potd] = {}
+        self.potd_ratings[potd][ctx.author.id] = rating
+
+        await ctx.message.delete()
+        await ctx.author.send('Thanks! Your rating of {} for potd {} has been recorded. '.format(rating, potd))
+        self.update_ratings()
+
+    @commands.command(aliases=['rating'], brief='Finds the median of a potd\'s ratings')
+    async def potd_rating(self, ctx, potd: int):
+        if potd not in self.potd_ratings:
+            await ctx.author.send('There have been no ratings for this potd yet. ')
+        else:
+            await ctx.author.send(
+                'The median rating for potd {} is {}. '.format(potd, statistics.median(self.potd_ratings[potd].values())))
 
 
 def setup(bot):
