@@ -57,7 +57,7 @@ class Suggestion:
 class Suggestions(Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.lock = False       # Lock when changing the sheet over a period of time.
+        self.lock = False  # Lock when changing the sheet over a period of time.
 
         # Initialise suggestion list
         suggestion_list.clear()
@@ -175,6 +175,10 @@ class Suggestions(Cog):
                               colour=status_colours[statuses.inverse[new_status]])
         embed.add_field(name='Content', value=suggestion.body, inline=False)
         embed.add_field(name='Reason', value=reason, inline=False)
+        embed.set_footer(
+            text='You received this DM because you either have the `Suggestions-Notify` role, '
+                 'voted on the suggestion, or reacted with 🔔. If you do not want to be notified '
+                 'about suggestion changes, please react with 🔕. ')
 
         for u in ids_to_dm:
             # Spam people :_)
