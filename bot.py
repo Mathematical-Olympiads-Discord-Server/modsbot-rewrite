@@ -93,7 +93,7 @@ class MODSBot(commands.Bot):
 
         elif isinstance(exception, commands.CommandNotFound):
             if isinstance(ctx.channel, discord.DMChannel):
-                await ctx.send("Command not recognised, please type `m.help` for help.")
+                await ctx.send("Command not recognised, please type `-help` for help.")
 
         elif isinstance(exception, commands.UserInputError):
             error = ' '.join(exception.args)
