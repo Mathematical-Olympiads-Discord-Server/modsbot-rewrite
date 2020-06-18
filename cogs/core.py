@@ -10,7 +10,7 @@ class Core(Cog):
     @commands.is_owner()
     async def reload(self, ctx, *, cog=''):
         """Reloads an extension"""
-        schedule.clear(cog)
+        schedule.clear(tag=cog)
         try:
             ctx.bot.reload_extension(cog)
         except Exception as e:
