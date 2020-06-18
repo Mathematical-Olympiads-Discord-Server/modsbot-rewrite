@@ -26,7 +26,8 @@ class Potd(Cog):
         self.bot = bot
         self.ping_daily = False
         self.late = False
-        schedule.every().day.at("12:00").do(asyncio.run_coroutine_threadsafe, self.check_potd(), bot.loop)
+        schedule.every().day.at("12:00").do(asyncio.run_coroutine_threadsafe, self.check_potd(), bot.loop).tag(
+            'cogs.potd')
 
         # Initialise potd_ratings
         try:
@@ -182,7 +183,8 @@ class Potd(Cog):
             await ctx.author.send('There have been no ratings for this potd yet. ')
         else:
             await ctx.author.send(
-                'The median rating for potd {} is {}. '.format(potd, statistics.median(self.potd_ratings[potd].values())))
+                'The median rating for potd {} is {}. '.format(potd,
+                                                               statistics.median(self.potd_ratings[potd].values())))
 
 
 def setup(bot):

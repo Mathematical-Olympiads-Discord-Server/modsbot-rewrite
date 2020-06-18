@@ -1,8 +1,5 @@
-from datetime import datetime
-
 import discord
 from discord.ext import commands
-from discord.ext.commands import BucketType
 
 from cogs import config as cfg
 
@@ -57,7 +54,6 @@ class Misc(Cog):
             await ctx.send(tag_dict[tag])
         else:
             await ctx.send('I don\'t recognise that tag!')
-
 
 
 def setup(bot):

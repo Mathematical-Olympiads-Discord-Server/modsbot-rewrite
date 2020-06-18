@@ -39,8 +39,6 @@ class Activity(Cog):
 
         # Get the values of the previous 7 days.
 
-
-
     @Cog.listener()
     async def on_message(self, message):
         if not message.author.bot:  # Ignore messages from bots
