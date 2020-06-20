@@ -26,6 +26,7 @@ class Potd(Cog):
         self.bot = bot
         self.ping_daily = False
         self.late = False
+        self.requested_number = -1
         schedule.every().day.at("12:00").do(asyncio.run_coroutine_threadsafe, self.check_potd(), bot.loop).tag(
             'cogs.potd')
 
@@ -95,6 +96,7 @@ class Potd(Cog):
         # Finish up
         print(source)
         await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=1.5)
+        self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
         self.update_ratings()
         self.to_send = source
@@ -105,6 +107,9 @@ class Potd(Cog):
     async def on_message(self, message: discord.message):
         if message.channel.id == self.listening_in_channel and int(message.author.id) == cfg.Config.config[
             'paradox_id']:
+            # m = await message.channel.send(
+            #     '{} \nRate this problem with `-rate {} <rating>` and check its user difficulty rating with `-rating {}`'.format(
+            #         self.to_send, self.requested_number, self.requested_number))
             m = await message.channel.send(self.to_send)
             await m.add_reaction("👍")
             if self.late:
@@ -116,6 +121,7 @@ class Potd(Cog):
                 await message.channel.send('<@&{}>'.format(cfg.Config.config['potd_role']))
                 await r.edit(mentionable=False)
 
+            self.requested_number = -1
             self.listening_in_channel = -1
             self.to_send = ''
             self.late = False
@@ -157,13 +163,14 @@ class Potd(Cog):
         # Finish up
         print(source)
         await ctx.send(to_tex, delete_after=1.5)
+        self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
         self.update_ratings()
         self.to_send = source
         self.listening_in_channel = ctx.channel.id
         self.late = True
 
-    @commands.command(aliases=['rate'], brief='Rates a potd based on difficulty. ')
+    # @commands.command(aliases=['rate'], brief='Rates a potd based on difficulty. ')
     async def potd_rate(self, ctx, potd: int, rating: int):
         if potd > self.latest_potd:  # Sanitise potd number
             await ctx.author.send('You cannot rate an un-released potd!')
@@ -177,7 +184,7 @@ class Potd(Cog):
         await ctx.author.send('Thanks! Your rating of {} for potd {} has been recorded. '.format(rating, potd))
         self.update_ratings()
 
-    @commands.command(aliases=['rating'], brief='Finds the median of a potd\'s ratings')
+    # @commands.command(aliases=['rating'], brief='Finds the median of a potd\'s ratings')
     async def potd_rating(self, ctx, potd: int):
         if potd not in self.potd_ratings:
             await ctx.author.send('There have been no ratings for this potd yet. ')
