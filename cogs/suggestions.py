@@ -173,6 +173,7 @@ class Suggestions(Cog):
                                                                                               suggestion.status,
                                                                                               new_status),
                               colour=status_colours[statuses.inverse[new_status]])
+        embed.add_field(name='Suggestor', value=suggestion.username, inline=False)
         embed.add_field(name='Content', value=suggestion.body, inline=False)
         embed.add_field(name='Reason', value=reason, inline=False)
         embed.set_footer(
@@ -183,10 +184,12 @@ class Suggestions(Cog):
         for u in ids_to_dm:
             # Spam people :_)
             member = ctx.guild.get_member(u)
-            if member is None:
-                ids_to_dm.remove(u)
-            elif not member.bot:
-                await member.send(embed=embed)
+            try:
+                if member is not None and not member.bot:
+                    await member.send(embed=embed)
+            except discord.Forbidden:
+                await ctx.guild.get_channel(cfg.Config.config['suggestion_discussion_channel']).send(member.mention,
+                                                                                                     embed=embed)
 
         # Actually update the suggestion
         suggestion.status = new_status
@@ -196,8 +199,8 @@ class Suggestions(Cog):
         # Finish up
         await ctx.send(
             "Finished. I have DMed the following people: {}. The following people requested not to be DMed: {}. ".format(
-                [ctx.guild.get_member(x).display_name for x in ids_to_dm],
-                [ctx.guild.get_member(x).display_name for x in no_ping]))
+                [ctx.guild.get_member(x).display_name for x in ids_to_dm if ctx.guild.get_member(x) is not None],
+                [ctx.guild.get_member(x).display_name for x in no_ping if ctx.guild.get_member(x) is not None]))
 
 
 def setup(bot):
