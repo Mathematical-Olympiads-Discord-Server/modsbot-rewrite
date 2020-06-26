@@ -3,6 +3,7 @@ blacklist: blacklist.txt
 prefix: '-'
 cogs:
   - cogs.config
+  - cogs.activity
   - cogs.core
   - cogs.misc
   - cogs.potd
