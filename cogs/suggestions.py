@@ -73,6 +73,12 @@ class Suggestions(Cog):
     @commands.command(brief='Suggest a change to the server. ')
     @commands.cooldown(1, 600, BucketType.user)
     async def suggest(self, ctx, *, suggestion):
+        if self.lock:
+            await ctx.send("You're going too fast! Wait for the previous command to process!")
+            return
+
+        self.lock = True
+
         # Create message
         m = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).send(
             '**Suggestion by <@!{}>**: \n{}'.format(ctx.author.id, suggestion))
@@ -89,6 +95,7 @@ class Suggestions(Cog):
 
         # Update the sheet
         update_suggestions()
+        self.lock = False
 
     @commands.command()
     @commands.is_owner()
@@ -120,6 +127,8 @@ class Suggestions(Cog):
         if self.lock:
             await ctx.send("You're going too fast! Wait for the previous command to process!")
             return
+
+        self.lock = True
 
         # Validate status
         if new_status not in statuses.inverse:
@@ -201,6 +210,7 @@ class Suggestions(Cog):
             "Finished. I have DMed the following people: {}. The following people requested not to be DMed: {}. ".format(
                 [ctx.guild.get_member(x).display_name for x in ids_to_dm if ctx.guild.get_member(x) is not None],
                 [ctx.guild.get_member(x).display_name for x in no_ping if ctx.guild.get_member(x) is not None]))
+        self.lock = False
 
 
 def setup(bot):
