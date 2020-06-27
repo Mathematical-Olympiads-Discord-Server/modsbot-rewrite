@@ -1,3 +1,4 @@
+import ast
 import asyncio
 import pickle
 from datetime import datetime
@@ -55,12 +56,16 @@ class Activity(Cog):
     @commands.command()
     @commands.is_owner()
     async def add_activity(self, ctx, *, activity):
-        for user in activity:
-            if user in today_messages:
-                today_messages[user] += activity[user]
-            else:
-                today_messages[user] = activity[user]
-        await ctx.send('Done!: New activity: ```{}```'.format(today_messages))
+        try:
+            activity_dict = ast.literal_eval(activity)
+            for user in activity_dict:
+                if user in today_messages:
+                    today_messages[user] += activity_dict[user]
+                else:
+                    today_messages[user] = activity_dict[user]
+            await ctx.send('Done!: New activity: ```{}```'.format(today_messages))
+        except:
+            await ctx.send("Something went wrong! ")
 
     @commands.command()
     @commands.is_owner()
