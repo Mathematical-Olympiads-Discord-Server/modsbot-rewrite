@@ -70,13 +70,13 @@ class Activity(Cog):
     @commands.command()
     @commands.is_owner()
     async def f_dump_activity(self, ctx):
-        pickle.dump(today_messages, open('data/activity_dump.p', 'w+'))
+        pickle.dump(today_messages, open('data/activity_dump.p', 'wb+'))
         await ctx.send("Dumped")
 
     @commands.command()
     @commands.is_owner()
     async def f_load_activity(self, ctx):
-        x = pickle.load(open('data/activity_dump.p', 'r'))
+        x = pickle.load(open('data/activity_dump.p', 'rb'))
         today_messages.clear()
         for i in x:
             today_messages[i] = x[i]
