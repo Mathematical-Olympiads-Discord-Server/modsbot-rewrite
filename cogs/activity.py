@@ -1,4 +1,5 @@
 import asyncio
+import pickle
 from datetime import datetime
 
 import schedule
@@ -50,6 +51,31 @@ class Activity(Cog):
     @commands.is_owner()
     async def dump_activity(self, ctx):
         await ctx.send(today_messages)
+
+    @commands.command()
+    @commands.is_owner()
+    async def add_activity(self, ctx, *, activity):
+        for user in activity:
+            if user in today_messages:
+                today_messages[user] += activity[user]
+            else:
+                today_messages[user] = activity[user]
+        await ctx.send('Done!: New activity: ```{}```'.format(today_messages))
+
+    @commands.command()
+    @commands.is_owner()
+    async def f_dump_activity(self, ctx):
+        pickle.dump(today_messages, open('data/activity_dump.p', 'w+'))
+        await ctx.send("Dumped")
+
+    @commands.command()
+    @commands.is_owner()
+    async def f_load_activity(self, ctx):
+        x = pickle.load(open('data/activity_dump.p', 'r'))
+        today_messages.clear()
+        for i in x:
+            today_messages[i] = x[i]
+        await ctx.send("Loaded: ```{}```".format(today_messages))
 
 
 def setup(bot):
