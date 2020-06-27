@@ -18,7 +18,7 @@ class Activity(Cog):
         self.bot = bot
         schedule.every().day.at("12:10").do(asyncio.run_coroutine_threadsafe, self.process_today(), bot.loop).tag(
             'cogs.activity')
-        schedule.every(10).minutes.do(asyncio.run_coroutine_threadsafe, self.f_dump_activity(), bot.loop).tag(
+        schedule.every(3).minutes.do(asyncio.run_coroutine_threadsafe, self.f_dump(), bot.loop).tag(
             'cogs.activity')
 
     async def process_today(self):
@@ -73,10 +73,11 @@ class Activity(Cog):
     @commands.is_owner()
     async def f_dump_activity(self, ctx):
         pickle.dump(today_messages, open('data/activity_dump.p', 'wb+'))
-        if ctx is not None:
-            await ctx.send("Dumped")
-        else:
-            await self.bot.get_channel(cfg.Config.config['log_channel']).send(f'Dumped: ```{today_messages}```')
+        await ctx.send("Dumped")
+
+    async def f_dump(self):
+        pickle.dump(today_messages, open('data/activity_dump.p', 'wb+'))
+        await self.bot.get_channel(cfg.Config.config['log_channel']).send(f'Dumped: ```{today_messages}```')
 
     @commands.command()
     @commands.is_owner()
