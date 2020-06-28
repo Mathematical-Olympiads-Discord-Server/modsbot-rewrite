@@ -18,8 +18,7 @@ class Activity(Cog):
         self.bot = bot
         schedule.every().day.at("12:10").do(asyncio.run_coroutine_threadsafe, self.process_today(), bot.loop).tag(
             'cogs.activity')
-        schedule.every(3).minutes.do(asyncio.run_coroutine_threadsafe, self.f_dump(), bot.loop).tag(
-            'cogs.activity')
+        schedule.every(3).minutes.do(self.f_dump).tag('cogs.activity')
 
     async def process_today(self):
         today_date = datetime.now().strftime("%d %b %Y")
