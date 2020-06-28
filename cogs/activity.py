@@ -17,7 +17,7 @@ class Activity(Cog):
     def __init__(self, bot):
         self.bot = bot
         self.logger = logging.getLogger('cogs.activity')
-        schedule.every().day.at("9:30").do(asyncio.run_coroutine_threadsafe, self.process_today(), bot.loop).tag(
+        schedule.every().day.at("09:30").do(asyncio.run_coroutine_threadsafe, self.process_today(), bot.loop).tag(
             'cogs.activity')
         schedule.every(5).minutes.do(self.f_dump).tag('cogs.activity')
 
