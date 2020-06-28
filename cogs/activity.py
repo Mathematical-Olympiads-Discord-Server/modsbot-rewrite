@@ -17,13 +17,13 @@ class Activity(Cog):
     def __init__(self, bot):
         self.bot = bot
         self.logger = logging.getLogger('cogs.activity')
-        schedule.every().day.at("12:10").do(asyncio.run_coroutine_threadsafe, self.process_today(), bot.loop).tag(
+        schedule.every().day.at("9:30").do(asyncio.run_coroutine_threadsafe, self.process_today(), bot.loop).tag(
             'cogs.activity')
         schedule.every(5).minutes.do(self.f_dump).tag('cogs.activity')
 
     async def process_today(self):
         today_date = datetime.now().strftime("%d %b %Y")
-        print(today_messages)
+        self.logger.info(today_messages)
 
         # Figure out which users were active today.
         active_users_today = str(today_messages)
@@ -41,6 +41,7 @@ class Activity(Cog):
 
         # Clear today's
         today_messages.clear()
+        self.f_dump()
 
     @Cog.listener()
     async def on_message(self, message):
