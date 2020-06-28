@@ -110,7 +110,7 @@ class MODSBot(commands.Bot):
 def executor():
     while True:
         schedule.run_pending()
-        time.sleep(10)
+        time.sleep(1)
 
 
 if __name__ == '__main__':

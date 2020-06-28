@@ -2,7 +2,7 @@ import ast
 import asyncio
 import pickle
 from datetime import datetime
-
+import logging
 import schedule
 from discord.ext import commands
 
@@ -16,9 +16,10 @@ today_messages = {}
 class Activity(Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.logger = logging.getLogger('cogs.activity')
         schedule.every().day.at("12:10").do(asyncio.run_coroutine_threadsafe, self.process_today(), bot.loop).tag(
             'cogs.activity')
-        schedule.every(3).minutes.do(self.f_dump).tag('cogs.activity')
+        schedule.every(5).minutes.do(self.f_dump).tag('cogs.activity')
 
     async def process_today(self):
         today_date = datetime.now().strftime("%d %b %Y")
@@ -76,7 +77,7 @@ class Activity(Cog):
 
     def f_dump(self):
         pickle.dump(today_messages, open('data/activity_dump.p', 'wb+'))
-        print('Dumped messages')
+        self.logger.info('Dumped activity: {}'.format(str(today_messages)))
 
     @commands.command()
     @commands.is_owner()
