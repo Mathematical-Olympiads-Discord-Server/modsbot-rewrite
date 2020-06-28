@@ -75,9 +75,9 @@ class Activity(Cog):
         pickle.dump(today_messages, open('data/activity_dump.p', 'wb+'))
         await ctx.send("Dumped")
 
-    async def f_dump(self):
+    def f_dump(self):
         pickle.dump(today_messages, open('data/activity_dump.p', 'wb+'))
-        await self.bot.get_channel(cfg.Config.config['log_channel']).send(f'Dumped: ```{today_messages}```')
+        print('Dumped messages')
 
     @commands.command()
     @commands.is_owner()
