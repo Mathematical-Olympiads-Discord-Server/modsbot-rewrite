@@ -91,6 +91,7 @@ class Activity(Cog):
             self.logger.info('Dumped activity: {}'.format(str(today_messages)))
         else:
             self.logger.info('No new messages. ')
+        self.new_message = False
 
     @commands.command()
     @commands.is_owner()
