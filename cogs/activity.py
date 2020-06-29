@@ -17,9 +17,17 @@ class Activity(Cog):
     def __init__(self, bot):
         self.bot = bot
         self.logger = logging.getLogger('cogs.activity')
+        self.new_message = False
         schedule.every().day.at("09:30").do(asyncio.run_coroutine_threadsafe, self.process_today(), bot.loop).tag(
             'cogs.activity')
         schedule.every(5).minutes.do(self.f_dump).tag('cogs.activity')
+
+        # Start
+        try:
+            x = pickle.load(open('data/activity_dump.p', 'rb'))
+            for i in x: today_messages[i] = x[i]
+        except FileNotFoundError:
+            today_messages.clear()
 
     async def process_today(self):
         today_date = datetime.now().strftime("%d %b %Y")
@@ -50,6 +58,7 @@ class Activity(Cog):
                 today_messages[message.author.id] += 1
             else:
                 today_messages[message.author.id] = 1
+        self.new_message = True
 
     @commands.command()
     @commands.is_owner()
@@ -77,8 +86,11 @@ class Activity(Cog):
         await ctx.send("Dumped")
 
     def f_dump(self):
-        pickle.dump(today_messages, open('data/activity_dump.p', 'wb+'))
-        self.logger.info('Dumped activity: {}'.format(str(today_messages)))
+        if self.new_message:
+            pickle.dump(today_messages, open('data/activity_dump.p', 'wb+'))
+            self.logger.info('Dumped activity: {}'.format(str(today_messages)))
+        else:
+            self.logger.info('No new messages. ')
 
     @commands.command()
     @commands.is_owner()
