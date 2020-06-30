@@ -5,6 +5,7 @@ cogs:
   - cogs.config
   - cogs.activity
   - cogs.core
+  - cogs.mcq-game
   - cogs.misc
   - cogs.potd
   - cogs.suggestions
