@@ -30,7 +30,7 @@ class Game:
 
     async def new_question(self):
         qid = random.randint(1, number_of_questions)
-        cursor.execute('SELECT * FROM problems WHERE idproblem = {}'.format(qid))
+        cursor.execute('SELECT * FROM problems WHERE idproblems = {}'.format(qid))
         problem = cursor.fetchone()
         m = await self.ctx.send(problem[1])  # problem statement
         await m.delete()
@@ -63,10 +63,10 @@ class MCQ_Game_Controller(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(aliases=['prob'])
     async def get_random_problem(self, ctx):
         qid = random.randint(1, number_of_questions)
-        cursor.execute('SELECT * FROM problems WHERE idproblem = {}'.format(qid))
+        cursor.execute('SELECT * FROM problems WHERE idproblems = {}'.format(qid))
         problem = cursor.fetchone()
         m = await ctx.send(problem[1])  # problem statement
         await m.delete()
