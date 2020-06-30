@@ -12,8 +12,8 @@ db = mysql.connector.connect(
     database=f.readline()[:-1]
 )
 cursor = db.cursor()
-number_of_questions = cursor.execute('SELECT COUNT(*) from problems;')
-
+cursor.execute('SELECT COUNT(*) from problems;')
+number_of_questions = cursor.fetchone()[0]
 games = {}
 
 
