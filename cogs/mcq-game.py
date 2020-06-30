@@ -95,8 +95,6 @@ class MCQ_Game_Controller(Cog):
     async def on_message(self, message):
         if message.channel.id in games:
             games[message.channel.id].process(message)
-        else:
-            await message.channel.send('No game in this channel!')
 
 
 def setup(bot):
