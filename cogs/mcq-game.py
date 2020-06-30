@@ -6,10 +6,10 @@ from discord.ext import commands
 Cog = commands.Cog
 f = open('data/dbcred.txt', 'r')
 db = mysql.connector.connect(
-    host=f.readline()[:-2],
-    user=f.readline()[:-2],
-    password=f.readline()[:-2],
-    database=f.readline()[:-2]
+    host=f.readline()[:-1],
+    user=f.readline()[:-1],
+    password=f.readline()[:-1],
+    database=f.readline()[:-1]
 )
 cursor = db.cursor()
 number_of_questions = cursor.execute('SELECT COUNT(*) from problems;')
