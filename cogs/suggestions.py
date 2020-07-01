@@ -81,7 +81,7 @@ class Suggestions(Cog):
 
         # Create message
         m = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).send(
-            '**Suggestion by <@!{}>**: \n{}'.format(ctx.author.id, suggestion))
+            '**Suggestion by <@!{}>**: (`#{}`) \n{}'.format(ctx.author.id, len(suggestion_list) + 1, suggestion))
         await m.add_reaction('👍')
         await m.add_reaction('🤷')
         await m.add_reaction('👎')
@@ -152,10 +152,12 @@ class Suggestions(Cog):
         suggestion_message = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).fetch_message(
             suggestion.msgid)
         no_ping = set()
+        votes_for = {}
         for reaction in suggestion_message.reactions:
             # Add everyone who reacted
             if not reaction.emoji == '🔕':
                 users = await reaction.users().flatten()
+                votes_for[reaction.emoji] = users - 1
                 for u in users:
                     ids_to_dm.add(u.id)
             else:
@@ -185,6 +187,11 @@ class Suggestions(Cog):
         embed.add_field(name='Suggestor', value=suggestion.username, inline=False)
         embed.add_field(name='Content', value=suggestion.body, inline=False)
         embed.add_field(name='Reason', value=reason, inline=False)
+        embed.add_field(name='Date/time', value=suggestion.time.isoformat(), inline=True)
+        embed.add_field(name='Vote split',
+                        value='👍: {}, 🤷: {}, 👎: {}'.format(votes_for['👍'], votes_for['🤷'], votes_for['👎']),
+                        inline=True)
+
         embed.set_footer(
             text='You received this DM because you either have the `Suggestions-Notify` role, '
                  'voted on the suggestion, or reacted with 🔔. If you do not want to be notified '
