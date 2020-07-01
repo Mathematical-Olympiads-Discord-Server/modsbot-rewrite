@@ -157,7 +157,7 @@ class Suggestions(Cog):
             # Add everyone who reacted
             if not reaction.emoji == '🔕':
                 users = await reaction.users().flatten()
-                votes_for[reaction.emoji] = users - 1
+                votes_for[reaction.emoji] = len(users) - 1
                 for u in users:
                     ids_to_dm.add(u.id)
             else:
