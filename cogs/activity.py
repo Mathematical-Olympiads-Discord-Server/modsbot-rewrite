@@ -64,6 +64,7 @@ class Activity(Cog):
         cursor.execute(
             'INSERT INTO messages (discord_message_id, discord_channel_id, discord_user_id, message_length, message_date) VALUES (%s, %s, %s, %s, %s)',
             (message.id, message.channel.id, message.author.id, len(message.content), datetime.now()))
+        cfg.db.commit()
 
     @commands.command()
     @commands.is_owner()
