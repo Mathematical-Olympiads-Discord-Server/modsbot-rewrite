@@ -1,12 +1,21 @@
 import bidict
 from discord.ext import commands
 
-Cog = commands.Cog
 from discord.ext import commands
 from ruamel import yaml
 import os
 from apiclient import discovery
 from google.oauth2 import service_account
+import mysql.connector
+
+Cog = commands.Cog
+f = open('data/dbcred.txt', 'r')
+db = mysql.connector.connect(
+    host=f.readline()[:-1],
+    user=f.readline()[:-1],
+    password=f.readline()[:-1],
+    database=f.readline()[:-1]
+)
 
 
 def is_staff(ctx):

@@ -18,3 +18,5 @@ idna~=2.9
 setuptools~=47.1.1
 uritemplate~=3.0.1
 schedule~=0.6.0
+mysql~=0.0.2
+mysql-connector-python~=8.0.20

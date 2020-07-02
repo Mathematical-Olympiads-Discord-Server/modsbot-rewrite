@@ -1,8 +1,9 @@
 import ast
 import asyncio
+import logging
 import pickle
 from datetime import datetime
-import logging
+
 import schedule
 from discord.ext import commands
 
@@ -59,6 +60,10 @@ class Activity(Cog):
             else:
                 today_messages[message.author.id] = 1
         self.new_message = True
+        cursor = cfg.db.cursor()
+        cursor.execute(
+            'INSERT INTO messages (discord_message_id, discord_channel_id, discord_user_id, message_length, message_date) VALUES (%s, %s, %s, %s, %s)',
+            (message.id, message.channel.id, message.author.id, len(message.content), datetime.now()))
 
     @commands.command()
     @commands.is_owner()

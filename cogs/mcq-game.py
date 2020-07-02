@@ -2,16 +2,11 @@ import random
 
 import mysql.connector
 from discord.ext import commands
+from cogs import config as cfg
 
 Cog = commands.Cog
-f = open('data/dbcred.txt', 'r')
-db = mysql.connector.connect(
-    host=f.readline()[:-1],
-    user=f.readline()[:-1],
-    password=f.readline()[:-1],
-    database=f.readline()[:-1]
-)
-cursor = db.cursor()
+
+cursor = cfg.db.cursor()
 cursor.execute('SELECT COUNT(*) from problems;')
 number_of_questions = cursor.fetchone()[0]
 games = {}
