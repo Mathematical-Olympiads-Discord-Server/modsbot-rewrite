@@ -170,28 +170,53 @@ class Potd(Cog):
         self.listening_in_channel = ctx.channel.id
         self.late = True
 
-    # @commands.command(aliases=['rate'], brief='Rates a potd based on difficulty. ')
-    async def potd_rate(self, ctx, potd: int, rating: int):
+    @commands.command(aliases=['rate'], brief='Rates a potd based on difficulty. ')
+    async def potd_rate(self, ctx, potd: int, rating: int, overwrite: bool = False):
         if potd > self.latest_potd:  # Sanitise potd number
             await ctx.author.send('You cannot rate an un-released potd!')
             return
-
-        if potd not in self.potd_ratings:
-            self.potd_ratings[potd] = {}
-        self.potd_ratings[potd][ctx.author.id] = rating
-
-        await ctx.message.delete()
-        await ctx.author.send('Thanks! Your rating of {} for potd {} has been recorded. '.format(rating, potd))
-        self.update_ratings()
-
-    # @commands.command(aliases=['rating'], brief='Finds the median of a potd\'s ratings')
-    async def potd_rating(self, ctx, potd: int):
-        if potd not in self.potd_ratings:
-            await ctx.author.send('There have been no ratings for this potd yet. ')
+        cursor = cfg.db.cursor()
+        cursor.execute(f'SELECT * FROM ratings where prob = {potd} and userid = {ctx.author.id} LIMIT 1')
+        result = cursor.fetchone()
+        # print(result)
+        if result is None:
+            sql = 'INSERT INTO ratings (prob, userid, rating) VALUES (%s, %s, %s)'
+            cursor.execute(sql, (potd, ctx.author.id, rating))
+            cfg.db.commit()
+            await ctx.author.send(f'You just rated potd {potd} {rating}. Thank you! ')
         else:
-            await ctx.author.send(
-                'The median rating for potd {} is {}. '.format(potd,
-                                                               statistics.median(self.potd_ratings[potd].values())))
+            if not overwrite:
+                await ctx.author.send(
+                    f'You already rated this potd {result[3]}. '
+                    f'If you wish to overwrite append `True` to your previous message, like `-rate {potd} {rating} True` ')
+            else:
+                cursor.execute(f'UPDATE ratings SET rating = {rating} WHERE idratings = {result[0]}')
+                cfg.db.commit()
+                await ctx.author.send(f'Changed your rating for potd {potd} from {result[3]} to {rating}')
+
+    @commands.command(aliases=['rating'], brief='Finds the median of a potd\'s ratings')
+    async def potd_rating(self, ctx, potd: int, full: bool = False):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'SELECT * FROM ratings WHERE prob = {potd}')
+        result = cursor.fetchall()
+        if len(result) == 0:
+            await ctx.author.send(f'No ratings for potd {potd} yet. ')
+            return
+        else:
+            median = statistics.median([row[3] for row in result])
+            await ctx.author.send(f'Rating for potd {potd} is `{median}`. ')
+            if full:
+                await ctx.author.send(f'Full list: {[row[3] for row in result]}')
+
+    @commands.command(aliases=['myrating'], brief='Checks your rating of a potd. ')
+    async def potd_rating_self(self, ctx, potd: int):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'SELECT * FROM ratings WHERE prob = {potd} AND userid = {ctx.author.id}')
+        result = cursor.fetchone()
+        if result is None:
+            await ctx.author.send(f'You have not rated potd {potd}. ')
+        else:
+            await ctx.author.send(f'You have rated potd {potd} as difficulty level {result[3]}')
 
 
 def setup(bot):

@@ -3,6 +3,5 @@
 /.idea/
 /config/credentials.json
 /config/token.txt
-/config/dbcred.txt
 */__pycache__
 /data/
