@@ -175,6 +175,11 @@ class Potd(Cog):
         if potd > self.latest_potd:  # Sanitise potd number
             await ctx.author.send('You cannot rate an un-released potd!')
             return
+
+        # Delete messages if it's in a guild
+        if ctx.guild is not None:
+            await ctx.message.delete()
+
         cursor = cfg.db.cursor()
         cursor.execute(f'SELECT * FROM ratings where prob = {potd} and userid = {ctx.author.id} LIMIT 1')
         result = cursor.fetchone()
