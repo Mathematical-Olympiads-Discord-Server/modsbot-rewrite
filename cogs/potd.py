@@ -223,6 +223,17 @@ class Potd(Cog):
         else:
             await ctx.author.send(f'You have rated potd {potd} as difficulty level {result[3]}')
 
+    @commands.command(aliases=['myratings'], brief='Checks all your ratings')
+    async def potd_rating_all(self, ctx):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'SELECT * FROM ratings WHERE userid = {ctx.author.id}')
+        result = cursor.fetchall()
+        if len(result) == 0:
+            await ctx.author.send('You have not rated any problems!')
+        else:
+            ratings = '\n'.join([f'{i[1]:<6}{i[3]}' for i in result])
+            await ctx.author.send(f'Your ratings: ```Potd  Rating\n{ratings}```You have rated {len(result)} potds. ')
+
     @commands.command(aliases=['rmrating'], brief='Removes your rating for a potd. ')
     async def potd_rating_remove(self, ctx, potd: int):
         cursor = cfg.db.cursor()
