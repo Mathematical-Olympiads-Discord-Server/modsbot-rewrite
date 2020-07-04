@@ -223,6 +223,17 @@ class Potd(Cog):
         else:
             await ctx.author.send(f'You have rated potd {potd} as difficulty level {result[3]}')
 
+    @commands.command(aliases=['rmrating'], brief='Removes your rating for a potd. ')
+    async def potd_rating_remove(self, ctx, potd: int):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'SELECT * FROM ratings WHERE prob = {potd} AND userid = {ctx.author.id}')
+        result = cursor.fetchone()
+        if result is None:
+            await ctx.author.send(f'You have not rated potd {potd}. ')
+        else:
+            cursor.execute(f'DELETE FROM ratings WHERE prob = {potd} AND userid = {ctx.author.id}')
+            await ctx.author.send(f'Removed your rating of difficulty level {result[3]} for potd {potd}. ')
+
 
 def setup(bot):
     bot.add_cog(Potd(bot))
