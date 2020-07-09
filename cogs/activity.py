@@ -4,6 +4,7 @@ import logging
 import pickle
 from datetime import datetime
 
+import discord
 import schedule
 from discord.ext import commands
 
@@ -134,6 +135,18 @@ class Activity(Cog):
             ORDER BY DATE(message_date), discord_user_id;''')
         l = len(cursor.fetchall())
         await ctx.author.send(f'You have {l} active days!')
+
+    @commands.command()
+    async def active_days_o(self, ctx, other: discord.User):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'''SELECT discord_user_id as userid, date(message_date) as date, COUNT(*) AS number
+            FROM messages
+            WHERE date(message_date) > date_sub(curdate(), interval 14 day)
+            GROUP BY discord_user_id, DATE(message_date)
+            HAVING number >= 10 and userid = {other.id}
+            ORDER BY DATE(message_date), discord_user_id;''')
+        l = len(cursor.fetchall())
+        await ctx.author.send(f'{other.display_name} has {l} active days!')
 
 
 def setup(bot):
