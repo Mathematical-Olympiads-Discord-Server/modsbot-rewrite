@@ -123,6 +123,18 @@ class Activity(Cog):
             today_messages[i] = x[i]
         await ctx.send("Loaded: ```{}```".format(today_messages))
 
+    @commands.command()
+    async def active_days(self, ctx):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'''SELECT discord_user_id as userid, date(message_date) as date, COUNT(*) AS number
+            FROM messages
+            WHERE date(message_date) > date_sub(curdate(), interval 14 day)
+            GROUP BY discord_user_id, DATE(message_date)
+            HAVING number >= 10 and userid = {ctx.author.id}
+            ORDER BY DATE(message_date), discord_user_id;''')
+        l = len(cursor.fetchall())
+        await ctx.author.send(f'You have {l} active days!')
+
 
 def setup(bot):
     bot.add_cog(Activity(bot))
