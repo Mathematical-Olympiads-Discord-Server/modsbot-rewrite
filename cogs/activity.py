@@ -46,8 +46,23 @@ class Activity(Cog):
                                                           range='Log!A1', valueInputOption='RAW',
                                                           insertDataOption='INSERT_ROWS', body=r_body).execute()
 
-        # Get the values of the previous 7 days.
+        '''
+        # Get the values of the previous x days.
+        activity = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                                  range='Log!A2:B').execute().get('values', [])
+        active_days = {}
+        for i in range(-1, -cfg.Config.config['period_length'] - 1, -1):
+            activity_that_day = ast.literal_eval(activity[i][1])
+            for user in activity_that_day:
+                active_days = active_days.get(user, 0) + 1
 
+        active_users = set()
+        for user in active_days:
+            if active_days[user] >= cfg.Config.config['days_active_threshold']:
+                active_days.add(user)
+
+        for user in active_users:
+        '''
         # Clear today's
         today_messages.clear()
         self.f_dump()
