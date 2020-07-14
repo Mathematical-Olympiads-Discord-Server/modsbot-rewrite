@@ -129,7 +129,7 @@ class Activity(Cog):
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT discord_user_id as userid, date(message_date) as date, COUNT(*) AS number
             FROM messages
-            WHERE date(message_date) > date_sub(curdate(), interval 14 day)
+            WHERE date(message_date) > date_sub(curdate(), interval 14 day) and discord_channel_id != 537818427675377677
             GROUP BY discord_user_id, DATE(message_date)
             HAVING number >= 10 and userid = {ctx.author.id}
             ORDER BY DATE(message_date), discord_user_id;''')
@@ -141,7 +141,7 @@ class Activity(Cog):
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT discord_user_id as userid, date(message_date) as date, COUNT(*) AS number
             FROM messages
-            WHERE date(message_date) > date_sub(curdate(), interval 14 day)
+            WHERE date(message_date) > date_sub(curdate(), interval 14 day) and discord_channel_id != 537818427675377677
             GROUP BY discord_user_id, DATE(message_date)
             HAVING number >= 10 and userid = {other.id}
             ORDER BY DATE(message_date), discord_user_id;''')
