@@ -120,9 +120,7 @@ class Suggestions(Cog):
             return
         await ctx.send('Finished!')
 
-    @commands.command(aliases=['sugg_change'], brief='Updates the status of a given suggestion. ')
-    @commands.check(cfg.is_staff)
-    async def change_suggestion_status(self, ctx, sugg_id: int, new_status, *, reason):
+    async def change_suggestion_status_back(self, ctx, sugg_id: int, new_status, reason) -> Suggestion:
         # Make sure not locked
         if self.lock:
             await ctx.send("You're going too fast! Wait for the previous command to process!")
@@ -186,7 +184,8 @@ class Suggestions(Cog):
                               colour=status_colours[statuses.inverse[new_status]])
         embed.add_field(name='Suggestor', value=suggestion.username, inline=False)
         embed.add_field(name='Content', value=suggestion.body, inline=False)
-        embed.add_field(name='Reason', value=reason, inline=False)
+        if reason is not None:
+            embed.add_field(name='Reason', value=reason, inline=False)
         embed.add_field(name='Date/time', value=suggestion.time.isoformat(), inline=True)
         embed.add_field(name='Vote split',
                         value='👍: {}, 🤷: {}, 👎: {}'.format(votes_for['👍'], votes_for['🤷'], votes_for['👎']),
@@ -218,7 +217,34 @@ class Suggestions(Cog):
                 [ctx.guild.get_member(x).display_name for x in ids_to_dm if ctx.guild.get_member(x) is not None],
                 [ctx.guild.get_member(x).display_name for x in no_ping if ctx.guild.get_member(x) is not None]))
         self.lock = False
+        return suggestion
 
+    @commands.command(aliases=['sugg_change'], brief='Updates the status of a given suggestion. ')
+    @commands.check(cfg.is_staff)
+    async def change_suggestion_status(self, ctx, sugg_id: int, new_status, *, reason):
+        await self.change_suggestion_status_back(ctx, sugg_id, new_status, reason)
+
+    @commands.command(aliases=['escl', 'modvote'])
+    @commands.check(cfg.is_staff)
+    async def escalate(self, ctx, sugg_id: int, *, reason = None):
+        suggestion = await self.change_suggestion_status_back(ctx, sugg_id, 'Mod vote', reason)
+        m = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).fetch_message(suggestion.msgid)
+        await self.bot.get_channel(cfg.Config.config['mod_vote_chan']).send(m.content)
+
+    @commands.command()
+    @commands.check(cfg.is_staff)
+    async def approve(self, ctx, sugg_id: int, *, reason = None):
+        await self.change_suggestion_status_back(ctx, sugg_id, 'Approved', reason)
+
+    @commands.command()
+    @commands.check(cfg.is_staff)
+    async def deny(self, ctx, sugg_id: int, *, reason = None):
+        await self.change_suggestion_status_back(ctx, sugg_id, 'Denied', reason)
+
+    @commands.command()
+    @commands.check(cfg.is_staff)
+    async def implemented(self, ctx, sugg_id: int, *, reason = None):
+        await self.change_suggestion_status_back(ctx, sugg_id, 'Implemented', reason)
 
 def setup(bot):
     bot.add_cog(Suggestions(bot))
