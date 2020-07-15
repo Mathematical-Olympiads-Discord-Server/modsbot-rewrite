@@ -140,14 +140,15 @@ class Activity(Cog):
         days = cursor.fetchall()
         l = len(days)
         if l == 0:
-            await ctx.author.send(f'You have {l} active days!')
+            person = 'You' if other is None else other.display_name
+            await ctx.author.send(f'{person} have 0 active days!')
         else:
             day_info = '\n'.join(f'{a[0]}: {a[1]}' for a in days)
             person = 'You' if other is None else other.display_name
             having = 'have' if l > 1 else 'has'
             plural = 's' if l > 1 else ''
             await ctx.author.send(f'{person} {having} {l} active day{plural}!  ```Date        Count\n{day_info}\n'
-                                  f'[Showing days only where Count >= 10]```')
+                                  f'[Showing days only where Count >= 10. Messages in bot-spam are not counted. ]```')
 
 
 def setup(bot):
