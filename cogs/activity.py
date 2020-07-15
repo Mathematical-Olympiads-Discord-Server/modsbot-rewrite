@@ -124,29 +124,30 @@ class Activity(Cog):
             today_messages[i] = x[i]
         await ctx.send("Loaded: ```{}```".format(today_messages))
 
-    @commands.command()
-    async def active_days(self, ctx):
+    @commands.command(aliases=['ad'])
+    async def active_days(self, ctx, other: discord.User = None):
+        check_id = ctx.author.id if other is None else other.id
         cursor = cfg.db.cursor()
-        cursor.execute(f'''SELECT discord_user_id as userid, date(message_date) as date, COUNT(*) AS number
+        cursor.execute(f'''SELECT date(message_date) as date, COUNT(*) AS number
             FROM messages
-            WHERE date(message_date) > date_sub(curdate(), interval 14 day) and discord_channel_id != 537818427675377677
+            WHERE date(message_date) > date_sub(curdate(), interval 14 day) 
+            and discord_channel_id != 537818427675377677
+            and discord_user_id = {check_id}
             GROUP BY discord_user_id, DATE(message_date)
-            HAVING number >= 10 and userid = {ctx.author.id}
+            HAVING number >= 10
             ORDER BY DATE(message_date), discord_user_id;''')
-        l = len(cursor.fetchall())
-        await ctx.author.send(f'You have {l} active days!')
 
-    @commands.command()
-    async def active_days_o(self, ctx, other: discord.User):
-        cursor = cfg.db.cursor()
-        cursor.execute(f'''SELECT discord_user_id as userid, date(message_date) as date, COUNT(*) AS number
-            FROM messages
-            WHERE date(message_date) > date_sub(curdate(), interval 14 day) and discord_channel_id != 537818427675377677
-            GROUP BY discord_user_id, DATE(message_date)
-            HAVING number >= 10 and userid = {other.id}
-            ORDER BY DATE(message_date), discord_user_id;''')
-        l = len(cursor.fetchall())
-        await ctx.author.send(f'{other.display_name} has {l} active days!')
+        days = cursor.fetchall()
+        l = len(days)
+        if l == 0:
+            await ctx.author.send(f'You have {l} active days!')
+        else:
+            day_info = '\n'.join(f'{a[0]}: {a[1]}' for a in days)
+            person = 'You' if other is None else other.display_name
+            having = 'have' if l > 1 else 'has'
+            plural = 's' if l > 1 else ''
+            await ctx.author.send(f'{person} {having} {l} active day{plural}!  ```Date        Count\n{day_info}\n'
+                                  f'[Showing days only where Count >= 10]```')
 
 
 def setup(bot):
