@@ -81,7 +81,7 @@ class Suggestions(Cog):
 
         # Create message
         m = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).send(
-            '**Suggestion by <@!{}>**: (`#{}`) \n{}'.format(ctx.author.id, len(suggestion_list) + 1, suggestion))
+            '`#{}`: **Suggestion by <@!{}>**: \n{}'.format(suggestion, ctx.author.id, len(suggestion_list) + 1))
         await m.add_reaction('👍')
         await m.add_reaction('🤷')
         await m.add_reaction('👎')
