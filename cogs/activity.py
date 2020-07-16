@@ -150,6 +150,59 @@ class Activity(Cog):
             await ctx.author.send(f'{person} {having} {l} active day{plural}!  ```Date        Count\n{day_info}\n'
                                   f'[Showing days only where Count >= 10. Messages in bot-spam are not counted. ]```')
 
+    @commands.command(aliases=['ua'])
+    @commands.check(cfg.is_staff)
+    async def update_actives(self, ctx, threshold: int = 7):
+        query = '''SELECT discord_user_id as userid, date(message_date) as date, COUNT(*) AS number
+        FROM messages
+        WHERE date(message_date) > date_sub(curdate(), interval 14 day) and discord_channel_id != 537818427675377677
+        GROUP BY discord_user_id, DATE(message_date)
+        HAVING number >= 10
+        ORDER BY DATE(message_date), discord_user_id;'''
+
+        cursor = cfg.db.cursor()
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        activity = {}
+        for i in rows:
+            if i[0] in activity:
+                activity[i[0]] += 1
+            else:
+                activity[i[0]] = 1
+
+        actives_today = set([i for i in activity if activity[i] >= threshold])
+        print([i for i in activity if activity[i] >= threshold])
+        print(len([i for i in activity if activity[i] >= threshold]))
+
+        active_role = ctx.guild.get_role(cfg.Config.config['active_role'])
+        continued_actives = set()
+        removed_actives = set()
+        new_actives = set()
+        for member in active_role.members:
+            if member.id in actives_today:
+                continued_actives.add(member.id)
+            else:
+                try:
+                    await member.remove_roles(active_role)
+                except:
+                    pass
+                removed_actives.add(member.id)
+
+        for id in actives_today:
+            if id not in continued_actives:
+                try:
+                    await ctx.guild.get_member(id).add_roles(active_role)
+                except:
+                    pass
+                new_actives.add(id)
+
+        ca = ', '.join([str(x) for x in continued_actives]) if len(continued_actives) > 0 else 'None'
+        ra = ', '.join([str(x) for x in removed_actives]) if len(removed_actives) > 0 else 'None'
+        na = ', '.join([str(x) for x in new_actives]) if len(new_actives) > 0 else 'None'
+        print(f'Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```')
+        await ctx.guild.get_channel(cfg.Config.config['log_channel']).send(
+            f'Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```')
+
 
 def setup(bot):
     bot.add_cog(Activity(bot))
