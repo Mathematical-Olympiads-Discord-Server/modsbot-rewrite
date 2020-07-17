@@ -203,26 +203,6 @@ class Activity(Cog):
         await ctx.guild.get_channel(cfg.Config.config['log_channel']).send(
             f'Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```')
 
-    @commands.command()
-    async def activity(self, ctx, days: int = 14):
-        query = f'''SELECT discord_user_id as userid, date(message_date) as date, COUNT(*) AS number
-        FROM messages
-        WHERE date(message_date) > date_sub(curdate(), interval {days} day) and discord_user_id = {ctx.author.id}
-        GROUP BY discord_user_id, DATE(message_date)
-        ORDER BY DATE(message_date);'''
-        print(query)
-        cursor = cfg.db.cursor()
-        cursor.execute(query)
-        data = cursor.fetchall()
-        dates = [x[1] for x in data]
-        count = [x[2] for x in data]
-
-        fig = plt.figure()
-        ax = fig.add_axes([0, 0, 1, 1])
-        ax.bar(dates, count)
-        plt.show()
-
-
 
 def setup(bot):
     bot.add_cog(Activity(bot))
