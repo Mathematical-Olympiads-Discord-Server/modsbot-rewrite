@@ -3,7 +3,7 @@ import asyncio
 import logging
 import pickle
 from datetime import datetime
-
+import matplotlib.pyplot as plt
 import discord
 import schedule
 from discord.ext import commands
@@ -145,7 +145,7 @@ class Activity(Cog):
         else:
             day_info = '\n'.join(f'{a[0]}: {a[1]}' for a in days)
             person = 'You' if other is None else other.display_name
-            having = 'have' if l > 1 else 'has'
+            having = 'have' if other is None else 'has'
             plural = 's' if l > 1 else ''
             await ctx.author.send(f'{person} {having} {l} active day{plural}!  ```Date        Count\n{day_info}\n'
                                   f'[Showing days only where Count >= 10. Messages in bot-spam are not counted. ]```')
@@ -202,6 +202,26 @@ class Activity(Cog):
         print(f'Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```')
         await ctx.guild.get_channel(cfg.Config.config['log_channel']).send(
             f'Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```')
+
+    @commands.command()
+    async def activity(self, ctx, days: int = 14):
+        query = f'''SELECT discord_user_id as userid, date(message_date) as date, COUNT(*) AS number
+        FROM messages
+        WHERE date(message_date) > date_sub(curdate(), interval {days} day) and discord_user_id = {ctx.author.id}
+        GROUP BY discord_user_id, DATE(message_date)
+        ORDER BY DATE(message_date);'''
+        print(query)
+        cursor = cfg.db.cursor()
+        cursor.execute(query)
+        data = cursor.fetchall()
+        dates = [x[1] for x in data]
+        count = [x[2] for x in data]
+
+        fig = plt.figure()
+        ax = fig.add_axes([0, 0, 1, 1])
+        ax.bar(dates, count)
+        plt.show()
+
 
 
 def setup(bot):
