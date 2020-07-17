@@ -81,7 +81,7 @@ class Suggestions(Cog):
 
         # Create message
         m = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).send(
-            '`#{}`: **Suggestion by <@!{}>**: \n{}'.format(suggestion, ctx.author.id, len(suggestion_list) + 1))
+            f'`#{len(suggestion_list + 1)}: **Suggestion by <@!{ctx.author.id}>: \n{suggestion}')
         await m.add_reaction('👍')
         await m.add_reaction('🤷')
         await m.add_reaction('👎')
@@ -226,25 +226,26 @@ class Suggestions(Cog):
 
     @commands.command(aliases=['escl', 'modvote'])
     @commands.check(cfg.is_staff)
-    async def escalate(self, ctx, sugg_id: int, *, reason = None):
+    async def escalate(self, ctx, sugg_id: int, *, reason=None):
         suggestion = await self.change_suggestion_status_back(ctx, sugg_id, 'Mod vote', reason)
         m = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).fetch_message(suggestion.msgid)
         await self.bot.get_channel(cfg.Config.config['mod_vote_chan']).send(m.content)
 
     @commands.command()
     @commands.check(cfg.is_staff)
-    async def approve(self, ctx, sugg_id: int, *, reason = None):
+    async def approve(self, ctx, sugg_id: int, *, reason=None):
         await self.change_suggestion_status_back(ctx, sugg_id, 'Approved', reason)
 
     @commands.command()
     @commands.check(cfg.is_staff)
-    async def deny(self, ctx, sugg_id: int, *, reason = None):
+    async def deny(self, ctx, sugg_id: int, *, reason=None):
         await self.change_suggestion_status_back(ctx, sugg_id, 'Denied', reason)
 
     @commands.command()
     @commands.check(cfg.is_staff)
-    async def implemented(self, ctx, sugg_id: int, *, reason = None):
+    async def implemented(self, ctx, sugg_id: int, *, reason=None):
         await self.change_suggestion_status_back(ctx, sugg_id, 'Implemented', reason)
+
 
 def setup(bot):
     bot.add_cog(Suggestions(bot))
