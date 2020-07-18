@@ -141,7 +141,8 @@ class Activity(Cog):
         l = len(days)
         if l == 0:
             person = 'You' if other is None else other.display_name
-            await ctx.author.send(f'{person} have 0 active days!')
+            having = 'have' if other is None else 'has'
+            await ctx.author.send(f'{person} {having} 0 active days!')
         else:
             day_info = '\n'.join(f'{a[0]}: {a[1]}' for a in days)
             person = 'You' if other is None else other.display_name
