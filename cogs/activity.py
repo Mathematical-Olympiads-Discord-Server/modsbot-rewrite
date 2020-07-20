@@ -210,7 +210,7 @@ class Activity(Cog):
 @flags.add_flag('--user', type=discord.User, default=None)
 @flags.command()
 async def activity(ctx, **flags):
-    activity = []
+    messages = []
     ticks = []
     delta = dt.timedelta(days=1)
     index = 0
@@ -243,16 +243,16 @@ async def activity(ctx, **flags):
     start = end - (interval - 1) * delta
     while start <= end:
         if len(result) > index and result[index][0] == start:
-            activity.append(result[index][1])
+            messages.append(result[index][1])
             index += 1
         else:
-            activity.append(0)
+            messages.append(0)
         ticks.append(start if start.weekday() == 0 else None)
         start += delta
-    x_pos = [i for i, _ in enumerate(activity)]
+    x_pos = [i for i, _ in enumerate(messages)]
     print(x_pos)
-    print(activity)
-    plt.bar(x_pos, activity, color='green')
+    print(messages)
+    plt.bar(x_pos, messages, color='green')
     plt.xlabel("Date")
     plt.ylabel("Messages")
     plt.title(f"{user.display_name}'s Activity")
