@@ -3,10 +3,11 @@ import asyncio
 import logging
 import pickle
 from datetime import datetime
+import datetime as dt
 import matplotlib.pyplot as plt
 import discord
 import schedule
-from discord.ext import commands
+from discord.ext import commands, flags
 
 from cogs import config as cfg
 
@@ -205,5 +206,63 @@ class Activity(Cog):
             f'Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```')
 
 
+@flags.add_flag('--interval', type=int, default=None)
+@flags.add_flag('--user', type=discord.User, default=None)
+@flags.command()
+async def activity(ctx, **flags):
+    activity = []
+    ticks = []
+    delta = dt.timedelta(days=1)
+    index = 0
+    end = datetime.now().date()
+    interval = flags['interval']
+    user = flags['user']
+
+    if interval is None:
+        interval = (end - (dt.date(2020, 7, 1))) / delta
+    if interval > (end - dt.date(2020, 7, 1)) / delta:
+        await ctx.send(f'Too big interval (max size: `{(end - (dt.date(2020, 7, 1)))//delta}`)')
+        return
+
+    if user is None:
+        user = ctx.author
+
+    cursor = cfg.db.cursor()
+    cursor.execute(f'''
+    SELECT date(message_date) as date, COUNT(*) AS number
+    FROM messages
+    WHERE date(message_date) > date_sub(curdate(), interval {interval} day) 
+    and discord_user_id = {user.id}
+    GROUP BY discord_user_id, DATE(message_date)
+    ORDER BY DATE(message_date), discord_user_id;
+    ''')
+    result = cursor.fetchall()
+
+    plt.style.use('ggplot')
+
+    start = end - (interval - 1) * delta
+    while start <= end:
+        if len(result) > index and result[index][0] == start:
+            activity.append(result[index][1])
+            index += 1
+        else:
+            activity.append(0)
+        ticks.append(start if start.weekday() == 0 else None)
+        start += delta
+    x_pos = [i for i, _ in enumerate(activity)]
+    print(x_pos)
+    print(activity)
+    plt.bar(x_pos, activity, color='green')
+    plt.xlabel("Date")
+    plt.ylabel("Messages")
+    plt.title(f"{user.display_name}'s Activity")
+
+    plt.xticks(x_pos, ticks)
+    fname = f'data/{datetime.now().isoformat()}.png'
+    plt.savefig(fname)
+    await ctx.send(file=discord.File(open(fname, 'rb')))
+
+
 def setup(bot):
     bot.add_cog(Activity(bot))
+    bot.add_command(activity)
