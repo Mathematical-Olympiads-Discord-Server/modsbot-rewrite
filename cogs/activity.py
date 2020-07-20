@@ -261,6 +261,7 @@ async def activity(ctx, **flags):
     fname = f'data/{datetime.now().isoformat()}.png'
     plt.savefig(fname)
     await ctx.send(file=discord.File(open(fname, 'rb')))
+    plt.clf()
 
 
 def setup(bot):
