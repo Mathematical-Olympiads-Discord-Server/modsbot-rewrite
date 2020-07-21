@@ -256,6 +256,7 @@ async def activity(ctx, **flags):
     plt.xlabel("Date")
     plt.ylabel("Messages")
     plt.title(f"{user.display_name}'s Activity")
+    plt.axhline(y=10,linewidth=1, color='r')
 
     plt.xticks(x_pos, ticks)
     fname = f'data/{datetime.now().isoformat()}.png'
