@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import discord
 import schedule
 from discord.ext import commands, flags
+from discord.ext.commands import BucketType
 
 from cogs import config as cfg
 
@@ -208,6 +209,7 @@ class Activity(Cog):
 
 @flags.add_flag('--interval', type=int, default=None)
 @flags.add_flag('--user', type=discord.User, default=None)
+@commands.cooldown(1, 10, BucketType.user)
 @flags.command()
 async def activity(ctx, **flags):
     messages = []
