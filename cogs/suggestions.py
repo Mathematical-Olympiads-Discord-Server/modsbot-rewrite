@@ -183,7 +183,9 @@ class Suggestions(Cog):
                                                                                               new_status),
                               colour=status_colours[statuses.inverse[new_status]])
         embed.add_field(name='Suggestor', value=suggestion.username, inline=False)
-        embed.add_field(name='Content', value=suggestion.body, inline=False)
+        embed.add_field(name='Content', value=suggestion.body[:1000], inline=False)
+        if len(suggestion.body) > 1000:
+            embed.add_field(name='More content', value=suggestion.body[1000:], inline=False)
         if reason is not None:
             embed.add_field(name='Reason', value=reason, inline=False)
         embed.add_field(name='Date/time', value=suggestion.time.isoformat(), inline=True)
