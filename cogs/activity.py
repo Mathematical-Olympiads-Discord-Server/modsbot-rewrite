@@ -1,6 +1,7 @@
 import ast
 import asyncio
 import logging
+import math
 import pickle
 from datetime import datetime
 import datetime as dt
@@ -206,6 +207,56 @@ class Activity(Cog):
         await ctx.guild.get_channel(cfg.Config.config['log_channel']).send(
             f'Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```')
 
+    @flags.add_flag('--interval', type=int, default=30)
+    @flags.command(aliases=['acttop'])
+    @commands.cooldown(1, 10, BucketType.user)
+    async def activity_top(self, ctx, **flags):
+        interval = flags['interval'] if flags['interval'] < 30 else 30
+        cursor = cfg.db.cursor()
+        cursor.execute(f'''SELECT discord_user_id, message_date, message_length 
+        FROM messages
+        WHERE message_date > date_sub(curdate(), interval {interval} day) LIMIT 100000;''')
+        messages = cursor.fetchall()
+        tss = [(x[0], x[1].timestamp(), x[2]) for x in messages]
+        last_message = {}
+        score = {}
+
+        def sigmoid(x):
+            return 1 / (1 + math.exp(-x))
+
+        def weight(chars, m_date, last_m, now_ts):
+            if last_m is None:
+                interval = 100
+            else:
+                interval = (m_date - last_m)
+            interval = abs(interval)
+            chars = chars if not chars == 0 else 1
+            # print(interval)
+            try:
+                x = math.log10(chars) * sigmoid(6 * interval) * math.exp(
+                    (m_date - now_ts) * math.log(0.8, math.e) / 86400)
+                # print(x)
+                return math.log10(chars) * sigmoid(6 * interval) * math.exp(
+                    (m_date - now_ts) * math.log(0.8, math.e) / 86400)
+            except Exception:
+                print(chars, interval, m_date, last_m, now_ts)
+
+        now = datetime.now().timestamp()
+        for message in tss:
+            if message[0] in score:
+                score[message[0]] += weight(message[2], message[1], last_message[message[0]], now)
+                last_message[message[0]] = message[1]
+            else:
+                score[message[0]] = weight(message[2], message[1], None, now)
+                last_message[message[0]] = message[1]
+
+        scores = [(x, int(score[x])) for x in score]
+        scores.sort(key=lambda x: -x[1])
+        embed = discord.Embed()
+        embed.add_field(name=f'Top 15 users by activity score ({interval} day)',
+                        value='\n'.join([f'`{i+1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(15)]))
+        await ctx.send(embed=embed)
+
 
 @flags.add_flag('--interval', type=int, default=None)
 @flags.add_flag('--user', type=discord.User, default=None)
@@ -223,7 +274,7 @@ async def activity(ctx, **flags):
     if interval is None:
         interval = (end - (dt.date(2020, 7, 1))) / delta
     if interval > (end - dt.date(2020, 7, 1)) / delta:
-        await ctx.send(f'Too big interval (max size: `{(end - (dt.date(2020, 7, 1)))//delta}`)')
+        await ctx.send(f'Too big interval (max size: `{(end - (dt.date(2020, 7, 1))) // delta}`)')
         return
 
     if user is None:
@@ -258,7 +309,7 @@ async def activity(ctx, **flags):
     plt.xlabel("Date")
     plt.ylabel("Messages")
     plt.title(f"{user.display_name}'s Activity")
-    plt.axhline(y=10,linewidth=1, color='r')
+    plt.axhline(y=10, linewidth=1, color='r')
 
     plt.xticks(x_pos, ticks)
     fname = f'data/{datetime.now().isoformat()}.png'
