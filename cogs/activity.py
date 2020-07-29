@@ -236,8 +236,8 @@ class Activity(Cog):
                 x = math.log10(chars) * sigmoid(6 * interval) * math.exp(
                     (m_date - now_ts) * math.log(0.8, math.e) / 86400)
                 # print(x)
-                return math.log10(chars) * sigmoid(6 * interval) * math.exp(
-                    (m_date - now_ts) * math.log(0.8, math.e) / 86400)
+                return 10 * math.log10(chars) * sigmoid(6 * interval) * math.exp(
+                    (now_ts - m_date) * math.log(0.8, math.e) / 86400)
             except Exception:
                 print(chars, interval, m_date, last_m, now_ts)
 
