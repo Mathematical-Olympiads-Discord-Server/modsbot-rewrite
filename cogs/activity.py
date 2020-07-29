@@ -151,7 +151,7 @@ class Activity(Cog):
             having = 'have' if other is None else 'has'
             plural = 's' if l > 1 else ''
             await ctx.author.send(f'{person} {having} {l} active day{plural}!  ```Date        Count\n{day_info}\n'
-                                  f'[Showing days only where Count >= 10. Messages in bot-spam are not counted. ]```')
+                                  f'[Showing days only where Count >= 10. Messages in bot-spam are not counted.]```')
 
     @commands.command(aliases=['ua'])
     @commands.check(cfg.is_staff)
