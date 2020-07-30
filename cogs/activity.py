@@ -208,10 +208,12 @@ class Activity(Cog):
             f'Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```')
 
     @flags.add_flag('--interval', type=int, default=30)
+    @flags.add_flag('--users', type=int, default=15)
     @flags.command(aliases=['acttop'])
     @commands.cooldown(1, 10, BucketType.user)
     async def activity_top(self, ctx, **flags):
         interval = flags['interval'] if flags['interval'] < 30 else 30
+        users = flags['users'] if flags['users'] < 30 else 30
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT discord_user_id, message_date, message_length 
         FROM messages
@@ -254,7 +256,7 @@ class Activity(Cog):
         scores.sort(key=lambda x: -x[1])
         embed = discord.Embed()
         embed.add_field(name=f'Top 15 users by activity score ({interval} day)',
-                        value='\n'.join([f'`{i+1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(15)]))
+                        value='\n'.join([f'`{i+1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(users)]))
         await ctx.send(embed=embed)
 
 
