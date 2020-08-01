@@ -2,11 +2,13 @@ import discord
 from discord.ext import commands
 
 from cogs import config as cfg
+from random import choice
 
 Cog = commands.Cog
-
+word_file = "/usr/share/dict/words"
+words = open(word_file).read().splitlines()
 waiting_for = set()
-
+aphasiad = set()
 
 class Misc(Cog):
     def __init__(self, bot: commands.Bot):
@@ -55,6 +57,23 @@ class Misc(Cog):
         else:
             await ctx.send('I don\'t recognise that tag!')
 
+    @commands.command()
+    @commands.check(cfg.is_staff)
+    async def aphasia(self, ctx, user: discord.User):
+        aphasiad.add(user.id)
+
+    @commands.command()
+    @commands.check(cfg.is_staff)
+    async def unaphasia(self, ctx, user: discord.User):
+        aphasiad.remove(user.id)
+
+    @Cog.listener()
+    async def on_message(self, message : discord.Message):
+        if message.author.id in aphasiad:
+            m_len = len(message.content.split())
+            x = ' '.join((choice(words) for i in range(m_len)))
+            await message.delete()
+            await message.channel.send(f'{message.author.mention}: {x}')
 
 def setup(bot):
     bot.add_cog(Misc(bot))
