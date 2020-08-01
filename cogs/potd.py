@@ -110,16 +110,19 @@ class Potd(Cog):
             # m = await message.channel.send(
             #     '{} \nRate this problem with `-rate {} <rating>` and check its user difficulty rating with `-rating {}`'.format(
             #         self.to_send, self.requested_number, self.requested_number))
-            m = await message.channel.send(self.to_send)
-            await m.add_reaction("👍")
+            source_msg = await message.channel.send(self.to_send)
+            await source_msg.add_reaction("👍")
             if self.late:
-                await m.add_reaction('⏰')
+                await source_msg.add_reaction('⏰')
 
             if self.ping_daily:
                 r = self.bot.get_guild(cfg.Config.config['mods_guild']).get_role(cfg.Config.config['potd_role'])
                 await r.edit(mentionable=True)
                 await message.channel.send('<@&{}>'.format(cfg.Config.config['potd_role']))
                 await r.edit(mentionable=False)
+
+            await source_msg.publish()
+            await message.publish()
 
             self.requested_number = -1
             self.listening_in_channel = -1
