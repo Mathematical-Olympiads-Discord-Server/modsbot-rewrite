@@ -121,8 +121,8 @@ class Potd(Cog):
                 await message.channel.send('<@&{}>'.format(cfg.Config.config['potd_role']))
                 await r.edit(mentionable=False)
 
-            await source_msg.publish()
             await message.publish()
+            await source_msg.publish()
 
             self.requested_number = -1
             self.listening_in_channel = -1
