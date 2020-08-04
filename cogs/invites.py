@@ -47,7 +47,13 @@ class Invites(Cog):
         embed = discord.Embed()
         embed.add_field(name='User Joined', value=member.mention, inline=False)
         embed.add_field(name='Possible Invites', value=possible_string, inline=False)
-        await member.guild.get_channel(cfg.Config.config['log_channel']).send(embed=embed)
+
+        join_delta = member.joined_at.timestamp() - member.created_at.timestamp()
+        if join_delta > 30:
+            await member.guild.get_channel(cfg.Config.config['log_channel']).send(embed=embed)
+        else:
+            embed.add_field(name='Recently Created', value=f'{join_delta} seconds ago', inline=False)
+            await self.bot.get_channel(cfg.Config.config['warn_channel']).send(embed=embed)
 
 
 def setup(bot: commands.Bot):

@@ -36,7 +36,7 @@ class Misc(Cog):
             verif_time_delta = datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()
             if verif_time_delta < 15:
                 await self.bot.get_channel(cfg.Config.config['warn_channel']).send(
-                   f'{payload.member.mention} verified in like, epsilon time')
+                   f'{payload.member.mention} verified in like, epsilon time ({verif_time_delta}s exactly)')
 
             try:
                 await user.remove_roles(guild.get_role(cfg.Config.config['unverified_role']))
