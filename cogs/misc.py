@@ -1,14 +1,17 @@
+from datetime import datetime
+from random import choice
+
 import discord
 from discord.ext import commands
 
 from cogs import config as cfg
-from random import choice
 
 Cog = commands.Cog
 word_file = "/usr/share/dict/words"
 words = open(word_file).read().splitlines()
 waiting_for = set()
 aphasiad = set()
+
 
 class Misc(Cog):
     def __init__(self, bot: commands.Bot):
@@ -29,6 +32,12 @@ class Misc(Cog):
         m = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
         await m.remove_reaction(payload.emoji, discord.Object(payload.user_id))
         if user is not None and payload.emoji and cfg.Config.config['unverified_role'] in role_ids:
+
+            verif_time_delta = datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()
+            if verif_time_delta < 15:
+                await self.bot.get_channel(cfg.Config.config['warn_channel']).send(
+                   f'{payload.member.mention} verified in like, epsilon time')
+
             try:
                 await user.remove_roles(guild.get_role(cfg.Config.config['unverified_role']))
             except discord.HTTPException as e:
@@ -68,12 +77,13 @@ class Misc(Cog):
         aphasiad.remove(user.id)
 
     @Cog.listener()
-    async def on_message(self, message : discord.Message):
+    async def on_message(self, message: discord.Message):
         if message.author.id in aphasiad:
             m_len = len(message.content.split())
             x = ' '.join((choice(words) for i in range(m_len)))
             await message.delete()
             await message.channel.send(f'{message.author.mention}: {x}')
+
 
 def setup(bot):
     bot.add_cog(Misc(bot))

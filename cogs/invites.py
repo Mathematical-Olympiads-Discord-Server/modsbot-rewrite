@@ -42,6 +42,7 @@ class Invites(Cog):
         for invite in temp_invites:
             if invite.uses > invites[invite.code]:
                 possible_joins.add(invite)
+            invites[invite.code] = invite.uses
         possible_string = ' '.join([f'{invite.code} by {invite.inviter.mention}' for invite in possible_joins])
         embed = discord.Embed()
         embed.add_field(name='User Joined', value=member.mention, inline=False)
