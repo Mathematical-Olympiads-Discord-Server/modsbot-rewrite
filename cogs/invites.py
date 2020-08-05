@@ -49,7 +49,7 @@ class Invites(Cog):
         embed.add_field(name='Possible Invites', value=possible_string, inline=False)
 
         join_delta = member.joined_at.timestamp() - member.created_at.timestamp()
-        if join_delta > 30:
+        if join_delta > 1800:
             await member.guild.get_channel(cfg.Config.config['log_channel']).send(embed=embed)
         else:
             embed.add_field(name='Recently Created', value=f'{join_delta} seconds ago', inline=False)
