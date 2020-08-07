@@ -213,7 +213,7 @@ class Suggestions(Cog):
         suggestion.reason = reason
         update_suggestions()
         await suggestion_message.edit(
-            f'**Suggestion `#{sugg_id}` by <@!{suggestion.userid}>:** `[{new_status}]`\n{suggestion.body}')
+            content=f'**Suggestion `#{sugg_id}` by <@!{suggestion.userid}>:** `[{new_status}]`\n{suggestion.body}')
 
         # Finish up
         await ctx.send(
