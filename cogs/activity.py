@@ -97,7 +97,7 @@ class Activity(Cog):
             today_messages[i] = x[i]
         await ctx.send("Loaded: ```{}```".format(today_messages))
 
-    @commands.command(aliases=['ad'])
+    @commands.command(aliases=['ad', 'as'])
     async def activity_score(self, ctx, other: discord.User = None):
         interval = 30
         to_check = ctx.author if other is None else other
