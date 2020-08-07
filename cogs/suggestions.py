@@ -81,7 +81,7 @@ class Suggestions(Cog):
 
         # Create message
         m = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).send(
-            f'**Suggestion `#{len(suggestion_list) + 1}` by <@!{ctx.author.id}>:** \n{suggestion}')
+            f'**Suggestion `#{len(suggestion_list) + 1}` by <@!{ctx.author.id}>:** `[Pending]`\n{suggestion}')
         await m.add_reaction('👍')
         await m.add_reaction('🤷')
         await m.add_reaction('👎')
@@ -212,6 +212,8 @@ class Suggestions(Cog):
         suggestion.status = new_status
         suggestion.reason = reason
         update_suggestions()
+        await suggestion_message.edit(
+            f'**Suggestion `#{sugg_id}` by <@!{suggestion.userid}>:** `[{new_status}]`\n{suggestion.body}')
 
         # Finish up
         await ctx.send(
