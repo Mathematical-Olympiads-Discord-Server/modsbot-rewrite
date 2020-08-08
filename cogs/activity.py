@@ -30,11 +30,11 @@ def weight(chars, m_date, last_m, now_ts):
     chars = chars if not chars == 0 else 1
     # print(interval)
     try:
-        x = math.log10(chars) * sigmoid(6 * interval) * math.exp(
-            (m_date - now_ts) * math.log(0.8, math.e) / 86400)
+        x = math.log10(chars) * sigmoid(interval / 30) * math.exp(
+            (m_date - now_ts) * math.log(0.9, math.e) / 86400)
         # print(x)
-        return 10 * math.log10(chars) * sigmoid(6 * interval) * math.exp(
-            (now_ts - m_date) * math.log(0.8, math.e) / 86400)
+        return 10 * math.log10(chars) * sigmoid(interval / 30) * math.exp(
+            (now_ts - m_date) * math.log(0.9, math.e) / 86400)
     except Exception:
         print(chars, interval, m_date, last_m, now_ts)
 
