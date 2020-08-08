@@ -250,11 +250,12 @@ class Activity(Cog):
                 index += 1
             else:
                 messages.append(0)
-            ticks.append(start if start.weekday() == 0 else None)
+            ticks.append(str(start)[5:] if start.weekday() == 0 else None)
             start += delta
         x_pos = [i for i, _ in enumerate(messages)]
         print(x_pos)
         print(messages)
+        plt.xkcd(scale=0.5, randomness=0.5)
         plt.bar(x_pos, messages, color='green')
         plt.xlabel("Date")
         plt.ylabel("Messages")
