@@ -261,6 +261,7 @@ class Activity(Cog):
         plt.ylabel("Messages")
         plt.title(f"{user.display_name}'s Activity")
         plt.axhline(y=10, linewidth=1, color='r')
+        plt.subplots_adjust(bottom=0.15)
 
         plt.xticks(x_pos, ticks)
         fname = f'data/{datetime.now().isoformat()}.png'
