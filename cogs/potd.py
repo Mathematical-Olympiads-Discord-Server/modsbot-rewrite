@@ -212,7 +212,6 @@ class Potd(Cog):
         result = cursor.fetchall()
         if len(result) == 0:
             await ctx.author.send(f'No ratings for potd {potd} yet. ')
-            return
         else:
             median = statistics.median([row[3] for row in result])
             await ctx.author.send(f'Rating for potd {potd} is `{median}`. ')
