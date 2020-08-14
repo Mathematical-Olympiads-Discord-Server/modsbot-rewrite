@@ -218,6 +218,7 @@ class Potd(Cog):
             await ctx.author.send(f'Rating for potd {potd} is `{median}`. ')
             if full:
                 await ctx.author.send(f'Full list: {[row[3] for row in result]}')
+        await ctx.message.delete()
 
     @commands.command(aliases=['myrating'], brief='Checks your rating of a potd. ')
     async def potd_rating_self(self, ctx, potd: int):
@@ -240,7 +241,7 @@ class Potd(Cog):
             ratings = '\n'.join([f'{i[1]:<6}{i[3]}' for i in result])
             await ctx.author.send(f'Your ratings: ```Potd  Rating\n{ratings}```You have rated {len(result)} potds. ')
 
-    @commands.command(aliases=['rmrating'], brief='Removes your rating for a potd. ')
+    @commands.command(aliases=['rmrating', 'unrate'], brief='Removes your rating for a potd. ')
     async def potd_rating_remove(self, ctx, potd: int):
         cursor = cfg.db.cursor()
         cursor.execute(f'SELECT * FROM ratings WHERE prob = {potd} AND userid = {ctx.author.id}')
