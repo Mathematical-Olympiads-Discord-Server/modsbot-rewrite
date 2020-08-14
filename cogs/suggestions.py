@@ -154,9 +154,9 @@ class Suggestions(Cog):
         for reaction in suggestion_message.reactions:
             # Add everyone who reacted
             if reaction.emoji == '🔔':
-                bell = set([x.id for x in await reaction.users.flatten()])
+                bell = set([x.id for x in await reaction.users().flatten()])
             elif reaction.emoji == '🔕':
-                no_bell = set([x.id for x in await reaction.users.flatten()])
+                no_bell = set([x.id for x in await reaction.users().flatten()])
             else:
                 users = await reaction.users().flatten()
                 votes_for[reaction.emoji] = len(users) - 1
