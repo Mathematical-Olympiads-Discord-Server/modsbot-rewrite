@@ -166,7 +166,7 @@ class Suggestions(Cog):
         ping_role = set([x.id for x in ctx.guild.get_role(cfg.Config.config['suggestion_role']).members])
         no_ping_role = set([x.id for x in ctx.guild.get_role(cfg.Config.config['suggestion_no_notify']).members])
         ids_to_dm = set()
-        ids_to_dm.union(ping_role).union(voted).difference(no_bell).difference(no_ping_role).union(bell)
+        ids_to_dm = ids_to_dm.union(ping_role).union(voted).difference(no_bell).difference(no_ping_role).union(bell)
 
         # Print out ids_to_dm for logging purposes
         # print(ids_to_dm)
@@ -214,7 +214,8 @@ class Suggestions(Cog):
         await ctx.send(
             "Finished. I have DMed the following people: {}. The following people requested not to be DMed: {}. ".format(
                 [ctx.guild.get_member(x).display_name for x in ids_to_dm if ctx.guild.get_member(x) is not None],
-                [ctx.guild.get_member(x).display_name for x in no_ping if ctx.guild.get_member(x) is not None]))
+                [ctx.guild.get_member(x).display_name for x in no_bell.union(no_ping_role) if
+                 ctx.guild.get_member(x) is not None]))
         self.lock = False
         return suggestion
 
