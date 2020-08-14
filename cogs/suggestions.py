@@ -149,29 +149,24 @@ class Suggestions(Cog):
 
         suggestion_message = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).fetch_message(
             suggestion.msgid)
-        no_ping = set()
+        voted = set()
         votes_for = {}
         for reaction in suggestion_message.reactions:
             # Add everyone who reacted
-            if not reaction.emoji == '🔕':
+            if reaction.emoji == '🔔':
+                bell = set([x.id for x in await reaction.users.flatten()])
+            elif reaction.emoji == '🔕':
+                no_bell = set([x.id for x in await reaction.users.flatten()])
+            else:
                 users = await reaction.users().flatten()
                 votes_for[reaction.emoji] = len(users) - 1
                 for u in users:
-                    ids_to_dm.add(u.id)
-            else:
-                users = await reaction.users().flatten()
-                for u in users:
-                    no_ping.add(u.id)
+                    voted.add(u.id)
         # Add everyone with the suggestions role
-        suggestions_role_members = ctx.guild.get_role(cfg.Config.config['suggestion_role']).members
-        for u in suggestions_role_members:
-            ids_to_dm.add(u.id)
-
-        # print(no_ping)
-        # Remove everyone who reacted with no_bell
-        for u in no_ping:
-            if u in ids_to_dm:
-                ids_to_dm.remove(u)
+        ping_role = set([x.id for x in ctx.guild.get_role(cfg.Config.config['suggestion_role']).members])
+        no_ping_role = set([x.id for x in ctx.guild.get_role(cfg.Config.config['suggestion_no_notify']).members])
+        ids_to_dm = set()
+        ids_to_dm.union(ping_role).union(voted).difference(no_bell).difference(no_ping_role).union(bell)
 
         # Print out ids_to_dm for logging purposes
         # print(ids_to_dm)
