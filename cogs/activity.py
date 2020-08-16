@@ -105,6 +105,7 @@ class Activity(Cog):
         cursor.execute(f'''SELECT message_date, message_length 
         FROM messages
         WHERE message_date > date_sub(curdate(), interval {interval} day) 
+        AND discord_channel_id != 537818427675377677 
         and discord_user_id = {to_check.id}
         LIMIT 100000;''')
         messages = cursor.fetchall()
@@ -128,7 +129,9 @@ class Activity(Cog):
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT discord_user_id, message_date, message_length 
         FROM messages
-        WHERE message_date > date_sub(curdate(), interval 30 day) LIMIT 100000;''')
+        WHERE message_date > date_sub(curdate(), interval 30 day) 
+        AND discord_channel_id != 537818427675377677 
+        LIMIT 100000;''')
         messages = cursor.fetchall()
         tss = [(x[0], x[1].timestamp(), x[2]) for x in messages]
         last_message = {}
@@ -186,7 +189,9 @@ class Activity(Cog):
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT discord_user_id, message_date, message_length 
         FROM messages
-        WHERE message_date > date_sub(curdate(), interval {interval} day) LIMIT 100000;''')
+        WHERE message_date > date_sub(curdate(), interval {interval} day) 
+        AND discord_channel_id != 537818427675377677
+        LIMIT 100000;''')
         messages = cursor.fetchall()
         tss = [(x[0], x[1].timestamp(), x[2]) for x in messages]
         last_message = {}
