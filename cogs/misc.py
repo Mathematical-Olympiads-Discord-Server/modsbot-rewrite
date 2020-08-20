@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 from random import choice
 
@@ -24,44 +23,37 @@ class Misc(Cog):
 
     @Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        logging.info(f'Reaction clicked:       {datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}')
-        logging.info(f'Reaction seen:          {datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}')
         if payload.channel_id != cfg.Config.config['welcome_channel']: return
+        if payload.user_id in in_verif_speedrun_mode:
+            await self.bot.get_channel(cfg.Config.config['bot_spam_channel']).send(
+                f"<@!{payload.user_id}>: `{datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}`s")
+
         guild = self.bot.get_guild(cfg.Config.config['mods_guild'])
         user = guild.get_member(payload.user_id)
-        logging.info(f'Sanitised:              {datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}')
 
         role_ids = set()
         for r in user.roles:
             role_ids.add(r.id)
         m = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
         await m.remove_reaction(payload.emoji, discord.Object(payload.user_id))
-        logging.info(f'Reaction removed:       {datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}')
         if user is not None and payload.emoji and cfg.Config.config['unverified_role'] in role_ids:
 
             verif_time_delta = datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()
-            if verif_time_delta < 15:
+            if verif_time_delta < 15 and payload.user_id not in in_verif_speedrun_mode:
                 await self.bot.get_channel(cfg.Config.config['warn_channel']).send(
                     f'{payload.member.mention} verified in like, epsilon time ({verif_time_delta}s exactly)')
 
-            logging.info(
-                f'Sent timing message:    {datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}')
             try:
                 await user.remove_roles(guild.get_role(cfg.Config.config['unverified_role']))
             except discord.HTTPException as e:
                 print(e)
 
-            if payload.user_id in in_verif_speedrun_mode:
-                await self.bot.get_channel(cfg.Config.config['bot_spam_channel']).send(
-                    f"<@!{payload.user_id}>: `{datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}`s")
-            else:
+            if payload.user_id not in in_verif_speedrun_mode:
                 await self.bot.get_channel(cfg.Config.config['lounge_channel']).send(
                     f"Welcome to the Mathematical Olympiads Discord server {user.mention}! "
                     "Check out the self-assignable roles in "
                     f"<#{cfg.Config.config['roles_channel']}> and enjoy your time here. :smile:"
                 )
-            logging.info(
-                f'Sent welcome message:   {datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}')
 
     @commands.command(aliases=['t'], brief='Sends the message associated with the given tag. ')
     async def retrieve_tag(self, ctx, *, tag):
