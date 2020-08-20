@@ -52,7 +52,7 @@ class Misc(Cog):
                 print(e)
 
             if payload.user_id in in_verif_speedrun_mode:
-                await self.bot.get_channel(cfg.Config.config['lounge_channel']).send(
+                await self.bot.get_channel(cfg.Config.config['bot_spam_channel']).send(
                     f"<@!{payload.user_id}>: `{datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}`s")
             else:
                 await self.bot.get_channel(cfg.Config.config['lounge_channel']).send(
