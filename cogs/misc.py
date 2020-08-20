@@ -53,7 +53,7 @@ class Misc(Cog):
 
             if payload.user_id in in_verif_speedrun_mode:
                 await self.bot.get_channel(cfg.Config.config['lounge_channel']).send(
-                    f"{datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}")
+                    f"<@!{payload.user_id}>: `{datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}`s")
             else:
                 await self.bot.get_channel(cfg.Config.config['lounge_channel']).send(
                     f"Welcome to the Mathematical Olympiads Discord server {user.mention}! "
