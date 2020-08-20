@@ -1,6 +1,6 @@
+import logging
 from datetime import datetime
 from random import choice
-import logging
 
 import discord
 from discord.ext import commands
@@ -12,6 +12,7 @@ word_file = "/usr/share/dict/words"
 words = open(word_file).read().splitlines()
 waiting_for = set()
 aphasiad = set()
+in_verif_speedrun_mode = set()
 
 
 class Misc(Cog):
@@ -23,12 +24,12 @@ class Misc(Cog):
 
     @Cog.listener()
     async def on_raw_reaction_add(self, payload):
+        logging.info(f'Reaction clicked:       {datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}')
         logging.info(f'Reaction seen:          {datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}')
         if payload.channel_id != cfg.Config.config['welcome_channel']: return
         guild = self.bot.get_guild(cfg.Config.config['mods_guild'])
         user = guild.get_member(payload.user_id)
         logging.info(f'Sanitised:              {datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}')
-
 
         role_ids = set()
         for r in user.roles:
@@ -41,20 +42,26 @@ class Misc(Cog):
             verif_time_delta = datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()
             if verif_time_delta < 15:
                 await self.bot.get_channel(cfg.Config.config['warn_channel']).send(
-                   f'{payload.member.mention} verified in like, epsilon time ({verif_time_delta}s exactly)')
+                    f'{payload.member.mention} verified in like, epsilon time ({verif_time_delta}s exactly)')
 
-            logging.info(f'Sent timing message:    {datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}')
+            logging.info(
+                f'Sent timing message:    {datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}')
             try:
                 await user.remove_roles(guild.get_role(cfg.Config.config['unverified_role']))
             except discord.HTTPException as e:
                 print(e)
 
-            await self.bot.get_channel(cfg.Config.config['lounge_channel']).send(
-                f"Welcome to the Mathematical Olympiads Discord server {user.mention}! "
-                "Check out the self-assignable roles in "
-                f"<#{cfg.Config.config['roles_channel']}> and enjoy your time here. :smile:"
-            )
-            logging.info(f'Sent welcome message:   {datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}')
+            if payload.user_id in in_verif_speedrun_mode:
+                await self.bot.get_channel(cfg.Config.config['lounge_channel']).send(
+                    f"{datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}")
+            else:
+                await self.bot.get_channel(cfg.Config.config['lounge_channel']).send(
+                    f"Welcome to the Mathematical Olympiads Discord server {user.mention}! "
+                    "Check out the self-assignable roles in "
+                    f"<#{cfg.Config.config['roles_channel']}> and enjoy your time here. :smile:"
+                )
+            logging.info(
+                f'Sent welcome message:   {datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}')
 
     @commands.command(aliases=['t'], brief='Sends the message associated with the given tag. ')
     async def retrieve_tag(self, ctx, *, tag):
@@ -72,6 +79,11 @@ class Misc(Cog):
             await ctx.send(tag_dict[tag])
         else:
             await ctx.send('I don\'t recognise that tag!')
+
+    @commands.command()
+    async def verify_speedrun_mode(self, ctx, user: discord.User):
+        in_verif_speedrun_mode.add(user.id)
+        await user.send('You\'re in verify speedrun mode now!')
 
     @commands.command()
     @commands.check(cfg.is_staff)
