@@ -81,9 +81,9 @@ class Misc(Cog):
             await ctx.send('I don\'t recognise that tag!')
 
     @commands.command()
-    async def verify_speedrun_mode(self, ctx, user: discord.User):
-        in_verif_speedrun_mode.add(user.id)
-        await user.send('You\'re in verify speedrun mode now!')
+    async def verify_speedrun_mode(self, ctx):
+        in_verif_speedrun_mode.add(ctx.author.id)
+        await ctx.author.send('You\'re in verify speedrun mode now!')
 
     @commands.command()
     @commands.check(cfg.is_staff)
