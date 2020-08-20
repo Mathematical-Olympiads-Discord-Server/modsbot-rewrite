@@ -209,7 +209,8 @@ class Activity(Cog):
         scores = [(x, int(score[x])) for x in score]
         scores.sort(key=lambda x: -x[1])
         embed = discord.Embed()
-        embed.add_field(name=f'Top {users} users by activity score ({interval} day)',
+        s = 's'
+        embed.add_field(name=f'Top {users} user{s if users > 1 else None} by activity score ({interval} day)',
                         value='\n'.join([f'`{i + 1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(users)]))
         await ctx.send(embed=embed)
 
