@@ -27,7 +27,7 @@ class Potd(Cog):
         self.ping_daily = False
         self.late = False
         self.requested_number = -1
-        schedule.every().day.at("09:15").do(self.bot.loop.create_task, self.check_potd(), bot.loop).tag(
+        schedule.every().day.at("10:00").do(self.bot.loop.create_task, self.check_potd()).tag(
             'cogs.potd')
 
         # Initialise potd_ratings
