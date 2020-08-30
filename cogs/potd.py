@@ -20,14 +20,14 @@ def is_pc(ctx):
 
 class Potd(Cog):
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.listening_in_channel = -1
         self.to_send = ''
         self.bot = bot
         self.ping_daily = False
         self.late = False
         self.requested_number = -1
-        schedule.every().day.at("09:15").do(asyncio.run_coroutine_threadsafe, self.check_potd(), bot.loop).tag(
+        schedule.every().day.at("09:15").do(self.bot.loop.create_task, self.check_potd(), bot.loop).tag(
             'cogs.potd')
 
         # Initialise potd_ratings
