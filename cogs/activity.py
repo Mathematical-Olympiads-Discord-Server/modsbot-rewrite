@@ -33,7 +33,7 @@ def weight(chars, m_date, last_m, now_ts):
         x = math.log10(chars) * sigmoid(interval / 30) * math.exp(
             (m_date - now_ts) * math.log(0.9, math.e) / 86400)
         # print(x)
-        return 10 * math.log10(chars) * sigmoid(interval / 30) * math.exp(
+        return 10 * math.log10(chars) * (2 * sigmoid(interval / 30 - 60)) * math.exp(
             (now_ts - m_date) * math.log(0.9, math.e) / 86400)
     except Exception:
         print(chars, interval, m_date, last_m, now_ts)
@@ -50,7 +50,8 @@ class Activity(Cog):
         if not message.author.bot and message.guild is not None:  # Ignore messages from bots and DMs
             cursor = cfg.db.cursor()
             cursor.execute(
-                'INSERT INTO messages (discord_message_id, discord_channel_id, discord_user_id, message_length, message_date) VALUES (%s, %s, %s, %s, %s)',
+                'INSERT INTO messages (discord_message_id, discord_channel_id, discord_user_id, message_length, '
+                'message_date) VALUES (?, ?, ?, ?, ?)',
                 (message.id, message.channel.id, message.author.id, len(message.content), datetime.now()))
             cfg.db.commit()
         self.new_message = True
@@ -228,10 +229,11 @@ class Activity(Cog):
         interval = flags['interval']
         user = flags['user']
 
+        epoch = dt.date(2019, 1, 11)  # This is when the server was created
         if interval is None:
-            interval = (end - (dt.date(2020, 7, 1))) / delta
-        if interval > (end - dt.date(2020, 7, 1)) / delta:
-            await ctx.send(f'Too big interval (max size: `{(end - (dt.date(2020, 7, 1))) // delta}`)')
+            interval = (end - epoch) / delta
+        if interval > (end - epoch) / delta:
+            await ctx.send(f'Too big interval (max size: `{(end - epoch) // delta}`)')
             return
 
         if user is None:
@@ -241,7 +243,8 @@ class Activity(Cog):
         cursor.execute(f'''
         SELECT date(message_date) as date, COUNT(*) AS number
         FROM messages
-        WHERE date(message_date) > date_sub(curdate(), interval {interval} day) 
+        WHERE date(message_date) BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
+        AND "{str(dt.date.today())}"
         and discord_user_id = {user.id}
         GROUP BY discord_user_id, DATE(message_date)
         ORDER BY DATE(message_date), discord_user_id;
@@ -252,17 +255,25 @@ class Activity(Cog):
 
         start = end - (interval - 1) * delta
         while start <= end:
-            if len(result) > index and result[index][0] == start:
+            if len(result) > index and result[index][0] == str(start):
                 messages.append(result[index][1])
                 index += 1
             else:
                 messages.append(0)
-            ticks.append(str(start)[5:] if start.weekday() == 0 else None)
+            if interval > 70:
+                ticks.append(str(start)[:7] if start.day == 1 else None)
+            else:
+                ticks.append(str(start)[5:] if start.weekday() == 0 else None)
             start += delta
         x_pos = [i for i, _ in enumerate(messages)]
         print(x_pos)
         print(messages)
-        plt.xkcd(scale=0.5, randomness=0.5)
+        if interval > 50:   # With a lot of data to display cool formatting is less necessary
+            plt.figure(figsize=(24, 13.5))
+            plt.xkcd(scale=0, randomness=0, length=0)
+        else:
+            plt.xkcd(scale=0.5, randomness=0.5)
+            plt.figure(figsize=(8, 6))
         plt.bar(x_pos, messages, color='green')
         plt.xlabel("Date")
         plt.ylabel("Messages")

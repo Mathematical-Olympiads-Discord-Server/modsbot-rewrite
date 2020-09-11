@@ -53,6 +53,47 @@ class Potd(Cog):
             f.write('\n')
             f.write(str(self.potd_ratings))
 
+    async def potd_embedded(self, ctx, *, number: int):
+        # It can only handle one at a time!
+        if not self.listening_in_channel == -1:
+            await ctx.send("Please wait until the previous potd call has finished!")
+            return
+
+        reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute()
+        values = reply.get('values', [])
+        current_potd = int(values[0][0])  # this will be the top left cell which indicates the current potd
+        potd_row = values[current_potd - number]  # this gets the row requested
+
+        # Create the message to send
+        to_tex = ''
+        try:
+            to_tex = '```\n \\textbf{Day ' + str(number) + '} --- ' + str(potd_row[2]) + ' ' + str(
+                potd_row[1]) + '\n \\begin{flushleft} \n' + str(potd_row[8]) + '\n \\end{flushleft}```'
+        except IndexError:
+            await ctx.send("There is no potd for day {}. ".format(number))
+            return
+        print(to_tex)
+
+        # Figure out whose potd it is
+        curator = 'Unknown Curator'
+        if potd_row[3] in cfg.Config.config['pc_codes'].inverse:
+            curator = 'Problem chosen by <@!{}>'.format(cfg.Config.config['pc_codes'].inverse[potd_row[3]])
+        difficulty_length = len(potd_row[5]) + len(potd_row[6])
+        source = '{} Source: ||`{}{}{}`||'.format(curator, potd_row[4],
+                                                  (' ' * (max(51 - len(potd_row[4]) + difficulty_length, 1))),
+                                                  (potd_row[5] + potd_row[6]))
+
+        # Finish up
+        print(source)
+        await ctx.send(to_tex, delete_after=1.5)
+        self.requested_number = int(potd_row[0])
+        self.latest_potd = int(potd_row[0])
+        self.update_ratings()
+        self.to_send = source
+        self.listening_in_channel = ctx.channel.id
+        self.late = True
+
     async def check_potd(self):
         # Get the potds from the sheet (API call)
         potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
@@ -191,7 +232,7 @@ class Potd(Cog):
         result = cursor.fetchone()
         # print(result)
         if result is None:
-            sql = 'INSERT INTO ratings (prob, userid, rating) VALUES (%s, %s, %s)'
+            sql = 'INSERT INTO ratings (prob, userid, rating) VALUES (?, ?, ?)'
             cursor.execute(sql, (potd, ctx.author.id, rating))
             cfg.db.commit()
             await ctx.author.send(f'You just rated potd {potd} {rating}. Thank you! ')

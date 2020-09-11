@@ -6,16 +6,10 @@ from ruamel import yaml
 import os
 from apiclient import discovery
 from google.oauth2 import service_account
-import mysql.connector
+import sqlite3
 
 Cog = commands.Cog
-f = open('data/dbcred.txt', 'r')
-db = mysql.connector.connect(
-    host=f.readline()[:-1],
-    user=f.readline()[:-1],
-    password=f.readline()[:-1],
-    database=f.readline()[:-1]
-)
+db = sqlite3.connect('data/modsdb.db')
 
 
 def is_staff(ctx):
