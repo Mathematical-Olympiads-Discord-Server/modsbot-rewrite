@@ -286,6 +286,7 @@ class Activity(Cog):
         plt.savefig(fname)
         await ctx.send(file=discord.File(open(fname, 'rb')))
         plt.clf()
+        plt.close('all')
 
 
 def setup(bot):
