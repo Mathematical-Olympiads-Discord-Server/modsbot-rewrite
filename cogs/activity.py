@@ -197,7 +197,7 @@ class Activity(Cog):
         AND discord_channel_id != 537818427675377677
         LIMIT 100000;''')
         messages = cursor.fetchall()
-        tss = [(x[0], x[1].timestamp(), x[2]) for x in messages]
+        tss = [(x[0], datetime.fromisoformat(x[1]).timestamp(), x[2]) for x in messages]
         last_message = {}
         score = {}
 
