@@ -216,7 +216,7 @@ class Activity(Cog):
                         value='\n'.join([f'`{i + 1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(users)]))
         await ctx.send(embed=embed)
 
-    @flags.add_flag('--interval', type=int, default=None)
+    @flags.add_flag('--interval', type=int, default=30)
     @flags.add_flag('--user', type=discord.User, default=None)
     @commands.cooldown(1, 10, BucketType.user)
     @flags.command()
