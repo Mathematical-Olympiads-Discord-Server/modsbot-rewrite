@@ -111,7 +111,7 @@ class Activity(Cog):
         and discord_user_id = {to_check.id}
         LIMIT 1000000;''')
         messages = cursor.fetchall()
-        tss = [(datetime.fromisoformat(x[0].timestamp()), x[1]) for x in messages]
+        tss = [(datetime.fromisoformat(x[0]).timestamp(), x[1]) for x in messages]
         last_message_time = -1
         score = 0
 
