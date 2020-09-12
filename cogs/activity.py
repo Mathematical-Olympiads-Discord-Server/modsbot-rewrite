@@ -33,7 +33,7 @@ def weight(chars, m_date, last_m, now_ts):
         x = math.log10(chars) * sigmoid(interval / 30) * math.exp(
             (m_date - now_ts) * math.log(0.9, math.e) / 86400)
         # print(x)
-        return 10 * math.log10(chars) * (2 * sigmoid(interval / 30 - 60)) * math.exp(
+        return 10 * math.log10(chars) * (sigmoid(interval / 30)) * math.exp(
             (now_ts - m_date) * math.log(0.9, math.e) / 86400)
     except Exception:
         print(chars, interval, m_date, last_m, now_ts)
