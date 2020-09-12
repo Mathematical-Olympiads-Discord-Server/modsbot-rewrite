@@ -105,13 +105,13 @@ class Activity(Cog):
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT message_date, message_length 
         FROM messages
-        WHERE message_date > BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
+        WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
         AND "{str(dt.date.today())}"
         AND discord_channel_id != 537818427675377677 
         and discord_user_id = {to_check.id}
-        LIMIT 100000;''')
+        LIMIT 1000000;''')
         messages = cursor.fetchall()
-        tss = [(x[0].timestamp(), x[1]) for x in messages]
+        tss = [(datetime.fromisoformat(x[0].timestamp()), x[1]) for x in messages]
         last_message_time = -1
         score = 0
 
@@ -134,9 +134,9 @@ class Activity(Cog):
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(30 - 1))}"
         AND "{str(dt.date.today())}"
         AND discord_channel_id != 537818427675377677 
-        LIMIT 100000;''')
+        LIMIT 1000000;''')
         messages = cursor.fetchall()
-        tss = [(x[0], x[1].timestamp(), x[2]) for x in messages]
+        tss = [(x[0], datetime.fromisoformat(x[1]).timestamp(), x[2]) for x in messages]
         last_message = {}
         activity = {}
 
