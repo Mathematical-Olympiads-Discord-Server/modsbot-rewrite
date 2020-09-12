@@ -105,7 +105,8 @@ class Activity(Cog):
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT message_date, message_length 
         FROM messages
-        WHERE message_date > date_sub(curdate(), interval {interval} day) 
+        WHERE message_date > BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
+        AND "{str(dt.date.today())}"
         AND discord_channel_id != 537818427675377677 
         and discord_user_id = {to_check.id}
         LIMIT 100000;''')
@@ -130,7 +131,8 @@ class Activity(Cog):
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT discord_user_id, message_date, message_length 
         FROM messages
-        WHERE message_date > date_sub(curdate(), interval 30 day) 
+        WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(30 - 1))}"
+        AND "{str(dt.date.today())}"
         AND discord_channel_id != 537818427675377677 
         LIMIT 100000;''')
         messages = cursor.fetchall()
@@ -190,7 +192,8 @@ class Activity(Cog):
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT discord_user_id, message_date, message_length 
         FROM messages
-        WHERE message_date > date_sub(curdate(), interval {interval} day) 
+        WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
+        AND "{str(dt.date.today())}"
         AND discord_channel_id != 537818427675377677
         LIMIT 100000;''')
         messages = cursor.fetchall()
