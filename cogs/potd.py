@@ -95,6 +95,7 @@ class Potd(Cog):
         self.late = True
 
     async def check_potd(self):
+        print('l98')
         # Get the potds from the sheet (API call)
         potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute().get('values', [])
@@ -119,6 +120,7 @@ class Potd(Cog):
                         "There is a potd today, however there was not one on {}. ".format(potd[1]))
                     return
 
+        print('l123')
         # Otherwise, everything has passed and we are good to go.
         # Create the message to send
         to_tex = '```\n \\textbf{Day ' + str(potd_row[0]) + '} --- ' + str(potd_row[2]) + ' ' + str(
@@ -134,6 +136,7 @@ class Potd(Cog):
                                                   (' ' * (max(51 - len(potd_row[4]) - difficulty_length, 1))),
                                                   (potd_row[5] + potd_row[6]))
 
+        print('l139')
         # Finish up
         print(source)
         await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=1.5)
@@ -143,6 +146,7 @@ class Potd(Cog):
         self.to_send = source
         self.listening_in_channel = cfg.Config.config['potd_channel']
         self.ping_daily = True
+        print('l149')
 
     @Cog.listener()
     async def on_message(self, message: discord.message):
