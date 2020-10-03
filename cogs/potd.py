@@ -80,9 +80,10 @@ class Potd(Cog):
         if potd_row[3] in cfg.Config.config['pc_codes'].inverse:
             curator = 'Problem chosen by <@!{}>'.format(cfg.Config.config['pc_codes'].inverse[potd_row[3]])
         difficulty_length = len(potd_row[5]) + len(potd_row[6])
-        source = '{} Source: ||`{}{}{}`||'.format(curator, potd_row[4],
-                                                  (' ' * (max(51 - len(potd_row[4]) + difficulty_length, 1))),
-                                                  (potd_row[5] + potd_row[6]))
+        padding = (' ' * (max(51 - len(potd_row[4]) - difficulty_length, 1)))
+        source = f'{curator} Source: ||`{potd_row[4]}{padding}{potd_row[5]}{potd_row[6]}`||\nUse `-rating ' \
+                 f'{potd_row[0]} to check the community difficulty rating of this problem or `-rate {potd_row[0]}' \
+                 f' <rating>` to rate it yourself. '
 
         # Finish up
         print(source)
@@ -132,9 +133,10 @@ class Potd(Cog):
         if potd_row[3] in cfg.Config.config['pc_codes'].inverse:
             curator = 'Problem chosen by <@!{}>'.format(cfg.Config.config['pc_codes'].inverse[potd_row[3]])
         difficulty_length = len(potd_row[5]) + len(potd_row[6])
-        source = '{} Source: ||`{}{}{}`||'.format(curator, potd_row[4],
-                                                  (' ' * (max(51 - len(potd_row[4]) - difficulty_length, 1))),
-                                                  (potd_row[5] + potd_row[6]))
+        padding = (' ' * (max(51 - len(potd_row[4]) - difficulty_length, 1)))
+        source = f'{curator} Source: ||`{potd_row[4]}{padding}{potd_row[5]}{potd_row[6]}`||\nUse `-rating ' \
+                 f'{potd_row[0]} to check the community difficulty rating of this problem or `-rate {potd_row[0]}' \
+                 f' <rating>` to rate it yourself. '
 
         print('l139')
         # Finish up
@@ -207,9 +209,10 @@ class Potd(Cog):
         if potd_row[3] in cfg.Config.config['pc_codes'].inverse:
             curator = 'Problem chosen by <@!{}>'.format(cfg.Config.config['pc_codes'].inverse[potd_row[3]])
         difficulty_length = len(potd_row[5]) + len(potd_row[6])
-        source = '{} Source: ||`{}{}{}`||'.format(curator, potd_row[4],
-                                                  (' ' * (max(51 - len(potd_row[4]) + difficulty_length, 1))),
-                                                  (potd_row[5] + potd_row[6]))
+        padding = (' ' * (max(51 - len(potd_row[4]) - difficulty_length, 1)))
+        source = f'{curator} Source: ||`{potd_row[4]}{padding}{potd_row[5]}{potd_row[6]}`||\nUse `-rating ' \
+                 f'{potd_row[0]} to check the community difficulty rating of this problem or `-rate {potd_row[0]}' \
+                 f' <rating>` to rate it yourself. '
 
         # Finish up
         print(source)
