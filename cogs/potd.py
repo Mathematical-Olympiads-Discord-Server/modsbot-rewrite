@@ -213,7 +213,7 @@ class Potd(Cog):
         difficulty_length = len(potd_row[5]) + len(potd_row[6])
         padding = (' ' * (max(51 - len(potd_row[4]) - difficulty_length, 1)))
         source = f'{curator} Source: ||`{potd_row[4]}{padding}{potd_row[5]}{potd_row[6]}`||\nUse `-rating ' \
-                 f'{potd_row[0]} to check the community difficulty rating of this problem or `-rate {potd_row[0]}' \
+                 f'{potd_row[0]}` to check the community difficulty rating of this problem or `-rate {potd_row[0]}' \
                  f' <rating>` to rate it yourself. '
 
         # Finish up
