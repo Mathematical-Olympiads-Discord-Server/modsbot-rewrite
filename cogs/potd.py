@@ -27,8 +27,7 @@ class Potd(Cog):
         self.ping_daily = False
         self.late = False
         self.requested_number = -1
-        schedule.every().day.at("10:00").do(self.bot.loop.create_task, self.check_potd()).tag(
-            'cogs.potd')
+        schedule.every().day.at("10:00").do(self.schedule_potd).tag('cogs.potd')
 
         # Initialise potd_ratings
         try:
@@ -42,6 +41,9 @@ class Potd(Cog):
             print("Corrupted potd_ratings file!")
             self.latest_potd = 10000
             self.potd_ratings = {}
+
+    def schedule_potd(self):
+        self.bot.loop.create_task(self.check_potd())
 
     def update_ratings(self):
         with open('data/potd_ratings.txt', 'r+') as f:
