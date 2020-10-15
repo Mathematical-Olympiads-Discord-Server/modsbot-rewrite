@@ -112,11 +112,12 @@ def executor():
         schedule.run_pending()
         time.sleep(1)
 
-
+intents = discord.Intents.default()
+intents.members = True
 if __name__ == '__main__':
     with open(f'config/{config["token"]}') as tokfile:
         token = tokfile.readline().rstrip('\n')
 
     x = threading.Thread(target=executor, args=(), daemon=True)
     x.start()
-    MODSBot(config['prefix']).run(token)
+    MODSBot(config['prefix']).run(token, intents=intents)
