@@ -15,7 +15,9 @@ config = yaml.safe_load(cfgfile)
 
 class MODSBot(commands.Bot):
     def __init__(self, prefix):
-        super().__init__(prefix)
+        intents = discord.Intents.default()
+        intents.members = True
+        super().__init__(prefix, intents=intent)
         self.config = config
         logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
         self.logger = logging.getLogger('bot')
@@ -112,12 +114,10 @@ def executor():
         schedule.run_pending()
         time.sleep(1)
 
-intents = discord.Intents.default()
-intents.members = True
 if __name__ == '__main__':
     with open(f'config/{config["token"]}') as tokfile:
         token = tokfile.readline().rstrip('\n')
 
     x = threading.Thread(target=executor, args=(), daemon=True)
     x.start()
-    MODSBot(config['prefix']).run(token, intents=intents)
+    MODSBot(config['prefix']).run(token)
