@@ -17,7 +17,7 @@ class MODSBot(commands.Bot):
     def __init__(self, prefix):
         intents = discord.Intents.default()
         intents.members = True
-        super().__init__(prefix, intents=intent)
+        super().__init__(prefix, intents=intents
         self.config = config
         logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
         self.logger = logging.getLogger('bot')
