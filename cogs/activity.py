@@ -30,9 +30,6 @@ def weight(chars, m_date, last_m, now_ts):
     chars = chars if not chars == 0 else 1
     # print(interval)
     try:
-        x = math.log10(chars) * sigmoid(interval / 30) * math.exp(
-            (m_date - now_ts) * math.log(0.9, math.e) / 86400)
-        # print(x)
         return 10 * math.log10(chars) * (sigmoid(interval / 30)) * math.exp(
             (now_ts - m_date) * math.log(0.9, math.e) / 86400)
     except Exception:
@@ -106,7 +103,7 @@ class Activity(Cog):
         cursor.execute(f'''SELECT message_date, message_length 
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
-        AND "{str(dt.date.today())}"
+        AND "{str(dt.date.today() + dt.timedelta(1))}"
         AND discord_channel_id != 537818427675377677 
         and discord_user_id = {to_check.id}
         LIMIT 1000000;''')
