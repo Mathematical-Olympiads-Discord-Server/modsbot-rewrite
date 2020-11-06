@@ -200,8 +200,8 @@ class Suggestions(Cog):
                 if member is not None and not member.bot:
                     await member.send(embed=embed)
             except discord.Forbidden:
-                await ctx.guild.get_channel(cfg.Config.config['suggestion_discussion_channel']).send(member.mention,
-                                                                                                     embed=embed)
+                await ctx.guild.get_channel(cfg.Config.config['bot_spam_channel']).send(member.mention,
+                                                                                        embed=embed)
 
         # Actually update the suggestion
         suggestion.status = new_status
