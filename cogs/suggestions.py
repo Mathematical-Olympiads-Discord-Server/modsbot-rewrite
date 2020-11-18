@@ -211,11 +211,7 @@ class Suggestions(Cog):
             content=f'**Suggestion `#{sugg_id}` by <@!{suggestion.userid}>:** `[{new_status}]`\n{suggestion.body}')
 
         # Finish up
-        await ctx.send(
-            "Finished. I have DMed the following people: {}. The following people requested not to be DMed: {}. ".format(
-                [ctx.guild.get_member(x).display_name for x in ids_to_dm if ctx.guild.get_member(x) is not None],
-                [ctx.guild.get_member(x).display_name for x in no_bell.union(no_ping_role) if
-                 ctx.guild.get_member(x) is not None]))
+        await ctx.send("Finished.")
         self.lock = False
         return suggestion
 
