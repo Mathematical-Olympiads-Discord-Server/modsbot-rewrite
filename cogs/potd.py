@@ -89,7 +89,7 @@ class Potd(Cog):
 
         # Finish up
         print(source)
-        await ctx.send(to_tex, delete_after=1.5)
+        await ctx.send(to_tex, delete_after=20)
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
         self.update_ratings()
@@ -143,7 +143,7 @@ class Potd(Cog):
         print('l139')
         # Finish up
         print(source)
-        await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=1.5)
+        await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=20)
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
         self.update_ratings()
@@ -218,7 +218,7 @@ class Potd(Cog):
 
         # Finish up
         print(source)
-        await ctx.send(to_tex, delete_after=1.5)
+        await ctx.send(to_tex, delete_after=20)
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
         self.update_ratings()
