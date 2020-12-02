@@ -46,7 +46,7 @@ class Invites(Cog):
         possible_string = ' '.join([f'{invite.code} by {invite.inviter.mention}' for invite in possible_joins])
         embed = discord.Embed()
         embed.add_field(name='User Joined', value=member.mention, inline=False)
-        embed.add_field(name='Possible Invites', value=possible_string, inline=False)
+        embed.add_field(name='Possible Invites', value=possible_string if possible_string != '' else 'None (probably Discovery)', inline=False)
 
         join_delta = member.joined_at.timestamp() - member.created_at.timestamp()
         if join_delta > 1800:
