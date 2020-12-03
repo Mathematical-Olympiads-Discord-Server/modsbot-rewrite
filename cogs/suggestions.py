@@ -10,7 +10,8 @@ from cogs import config as cfg
 
 Cog = commands.Cog
 suggestion_list = []
-statuses = bidict.bidict({0: 'Pending', 1: 'Mod vote', 2: 'Approved', 3: 'Denied', 4: 'Revised', 5: 'Implemented'})
+statuses = bidict.bidict(
+    {0: 'Pending', 1: 'Mod vote', 2: 'Approved', 3: 'Denied', 4: 'Revised', 5: 'Implemented', -1: "Removed"})
 status_colours = {0: 0xFCECB4, 1: 0xFF8105, 2: 0x5FE36A, 3: 0xF4C4C4, 4: 0xA4C4F4, 5: 0xDCDCDC}
 
 
@@ -120,7 +121,8 @@ class Suggestions(Cog):
             return
         await ctx.send('Finished!')
 
-    async def change_suggestion_status_back(self, ctx, sugg_id: int, new_status, reason) -> Suggestion:
+    async def change_suggestion_status_back(self, ctx, sugg_id: int, new_status, reason,
+                                            notify: bool = True) -> Suggestion:
         # Make sure not locked
         if self.lock:
             await ctx.send("You're going too fast! Wait for the previous command to process!")
@@ -151,17 +153,18 @@ class Suggestions(Cog):
             suggestion.msgid)
         voted = set()
         votes_for = {}
-        for reaction in suggestion_message.reactions:
-            # Add everyone who reacted
-            if reaction.emoji == '🔔':
-                bell = set([x.id for x in await reaction.users().flatten()])
-            elif reaction.emoji == '🔕':
-                no_bell = set([x.id for x in await reaction.users().flatten()])
-            else:
-                users = await reaction.users().flatten()
-                votes_for[reaction.emoji] = len(users) - 1
-                for u in users:
-                    voted.add(u.id)
+        if suggestion_message is not None:
+            for reaction in suggestion_message.reactions:
+                # Add everyone who reacted
+                if reaction.emoji == '🔔':
+                    bell = set([x.id for x in await reaction.users().flatten()])
+                elif reaction.emoji == '🔕':
+                    no_bell = set([x.id for x in await reaction.users().flatten()])
+                else:
+                    users = await reaction.users().flatten()
+                    votes_for[reaction.emoji] = len(users) - 1
+                    for u in users:
+                        voted.add(u.id)
         # Add everyone with the suggestions role
         ping_role = set([x.id for x in ctx.guild.get_role(cfg.Config.config['suggestion_role']).members])
         no_ping_role = set([x.id for x in ctx.guild.get_role(cfg.Config.config['suggestion_no_notify']).members])
@@ -193,15 +196,16 @@ class Suggestions(Cog):
                  'voted on the suggestion, or reacted with 🔔. If you do not want to be notified '
                  'about suggestion changes, please react with 🔕. ')
 
-        for u in ids_to_dm:
-            # Spam people :_)
-            member = ctx.guild.get_member(u)
-            try:
-                if member is not None and not member.bot:
-                    await member.send(embed=embed)
-            except discord.Forbidden:
-                await ctx.guild.get_channel(cfg.Config.config['bot_spam_channel']).send(member.mention,
-                                                                                        embed=embed)
+        if notify:
+            for u in ids_to_dm:
+                # Spam people :_)
+                member = ctx.guild.get_member(u)
+                try:
+                    if member is not None and not member.bot:
+                        await member.send(embed=embed)
+                except discord.Forbidden:
+                    await ctx.guild.get_channel(cfg.Config.config['bot_spam_channel']).send(member.mention,
+                                                                                            embed=embed)
 
         # Actually update the suggestion
         suggestion.status = new_status
@@ -241,6 +245,11 @@ class Suggestions(Cog):
     @commands.check(cfg.is_staff)
     async def implemented(self, ctx, sugg_id: int, *, reason=None):
         await self.change_suggestion_status_back(ctx, sugg_id, 'Implemented', reason)
+
+    @commands.command()
+    @commands.check(cfg.is_staff)
+    async def remove_sg(self, ctx, sugg_id: int, *, reason=None):
+        await self.change_suggestion_status_back(ctx, sugg_id, 'Removed', reason)
 
 
 def setup(bot):
