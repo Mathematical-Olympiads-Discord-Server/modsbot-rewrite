@@ -18,6 +18,24 @@ def is_pc(ctx):
     return ctx.author.id in cfg.Config.config['pc_codes']
 
 
+def generate_source(potd_row):
+    # Figure out whose potd it is
+    curator = 'Unknown Curator'
+    if potd_row[3] in cfg.Config.config['pc_codes'].inverse:
+        curator = '<@!{}>'.format(cfg.Config.config['pc_codes'].inverse[potd_row[3]])
+    difficulty_length = len(potd_row[5]) + len(potd_row[6])
+    padding = (' ' * (max(51 - len(potd_row[4]), 1)))
+
+    source = discord.Embed()
+    source.add_field(name='Curator', value=curator)
+    source.add_field(name='Source', value=f'||`{potd_row[4]}{padding}`||')
+    source.add_field(name='Difficulty', value=f'||`{potd_row[6]}`||')
+    source.add_field(name='Genre', value=f'||`{potd_row[5]}`||')
+    source.set_footer(text=f'Use `-rating {potd_row[0]}` to check the community difficulty rating of this problem'
+                           f'or `-rate {potd_row[0]} rating` to rate it yourself.')
+    return source
+
+
 class Potd(Cog):
 
     def __init__(self, bot: commands.Bot):
@@ -77,28 +95,16 @@ class Potd(Cog):
             return
         print(to_tex)
 
-        # Figure out whose potd it is
-        curator = 'Unknown Curator'
-        if potd_row[3] in cfg.Config.config['pc_codes'].inverse:
-            curator = 'Problem chosen by <@!{}>'.format(cfg.Config.config['pc_codes'].inverse[potd_row[3]])
-        difficulty_length = len(potd_row[5]) + len(potd_row[6])
-        padding = (' ' * (max(51 - len(potd_row[4]) - difficulty_length, 1)))
-        source = f'{curator} Source: ||`{potd_row[4]}{padding}{potd_row[5]}{potd_row[6]}`||\nUse `-rating ' \
-                 f'{potd_row[0]} to check the community difficulty rating of this problem or `-rate {potd_row[0]}' \
-                 f' <rating>` to rate it yourself. '
-
         # Finish up
-        print(source)
         await ctx.send(to_tex, delete_after=20)
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
         self.update_ratings()
-        self.to_send = source
+        self.to_send = generate_source(potd_row)
         self.listening_in_channel = ctx.channel.id
         self.late = True
 
     async def check_potd(self):
-        print('l98')
         # Get the potds from the sheet (API call)
         potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute().get('values', [])
@@ -130,24 +136,12 @@ class Potd(Cog):
             potd_row[1]) + '\n \\begin{flushleft} \n' + str(potd_row[8]) + '\n \\end{flushleft}```'
         print(to_tex)
 
-        # Figure out whose potd it is
-        curator = 'Unknown Curator'
-        if potd_row[3] in cfg.Config.config['pc_codes'].inverse:
-            curator = 'Problem chosen by <@!{}>'.format(cfg.Config.config['pc_codes'].inverse[potd_row[3]])
-        difficulty_length = len(potd_row[5]) + len(potd_row[6])
-        padding = (' ' * (max(51 - len(potd_row[4]) - difficulty_length, 1)))
-        source = f'{curator} Source: ||`{potd_row[4]}{padding}{potd_row[5]}{potd_row[6]}`||\nUse `-rating ' \
-                 f'{potd_row[0]} to check the community difficulty rating of this problem or `-rate {potd_row[0]}' \
-                 f' <rating>` to rate it yourself. '
-
-        print('l139')
         # Finish up
-        print(source)
         await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=20)
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
         self.update_ratings()
-        self.to_send = source
+        self.to_send = generate_source(potd_row)
         self.listening_in_channel = cfg.Config.config['potd_channel']
         self.ping_daily = True
         print('l149')
@@ -159,7 +153,7 @@ class Potd(Cog):
             # m = await message.channel.send(
             #     '{} \nRate this problem with `-rate {} <rating>` and check its user difficulty rating with `-rating {}`'.format(
             #         self.to_send, self.requested_number, self.requested_number))
-            source_msg = await message.channel.send(self.to_send)
+            source_msg = await message.channel.send(embed=self.to_send)
             await source_msg.add_reaction("👍")
             if self.late:
                 await source_msg.add_reaction('⏰')
@@ -178,7 +172,7 @@ class Potd(Cog):
 
             self.requested_number = -1
             self.listening_in_channel = -1
-            self.to_send = ''
+            self.to_send = None
             self.late = False
             self.ping_daily = False
 
@@ -206,23 +200,12 @@ class Potd(Cog):
             return
         print(to_tex)
 
-        # Figure out whose potd it is
-        curator = 'Unknown Curator'
-        if potd_row[3] in cfg.Config.config['pc_codes'].inverse:
-            curator = 'Problem chosen by <@!{}>'.format(cfg.Config.config['pc_codes'].inverse[potd_row[3]])
-        difficulty_length = len(potd_row[5]) + len(potd_row[6])
-        padding = (' ' * (max(51 - len(potd_row[4]) - difficulty_length, 1)))
-        source = f'{curator} Source: ||`{potd_row[4]}{padding}{potd_row[5]}{potd_row[6]}`||\nUse `-rating ' \
-                 f'{potd_row[0]}` to check the community difficulty rating of this problem or `-rate {potd_row[0]}' \
-                 f' <rating>` to rate it yourself. '
-
         # Finish up
-        print(source)
         await ctx.send(to_tex, delete_after=20)
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
         self.update_ratings()
-        self.to_send = source
+        self.to_send = generate_source(potd_row)
         self.listening_in_channel = ctx.channel.id
         self.late = True
 
