@@ -24,7 +24,7 @@ def generate_source(potd_row):
     if potd_row[3] in cfg.Config.config['pc_codes'].inverse:
         curator = '<@!{}>'.format(cfg.Config.config['pc_codes'].inverse[potd_row[3]])
     difficulty_length = len(potd_row[5]) + len(potd_row[6])
-    padding = (' ' * (max(39 - len(potd_row[4]), 1)))
+    padding = (' ' * (max(35 - len(potd_row[4]), 1)))
 
     source = discord.Embed()
     source.add_field(name='Curator', value=curator)
