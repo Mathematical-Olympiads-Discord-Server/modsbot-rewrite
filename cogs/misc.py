@@ -56,6 +56,11 @@ class Misc(Cog):
                     f"<#{cfg.Config.config['lounge_channel']}> "
                     f"and enjoy your time here. :smile:"
                 )
+                await self.bot.get_user(payload.user_id).send(
+                    'Hello and welcome to MODS! We are a Mathematical Olympiad discord server. If you want help with '
+                    'non-Olympiad mathematics, please visit the **Mathematics** discord server at '
+                    '<https://discord.sg/math> or the **Homework Help** discord server at '
+                    '<https://discord.gg/YudDZtb>. Otherwise, feel free to chat and enjoy MODS!!')
 
     @commands.command(aliases=['t'], brief='Sends the message associated with the given tag. ')
     async def retrieve_tag(self, ctx, *, tag):
