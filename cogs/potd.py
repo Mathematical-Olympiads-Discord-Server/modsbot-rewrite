@@ -24,15 +24,15 @@ def generate_source(potd_row):
     if potd_row[3] in cfg.Config.config['pc_codes'].inverse:
         curator = '<@!{}>'.format(cfg.Config.config['pc_codes'].inverse[potd_row[3]])
     difficulty_length = len(potd_row[5]) + len(potd_row[6])
-    padding = (' ' * (max(51 - len(potd_row[4]), 1)))
+    padding = (' ' * (max(39 - len(potd_row[4]), 1)))
 
     source = discord.Embed()
     source.add_field(name='Curator', value=curator)
     source.add_field(name='Source', value=f'||`{potd_row[4]}{padding}`||')
     source.add_field(name='Difficulty', value=f'||`{potd_row[6]}`||')
     source.add_field(name='Genre', value=f'||`{potd_row[5]}`||')
-    source.set_footer(text=f'Use `-rating {potd_row[0]}` to check the community difficulty rating of this problem'
-                           f'or `-rate {potd_row[0]} rating` to rate it yourself.')
+    source.set_footer(text=f'Use -rating {potd_row[0]} to check the community difficulty rating of this problem '
+                           f'or -rate {potd_row[0]} rating to rate it yourself.')
     return source
 
 
