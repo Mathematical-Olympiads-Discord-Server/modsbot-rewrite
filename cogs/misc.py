@@ -49,10 +49,12 @@ class Misc(Cog):
                 print(e)
 
             if payload.user_id not in in_verif_speedrun_mode:
-                await self.bot.get_channel(cfg.Config.config['lounge_channel']).send(
+                await self.bot.get_channel(cfg.Config.config['new_people_channel']).send(
                     f"Welcome to the Mathematical Olympiads Discord server {user.mention}! "
                     "Check out the self-assignable roles in "
-                    f"<#{cfg.Config.config['roles_channel']}> and enjoy your time here. :smile:"
+                    f"<#{cfg.Config.config['roles_channel']}> or start chatting in "
+                    f"<#{cfg.Config.config['lounge_channel']}> "
+                    f"and enjoy your time here. :smile:"
                 )
 
     @commands.command(aliases=['t'], brief='Sends the message associated with the given tag. ')
