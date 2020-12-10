@@ -49,18 +49,17 @@ class Misc(Cog):
                 print(e)
 
             if payload.user_id not in in_verif_speedrun_mode:
-                await self.bot.get_channel(cfg.Config.config['new_people_channel']).send(
-                    f"Welcome to the Mathematical Olympiads Discord server {user.mention}! "
-                    "Check out the self-assignable roles in "
-                    f"<#{cfg.Config.config['roles_channel']}> or start chatting in "
-                    f"<#{cfg.Config.config['lounge_channel']}> "
-                    f"and enjoy your time here. :smile:"
-                )
-                await self.bot.get_user(payload.user_id).send(
-                    'Hello and welcome to MODS! We are a Mathematical Olympiad discord server. If you want help with '
-                    'non-Olympiad mathematics, please visit the **Mathematics** discord server at '
-                    '<https://discord.sg/math> or the **Homework Help** discord server at '
-                    '<https://discord.gg/YudDZtb>. Otherwise, feel free to chat and enjoy MODS!!')
+                await self.bot.get_user(payload.user_id).send(f'Welcome to the server! Check out the self-assignable '
+                                                              f'roles in <#671639229293395978> or start chatting in '
+                                                              f'our <#533153217119387660>. If you have any issues '
+                                                              f'related to the server, please feel free to DM '
+                                                              f'<@!696261358932721694>. We hope you enjoy your time '
+                                                              f'here. 😄\n\n*Please note that we are a Mathematical '
+                                                              f'Olympiad discord server. If you want help with '
+                                                              f'non-Olympiad mathematics, please visit the '
+                                                              f'**Mathematics** discord server at '
+                                                              f'<https://discord.sg/math> or the **Homework Help** '
+                                                              f'discord server at <https://discord.gg/YudDZtb>.*')
 
     @commands.command(aliases=['t'], brief='Sends the message associated with the given tag. ')
     async def retrieve_tag(self, ctx, *, tag):
