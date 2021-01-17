@@ -29,8 +29,8 @@ def generate_source(potd_row):
     source = discord.Embed()
     source.add_field(name='Curator', value=curator)
     source.add_field(name='Source', value=f'||`{potd_row[4]}{padding}`||')
-    source.add_field(name='Difficulty', value=f'||`{potd_row[6]}`||')
-    source.add_field(name='Genre', value=f'||`{potd_row[5]}`||')
+    source.add_field(name='Difficulty', value=f'||`{str(potd_row[6]).ljust(5)}`||')
+    source.add_field(name='Genre', value=f'||`{str(potd_row[5]).ljust(5)}`||')
     source.set_footer(text=f'Use -rating {potd_row[0]} to check the community difficulty rating of this problem '
                            f'or -rate {potd_row[0]} rating to rate it yourself. React with a 👍 if you liked '
                            f'the problem. ')
