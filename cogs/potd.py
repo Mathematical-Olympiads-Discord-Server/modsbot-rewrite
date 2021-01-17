@@ -32,7 +32,9 @@ def generate_source(potd_row):
     source.add_field(name='Difficulty', value=f'||`{potd_row[6]}`||')
     source.add_field(name='Genre', value=f'||`{potd_row[5]}`||')
     source.set_footer(text=f'Use -rating {potd_row[0]} to check the community difficulty rating of this problem '
-                           f'or -rate {potd_row[0]} rating to rate it yourself.')
+                           f'or -rate {potd_row[0]} rating to rate it yourself. React with a 👍 if you liked '
+                           f'the problem. ')
+
     return source
 
 
