@@ -253,7 +253,7 @@ class Suggestions(Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def multichg(self, ctx, commands):
+    async def multichg(self, ctx, *, commands):
         new_statuses = [[j.strip() for j in i.strip().split(' ')] for i in commands.split('\n')]
         for status in new_statuses:
             await self.change_suggestion_status_back(ctx, status[0], status[1],
