@@ -11,7 +11,7 @@ from cogs import config as cfg
 Cog = commands.Cog
 suggestion_list = []
 statuses = bidict.bidict(
-    {0: 'Pending', 1: 'Mod vote', 2: 'Approved', 3: 'Denied', 4: 'Revised', 5: 'Implemented', 6: "Removed"})
+    {0: 'Pending', 1: 'Mod-vote', 2: 'Approved', 3: 'Denied', 4: 'Revised', 5: 'Implemented', 6: "Removed"})
 status_colours = {0: 0xFCECB4, 1: 0xFF8105, 2: 0x5FE36A, 3: 0xF4C4C4, 4: 0xA4C4F4, 5: 0xDCDCDC, 6: 0x000000}
 
 
@@ -227,7 +227,7 @@ class Suggestions(Cog):
     @commands.command(aliases=['escl', 'modvote'])
     @commands.check(cfg.is_staff)
     async def escalate(self, ctx, sugg_id: int, *, reason=None):
-        suggestion = await self.change_suggestion_status_back(ctx, sugg_id, 'Mod vote', reason)
+        suggestion = await self.change_suggestion_status_back(ctx, sugg_id, 'Mod-vote', reason)
         m = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).fetch_message(suggestion.msgid)
         await self.bot.get_channel(cfg.Config.config['mod_vote_chan']).send(m.content)
 
