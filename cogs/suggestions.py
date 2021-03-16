@@ -256,7 +256,7 @@ class Suggestions(Cog):
     async def multichg(self, ctx, *, commands):
         new_statuses = [[j.strip() for j in i.strip().split(' ')] for i in commands.split('\n')]
         for status in new_statuses:
-            await self.change_suggestion_status_back(ctx, status[0], status[1],
+            await self.change_suggestion_status_back(ctx, int(status[0]), status[1],
                                                      ' '.join(status[2:]) if len(status) >= 2 else None)
             await ctx.send(f'Done {status}')
 
