@@ -251,6 +251,15 @@ class Suggestions(Cog):
     async def remove_sg(self, ctx, sugg_id: int, *, reason=None):
         await self.change_suggestion_status_back(ctx, sugg_id, 'Removed', reason)
 
+    @commands.command()
+    @commands.is_owner()
+    async def multichg(self, ctx, commands):
+        new_statuses = [i.split(' ').strip() for i in commands.split('\n').strip()]
+        for status in new_statuses:
+            await self.change_suggestion_status_back(ctx, status[0], status[1],
+                                                     status[2] if len(status) >= 2 else None)
+            await ctx.send(f'Done {status}')
+
 
 def setup(bot):
     bot.add_cog(Suggestions(bot))
