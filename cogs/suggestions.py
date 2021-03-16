@@ -256,8 +256,13 @@ class Suggestions(Cog):
     async def multichg(self, ctx, *, commands):
         new_statuses = [[j.strip() for j in i.strip().split(' ')] for i in commands.split('\n')]
         for status in new_statuses:
-            await self.change_suggestion_status_back(ctx, int(status[0]), status[1],
-                                                     ' '.join(status[2:]) if len(status) > 2 else None)
+            suggestion = await self.change_suggestion_status_back(ctx, int(status[0]), status[1],
+                                                                  ' '.join(status[2:]) if len(status) > 2 else None)
+            if status[1] == 'Mod-vote':
+                m = await self.bot.get_channel(cfg.Config.config['suggestion_channel']). \
+                    fetch_message(suggestion.msgid)
+                await self.bot.get_channel(cfg.Config.config['mod_vote_chan']).send(m.content)
+
             await ctx.send(f'Done {status}')
 
 
