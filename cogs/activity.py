@@ -104,7 +104,7 @@ class Activity(Cog):
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
-        AND discord_channel_id != 537818427675377677 
+        AND discord_channel_id != 537818427675377677 and discord_channel_id != 565824284669509642
         and discord_user_id = {to_check.id}
         LIMIT 1000000;''')
         messages = cursor.fetchall()
@@ -130,7 +130,7 @@ class Activity(Cog):
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(30 - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
-        AND discord_channel_id != 537818427675377677 
+        AND discord_channel_id != 537818427675377677 and discord_channel_id != 565824284669509642
         LIMIT 1000000;''')
         messages = cursor.fetchall()
         tss = [(x[0], datetime.fromisoformat(x[1]).timestamp(), x[2]) for x in messages]
@@ -191,7 +191,7 @@ class Activity(Cog):
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
-        AND discord_channel_id != 537818427675377677
+        AND discord_channel_id != 537818427675377677 and discord_channel_id != 565824284669509642
         LIMIT 1000000;''')
         messages = cursor.fetchall()
         tss = [(x[0], datetime.fromisoformat(x[1]).timestamp(), x[2]) for x in messages]
