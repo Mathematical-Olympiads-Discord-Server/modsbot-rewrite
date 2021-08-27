@@ -50,7 +50,7 @@ class MODSBot(commands.Bot):
         # Mute for spam
         spam = False
         if re.search(r'http://|https://', message.content):
-            if re.search('discord', message.content) and re.search('nitro', message.content):
+            if re.search('discord', message.content, re.I) and re.search('nitro', message.content, re.I):
                 spam = True
             for i in message.embeds:
                 print(i.title + i.description)
