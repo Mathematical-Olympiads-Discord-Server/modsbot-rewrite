@@ -58,10 +58,11 @@ class MODSBot(commands.Bot):
                     spam = True
         if spam:
             try:
-                log_message = f'Muted {message.author.mention} for spam:\n```{message.content}```'
+                log_message = f'Muted {message.author.mention} ({message.author.id}) for spam:\n```{message.content}```'
                 await message.delete()
                 await message.author.add_roles(message.guild.get_role(self.config['muted_role']))
                 await message.guild.get_channel(self.config['log_channel']).send(log_message)
+                await message.guild.get_channel(self.config['warn_channel']).send(log_message)
             except Exception:
                 pass
             return
