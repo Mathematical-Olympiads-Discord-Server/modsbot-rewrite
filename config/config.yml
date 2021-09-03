@@ -10,6 +10,7 @@ cogs:
   - cogs.misc
   - cogs.potd
   - cogs.suggestions
+  - cogs.mathjams
 potd_sheet: '10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA'
 paradox_id: 419356082981568522
 potd_channel: 537763636161150976
@@ -39,3 +40,5 @@ tags_sheet: '1ITwXFYSrlw_asQ1lGJusE-w0xT50Mmy__0yxl2URqHI'
 mod_vote_chan: 582915500254691328
 warn_channel: 739993490108448798
 muted_role: 565820528435396619
+mathjams_channel: 621548930894921749
+mathjams_role: 586294839184719914
