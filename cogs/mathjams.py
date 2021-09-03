@@ -18,7 +18,7 @@ class Mathjams(Cog):
         self.bot.loop.create_task(self.ping_mathjams(timeslot))
 
     async def ping_mathjams(self, timeslot):
-        role_id = cfg.Config.config[f'mathjams_slot_{timeslot}']
+        role_id = cfg.Config.config[f'mathjams_timeslot_{timeslot}']
         mathjams_channel = await self.bot.fetch_channel(cfg.Config.config['mathjams_channel'])
         r = self.bot.get_guild(cfg.Config.config['mods_guild']).get_role(role_id)
         await r.edit(mentionable=True)
