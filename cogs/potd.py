@@ -132,9 +132,13 @@ class Potd(Cog):
                     await self.bot.get_channel(cfg.Config.config['helper_lounge']).send("There is no potd today!")
             if passed_current and not fail:
                 if len(potd) < 8:  # Then there has not been a potd on the past day.
+                    if fail:
+                        await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
+                            "There was no potd on {}. ".format(potd[1]))
+                    else:
+                        await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
+                            "There is a potd today, but there wasn't one on {}. ".format(potd[1]))
                     fail = True
-                    await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
-                        "There is a potd today, however there was not one on {}. ".format(potd[1]))
             if potd[1] == tmr:
                 if len(potd) >= 8:  # Then there is a potd tomorrow.
                     has_tmr = True
