@@ -1,7 +1,7 @@
 import ast
 import asyncio
 import statistics
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import discord
 import schedule
@@ -113,23 +113,39 @@ class Potd(Cog):
 
         # Check today's potd
         date = datetime.now().strftime("%d %b %Y")
+        tmr = (datetime.now() + timedelta(days = 1)).strftime("%d %b %Y")
         if date[0] == '0':
             date = date[1:]
+        if tmr[0] == '0':
+            tmr = tmr[1:]
         passed_current = False
         potd_row = None
+        fail = False
+        has_tmr = False
         for potd in potds:
             if potd[1] == date:
                 if len(potd) >= 8:  # Then there is a potd.
                     passed_current = True
                     potd_row = potd
                 else:  # There is no potd.
+                    fail = True
                     await self.bot.get_channel(cfg.Config.config['helper_lounge']).send("There is no potd today!")
-                    return
-            if passed_current:
+            if passed_current and not fail:
                 if len(potd) < 8:  # Then there has not been a potd on the past day.
-                    await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
-                        "There is a potd today, however there was not one on {}. ".format(potd[1]))
-                    return
+                    if fail:
+                        await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
+                            "There was no potd on {}. ".format(potd[1]))
+                    else:
+                        await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
+                            "There is a potd today, but there wasn't one on {}. ".format(potd[1]))
+                    fail = True
+            if potd[1] == tmr:
+                if len(potd) >= 8:  # Then there is a potd tomorrow.
+                    has_tmr = True
+        if not has_tmr:
+            await self.bot.get_channel(cfg.Config.config['helper_lounge']).send("There is no potd tomorrow!")
+        if fail:
+            return
 
         print('l123')
         # Otherwise, everything has passed and we are good to go.
