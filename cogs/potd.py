@@ -130,8 +130,8 @@ class Potd(Cog):
                 else:  # There is no potd.
                     fail = True
                     await self.bot.get_channel(cfg.Config.config['helper_lounge']).send("There is no potd today!")
-            if passed_current and not fail:
-                if len(potd) < 8:  # Then there has not been a potd on the past day.
+            if passed_current:
+                if len(potd) < 8:  # Then there has not been a potd on that day.
                     if fail:
                         await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
                             "There was no potd on {}. ".format(potd[1]))
