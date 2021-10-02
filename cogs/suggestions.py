@@ -11,8 +11,12 @@ from cogs import config as cfg
 Cog = commands.Cog
 suggestion_list = []
 statuses = bidict.bidict(
-    {0: 'Pending', 1: 'Mod-vote', 2: 'Approved', 3: 'Denied', 4: 'Revised', 5: 'Implemented', 6: "Removed"})
+    {0: 'Pending', 1: 'Mod-vote', 2: 'Approved', 3: 'Denied', 4: 'Revised', 5: 'Implemented', 6: 'Removed'})
 status_colours = {0: 0xFCECB4, 1: 0xFF8105, 2: 0x5FE36A, 3: 0xF4C4C4, 4: 0xA4C4F4, 5: 0xDCDCDC, 6: 0x000000}
+status_aliases = bidict.bidict(
+    {0: ('pending', 'p'), 1: ('mod-vote', 'modvote', 'mod', 'vote', 'm', 'v', 'mv', 'm-v'), 
+    2: ('approved', 'approve', 'accept', 'accepted', 'a'), 3: ('denied', 'deny', 'reject', 'rejected', 'd'), 
+    4: ('revised', 'revise', 'r'), 5: ('implemented', 'implement', 'i'), 6: ('removed', 'remove')})
 
 
 def from_list(s):
@@ -123,9 +127,12 @@ class Suggestions(Cog):
 
     async def change_suggestion_status_back(self, ctx, sugg_id: int, new_status, reason,
                                             notify: bool = True) -> Suggestion:
+
+        bot_spam = ctx.guild.get_channel(cfg.Config.config['bot_spam_channel'])
+        
         # Make sure not locked
         if self.lock:
-            await ctx.send("You're going too fast! Wait for the previous command to process!")
+            await bot_spam.send("You're going too fast! Wait for the previous command to process!")
             return
 
         self.lock = True
@@ -133,6 +140,7 @@ class Suggestions(Cog):
         # Validate status
         if new_status not in statuses.inverse:
             await ctx.send("I didn't recognise that status!")
+            self.lock = False
             return
 
         # Figure out who needs to be notified
@@ -146,7 +154,8 @@ class Suggestions(Cog):
                 break
 
         if suggestion is None:
-            await ctx.send("No suggestion with that ID!")
+            await bot_spam.send("No suggestion with that ID!")
+            self.lock = False
             return
 
         suggestion_message = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).fetch_message(
@@ -204,8 +213,7 @@ class Suggestions(Cog):
                     if member is not None and not member.bot:
                         await member.send(embed=embed)
                 except discord.Forbidden:
-                    await ctx.guild.get_channel(cfg.Config.config['bot_spam_channel']).send(member.mention,
-                                                                                            embed=embed)
+                    await bot_spam.send(member.mention, embed=embed)
 
         # Actually update the suggestion
         suggestion.status = new_status
@@ -215,7 +223,9 @@ class Suggestions(Cog):
             content=f'**Suggestion `#{sugg_id}` by <@!{suggestion.userid}>:** `[{new_status}]`\n{suggestion.body}')
 
         # Finish up
-        await ctx.send("Finished.")
+        await bot_spam.send('Finished.')
+        await ctx.guild.get_channel(cfg.Config.config['log_channel']).send(
+            f'**Suggestion `#{sugg_id}` set to `[{new_status}]` by {ctx.author.mention}\nReason: `{reason}`**\n{suggestion.body}')
         self.lock = False
         return suggestion
 
@@ -252,6 +262,11 @@ class Suggestions(Cog):
         await self.change_suggestion_status_back(ctx, sugg_id, 'Removed', reason)
 
     @commands.command()
+    @commands.check(cfg.is_staff)
+    async def force_unlock(self, ctx):
+        self.lock = False
+
+    @commands.command()
     @commands.is_owner()
     async def multichg(self, ctx, *, commands):
         new_statuses = [[j.strip() for j in i.strip().split(' ')] for i in commands.split('\n')]
@@ -264,6 +279,44 @@ class Suggestions(Cog):
                 await self.bot.get_channel(cfg.Config.config['mod_vote_chan']).send(m.content)
 
             await ctx.send(f'Done {status}')
+
+    @Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if (message.channel.id == cfg.Config.config['suggestion_channel']) and message.reference:
+
+            ctx = await self.bot.get_context(message)
+
+            # Get suggestion
+            suggestion = None
+            for s in suggestion_list:
+                if s.msgid == str(message.reference.message_id):
+                    suggestion = s
+                    break
+            if suggestion == None:
+                return
+
+            # Identify suggestion status
+            space = message.content.find(' ')
+            if space == -1:
+                new_status = message.content
+                reason = None
+            else:
+                new_status = message.content[:space]
+                reason = message.content[space + 1:]
+            valid = False
+            for i in status_aliases.inverse:
+                if new_status.lower() in i:
+                    new_status = statuses[status_aliases.inverse[i]]
+                    valid = True
+                    break
+            if not valid:
+                return
+
+            # Change suggestion status
+            await self.change_suggestion_status_back(ctx, int(s.id), new_status, reason)
+
+            # Delete message
+            await message.delete(delay=15)
 
 
 def setup(bot):
