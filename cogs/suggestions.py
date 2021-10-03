@@ -14,7 +14,7 @@ statuses = bidict.bidict(
     {0: 'Pending', 1: 'Mod-vote', 2: 'Approved', 3: 'Denied', 4: 'Revised', 5: 'Implemented', 6: 'Removed'})
 status_colours = {0: 0xFCECB4, 1: 0xFF8105, 2: 0x5FE36A, 3: 0xF4C4C4, 4: 0xA4C4F4, 5: 0xDCDCDC, 6: 0x000000}
 status_aliases = bidict.bidict(
-    {0: ('pending', 'p'), 1: ('mod-vote', 'modvote', 'mod', 'vote', 'm', 'v', 'mv', 'm-v'), 
+    {0: ('pending', 'p'), 1: ('mod-vote', 'modvote', 'vote', 'escalate', 'escalated', 'm', 'v', 'e'), 
     2: ('approved', 'approve', 'accept', 'accepted', 'a'), 3: ('denied', 'deny', 'reject', 'rejected', 'd'), 
     4: ('revised', 'revise', 'r'), 5: ('implemented', 'implement', 'i'), 6: ('removed', 'remove')})
 
