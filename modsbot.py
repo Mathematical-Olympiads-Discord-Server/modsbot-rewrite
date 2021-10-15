@@ -9,6 +9,8 @@ import schedule
 from discord.ext import commands
 from ruamel import yaml
 
+import sqlite3
+
 cfgfile = open("config/config.yml")
 config = yaml.safe_load(cfgfile)
 
@@ -43,6 +45,15 @@ class MODSBot(commands.Bot):
                 self.logger.exception('Failed to load cog {}.'.format(cog))
             else:
                 self.logger.info('Loaded cog {}.'.format(cog))
+
+        # Set up settings in data/modsdb.db
+        db = sqlite3.connect('data/modsdb.db')
+        cursor = db.cursor()
+        cursor.execute('''CREATE TABLE IF NOT EXISTS settings (
+            setting CHAR(20) PRIMARY KEY NOT NULL,
+            value TEXT
+            )''')
+        db.commit()
 
     async def on_message(self, message):
         if message.author.bot: return
