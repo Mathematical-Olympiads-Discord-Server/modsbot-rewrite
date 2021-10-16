@@ -38,14 +38,6 @@ class MODSBot(commands.Bot):
         self.logger.info('Channels: {}'.format(len(list(self.get_all_channels()))))
         await self.set_presence("MODSBot: use -help")
 
-        for cog in self.config['cogs']:
-            try:
-                self.load_extension(cog)
-            except Exception:
-                self.logger.exception('Failed to load cog {}.'.format(cog))
-            else:
-                self.logger.info('Loaded cog {}.'.format(cog))
-
         # Set up settings in data/modsdb.db
         db = sqlite3.connect('data/modsdb.db')
         cursor = db.cursor()
@@ -54,6 +46,14 @@ class MODSBot(commands.Bot):
             value TEXT
             )''')
         db.commit()
+
+        for cog in self.config['cogs']:
+            try:
+                self.load_extension(cog)
+            except Exception:
+                self.logger.exception('Failed to load cog {}.'.format(cog))
+            else:
+                self.logger.info('Loaded cog {}.'.format(cog))
 
     async def on_message(self, message):
         if message.author.bot: return
