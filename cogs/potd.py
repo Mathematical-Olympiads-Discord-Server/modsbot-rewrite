@@ -2,7 +2,6 @@ import ast
 import asyncio
 import statistics
 from datetime import datetime, timedelta
-from typing import Text
 
 import discord
 import schedule
