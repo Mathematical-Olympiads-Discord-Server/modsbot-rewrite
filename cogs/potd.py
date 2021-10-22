@@ -149,10 +149,7 @@ class Potd(Cog):
         self.listening_in_channel = ctx.channel.id
         self.late = True
 
-    @commands.command() # TESTING
-    @commands.check(cfg.is_staff) # TESTING
-    async def check_potd(self, ctx): # TESTING
-    # async def check_potd(self):
+    async def check_potd(self):
 
         # Get the potds from the sheet (API call)
         potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
