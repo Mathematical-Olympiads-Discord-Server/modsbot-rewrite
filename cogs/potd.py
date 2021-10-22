@@ -150,7 +150,10 @@ class Potd(Cog):
         self.listening_in_channel = ctx.channel.id
         self.late = True
 
-    async def check_potd(self):
+    @commands.command() # TESTING
+    @commands.check(cfg.is_staff) # TESTING
+    async def check_potd(self, ctx): # TESTING
+    # async def check_potd(self):
 
         # Get the potds from the sheet (API call)
         potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
@@ -392,7 +395,7 @@ class Potd(Cog):
                 cursor.execute(f'''INSERT INTO potd_ping (user_id, categories, min, max)
                     VALUES('{ctx.author.id}', 'ACGN', 1, 12)''')
                 cfg.db.commit()
-                await ctx.send('You will now receive POTD notifications. Use `-potd_dm off` to turn this off. ', embed=self.potd_notif_embed(ctx))
+                await ctx.send('You will now receive POTD notifications. Use `-pn off` to turn this off. ', embed=self.potd_notif_embed(ctx))
             else:
                 await ctx.send('Here are your POTD notification settings: ', embed=self.potd_notif_embed(ctx))
             return
