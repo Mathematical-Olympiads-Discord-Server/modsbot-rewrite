@@ -38,12 +38,18 @@ class MODSBot(commands.Bot):
         self.logger.info('Channels: {}'.format(len(list(self.get_all_channels()))))
         await self.set_presence("MODSBot: use -help")
 
-        # Set up settings in data/modsdb.db
+        # Set up some stuff in data/modsdb.db
         db = sqlite3.connect('data/modsdb.db')
         cursor = db.cursor()
         cursor.execute('''CREATE TABLE IF NOT EXISTS settings (
             setting CHAR(20) PRIMARY KEY NOT NULL,
             value TEXT
+            )''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS potd_ping (
+            user_id CHAR(20) PRIMARY KEY NOT NULL,
+            categories CHAR(4),
+            min INT,
+            max INT
             )''')
         db.commit()
 
