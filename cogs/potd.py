@@ -451,7 +451,7 @@ class Potd(Cog):
         cursor.execute(f"UPDATE settings SET value = '{str(self.enable_dm)}' WHERE setting = 'potd_dm'")
         cfg.db.commit()
         await ctx.guild.get_channel(cfg.Config.config['log_channel']).send(
-            f'**POTD notifications set to `{self.enable_dm}` by {ctx.author.mention}**')
+            f'**POTD notifications set to `{self.enable_dm}` by {ctx.author.nick} ({ctx.author.id})**')
 
 
 def setup(bot):
