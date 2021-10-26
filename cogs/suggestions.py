@@ -95,7 +95,7 @@ class Suggestions(Cog):
 
         # Add the new suggestion
         suggestion_list.append(
-            Suggestion(len(suggestion_list) + 1, m.id, datetime.now(), ctx.author.name, ctx.author.id, 'Pending',
+            Suggestion(len(suggestion_list) + 1, str(m.id), datetime.now(), ctx.author.name, ctx.author.id, 'Pending',
                        suggestion, None))
 
         # Update the sheet
@@ -225,7 +225,7 @@ class Suggestions(Cog):
         # Finish up
         await bot_spam.send('Finished.')
         await ctx.guild.get_channel(cfg.Config.config['log_channel']).send(
-            f'**Suggestion `#{sugg_id}` set to `[{new_status}]` by {ctx.author.mention}\nReason: `{reason}`**\n{suggestion.body}')
+            f'**Suggestion `#{sugg_id}` set to `[{new_status}]` by {ctx.author.nick} ({ctx.author.id})\nReason: `{reason}`**\n{suggestion.body}')
         self.lock = False
         return suggestion
 
@@ -283,6 +283,9 @@ class Suggestions(Cog):
     @Cog.listener()
     async def on_message(self, message: discord.Message):
         if (message.channel.id == cfg.Config.config['suggestion_channel']) and message.reference:
+
+            if not message.author.id in cfg.Config.config['staff']:
+                return
 
             ctx = await self.bot.get_context(message)
 
