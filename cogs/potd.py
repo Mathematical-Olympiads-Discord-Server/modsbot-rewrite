@@ -28,7 +28,6 @@ class Potd(Cog):
         self.ping_daily = False
         self.late = False
         self.requested_number = -1
-        self.dm_no = 0
         self.dm_list = []
         self.timer = None
         
@@ -62,7 +61,6 @@ class Potd(Cog):
             self.to_send = ''
             self.late = False
             self.ping_daily = False
-            self.dm_no = 0
             self.dm_list = []
             try:
                 self.timer.cancel()
@@ -71,9 +69,6 @@ class Potd(Cog):
             self.timer = None
 
     def prepare_dms(self, potd_row):
-        def should_dm(x):
-            return (d >= x[2]) and (d <= x[3]) and (len(set(x[1]).intersection(potd_row[5])) != 0)
-
         try:
             d = int(potd_row[6])
         except Exception:
@@ -82,8 +77,8 @@ class Potd(Cog):
         cursor = cfg.db.cursor()
         cursor.execute("SELECT * FROM potd_ping")
         result = cursor.fetchall()
-        self.dm_no = len(result)
-        self.dm_list = [i[0] for i in filter(should_dm, result)]
+        self.dm_list = [i[0] for i in filter(lambda x : (d >= x[2]) and (d <= x[3])
+            and (len(set(x[1]).intersection(potd_row[5])) != 0), result)]
 
     def generate_source(self, potd_row):
         # Figure out whose potd it is
@@ -98,7 +93,7 @@ class Potd(Cog):
         source.add_field(name='Source', value=f'||`{potd_row[4]}{padding}`||')
         source.add_field(name='Difficulty', value=f'||`{str(potd_row[6]).ljust(5)}`||')
         source.add_field(name='Genre', value=f'||`{str(potd_row[5]).ljust(5)}`||')
-        source.add_field(name='Subscribed', value=f'||`{self.dm_no}`||')
+        source.add_field(name='Subscribed', value=f'||`{str(len(self.dm_list)).ljust(5)}`||')
         source.set_footer(text=f'Use -rating {potd_row[0]} to check the community difficulty rating of this problem '
                             f'or -rate {potd_row[0]} rating to rate it yourself. React with a 👍 if you liked '
                             f'the problem. ')
@@ -233,8 +228,8 @@ class Potd(Cog):
 
                 if self.enable_dm:
                     bot_spam = message.guild.get_channel(cfg.Config.config['bot_spam_channel'])
-                    ping_embed = discord.Embed()
-                    ping_embed.add_field(name=f'POTD {self.latest_potd} has been posted: ', value=message.channel.mention)
+                    ping_embed = discord.Embed(title=f'POTD {self.latest_potd} has been posted: ',
+                        description=f'{message.channel.mention}\n{message.jump_url}', colour=0xDCDCDC)
                     for id in self.dm_list:
                         member = message.guild.get_member(int(id))
                         try:
@@ -363,20 +358,21 @@ class Potd(Cog):
             cursor.execute(f'DELETE FROM ratings WHERE prob = {potd} AND userid = {ctx.author.id}')
             await ctx.author.send(f'Removed your rating of difficulty level {result[3]} for potd {potd}. ')
 
-    def potd_notif_embed(self, ctx):
+    def potd_notif_embed(self, ctx, colour):
         cursor = cfg.db.cursor()
         cursor.execute(f'SELECT * FROM potd_ping WHERE user_id = {ctx.author.id}')
         result = cursor.fetchone()
         if result == None:
             return None
-        msg = discord.Embed()
+        embed = discord.Embed(colour=colour)
         if ctx.author.nick == None:
-            msg.add_field(name='Username', value=ctx.author.name)
+            embed.add_field(name='Username', value=ctx.author.name)
         else:
-            msg.add_field(name='Nickname', value=ctx.author.nick)
-        msg.add_field(name='Categories', value=result[1])
-        msg.add_field(name='Difficulty', value=f'{str(result[2])}-{str(result[3])}')
-        return msg
+            embed.add_field(name='Nickname', value=ctx.author.nick)
+        embed.add_field(name='Categories', value=result[1])
+        embed.add_field(name='Difficulty', value=f'{str(result[2])}-{str(result[3])}')
+        embed.set_footer(text='Use `-pn off` to turn this off. ')
+        return embed
 
     @commands.command(aliases=['pn'], brief='Customizes potd pings. ')
     async def potd_notif(self, ctx, *criteria:str):
@@ -389,11 +385,11 @@ class Potd(Cog):
             result = cursor.fetchone()
             if result == None:
                 cursor.execute(f'''INSERT INTO potd_ping (user_id, categories, min, max)
-                    VALUES('{ctx.author.id}', 'ACGN', 1, 12)''')
+                    VALUES('{ctx.author.id}', 'ACGN', 0, 12)''')
                 cfg.db.commit()
-                await ctx.send('You will now receive POTD notifications. Use `-pn off` to turn this off. ', embed=self.potd_notif_embed(ctx))
+                await ctx.send('Your POTD notification settings have been updated: ', embed=self.potd_notif_embed(ctx, 0x5FE36A))
             else:
-                await ctx.send('Here are your POTD notification settings: ', embed=self.potd_notif_embed(ctx))
+                await ctx.send('Here are your POTD notification settings: ', embed=self.potd_notif_embed(ctx, 0xDCDCDC))
             return
 
         # Turn off ping
@@ -415,7 +411,7 @@ class Potd(Cog):
             if category in criteria[0].upper():
                 categories += category
         if categories != '':
-            cursor.execute(f"UPDATE potd_ping SET categories = '{categories}'")
+            cursor.execute(f"UPDATE potd_ping SET categories = '{categories}' WHERE user_id = '{ctx.author.id}'")
             criteria.pop(0)
 
         if len(criteria) > 0:
@@ -430,7 +426,7 @@ class Potd(Cog):
                 cfg.db.rollback()
                 await ctx.send('Check your input! ')
                 return
-            cursor.execute(f"UPDATE potd_ping SET min = {min}, max = {max}")
+            cursor.execute(f"UPDATE potd_ping SET min = {min}, max = {max} WHERE user_id = '{ctx.author.id}'")
 
         if len(criteria) > 0:
             cfg.db.rollback()
@@ -438,7 +434,7 @@ class Potd(Cog):
             return
 
         cfg.db.commit()
-        await ctx.send('Your POTD notification settings have been updated: ', embed=self.potd_notif_embed(ctx))
+        await ctx.send('Your POTD notification settings have been updated: ', embed=self.potd_notif_embed(ctx, 0x5FE36A))
 
     @commands.command()
     @commands.check(cfg.is_staff)
