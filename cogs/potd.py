@@ -93,7 +93,7 @@ class Potd(Cog):
         source.add_field(name='Source', value=f'||`{potd_row[4]}{padding}`||')
         source.add_field(name='Difficulty', value=f'||`{str(potd_row[6]).ljust(5)}`||')
         source.add_field(name='Genre', value=f'||`{str(potd_row[5]).ljust(5)}`||')
-        source.add_field(name='Subscribed', value=f'||`{str(len(self.dm_list)).ljust(5)}`||')
+        source.add_field(name='Subscribed', value=f'`{str(len(self.dm_list)).ljust(5)}`')
         source.set_footer(text=f'Use -rating {potd_row[0]} to check the community difficulty rating of this problem '
                             f'or -rate {potd_row[0]} rating to rate it yourself. React with a 👍 if you liked '
                             f'the problem. ')
