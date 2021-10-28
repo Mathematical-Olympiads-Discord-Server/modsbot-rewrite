@@ -365,10 +365,13 @@ class Potd(Cog):
         if result == None:
             return None
         embed = discord.Embed(colour=colour)
-        if ctx.author.nick == None:
+        try:
+            if ctx.author.nick == None:
+                embed.add_field(name='Username', value=ctx.author.name)
+            else:
+                embed.add_field(name='Nickname', value=ctx.author.nick)
+        except Exception:
             embed.add_field(name='Username', value=ctx.author.name)
-        else:
-            embed.add_field(name='Nickname', value=ctx.author.nick)
         embed.add_field(name='Categories', value=result[1])
         embed.add_field(name='Difficulty', value=f'{str(result[2])}-{str(result[3])}')
         embed.set_footer(text='Use `-pn off` to turn this off. ')
