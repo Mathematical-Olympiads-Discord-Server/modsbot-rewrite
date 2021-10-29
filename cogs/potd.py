@@ -1,5 +1,4 @@
 import ast
-import asyncio
 import statistics
 from datetime import datetime, timedelta
 
@@ -13,6 +12,9 @@ from cogs import config as cfg
 Cog = commands.Cog
 
 POTD_RANGE = 'History!A2:M'
+CURATOR_RANGE = 'Curators!A3:E'
+
+days = [None, 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 
 def is_pc(ctx):
@@ -32,7 +34,7 @@ class Potd(Cog):
         self.timer = None
         
         cursor = cfg.db.cursor()
-        cursor.execute('''INSERT OR IGNORE INTO settings VALUES
+        cursor.execute('''INSERT OR IGNORE INTO settings (setting, value) VALUES
             ('potd_dm', 'True')
             ''')
         cfg.db.commit()
@@ -106,6 +108,49 @@ class Potd(Cog):
     def schedule_potd(self):
         self.bot.loop.create_task(self.check_potd())
 
+    def responsible(self, potd_id:int, urgent:bool=False):     # Mentions of responsible curators
+
+        # Get stuff from the sheet (API call)
+        potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute().get('values', [])
+        curators = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=CURATOR_RANGE).execute().get('values', [])
+        try:
+            i = int(potds[0][0]) - int(potd_id)
+        except Exception:
+            return 'Invalid entry (A2) in spreadsheet. '
+        potd_row = potds[i]
+
+        # Searches for relevant curators
+        mentions = ''
+        r_list = []
+        try:
+            day = str(days.index(str(potd_row[2])))
+        except Exception:
+            return 'Day not recognized. '
+        for curator in curators:
+            try:
+                if (curator[4] == day) or (curator[4] == 'back-up'):
+                    mentions += f'<@{curator[0]}>'
+                    if curator[4] != 'back-up':
+                        r_list.append(curator)
+            except Exception:
+                pass
+        if urgent or (len(r_list) == 0):
+            return mentions
+
+        # Searches for curator whose last curation on this day of the week was longest ago.
+        i += 7
+        while (i < len(potds)) and (len(r_list) > 1):
+            try:
+                for curator in r_list:
+                    if curator[2] == potds[i][3]:
+                        r_list.remove(curator)
+            except Exception:
+                pass
+            i += 7
+        return f'<@{r_list[0][0]}>'
+
     def update_ratings(self):
         with open('data/potd_ratings.txt', 'r+') as f:
             # Clear
@@ -125,7 +170,7 @@ class Potd(Cog):
         reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute()
         values = reply.get('values', [])
-        current_potd = int(values[0][0])  # this will be the top left cell which indicates the current potd
+        current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
         potd_row = values[current_potd - number]  # this gets the row requested
 
         # Create the message to send
@@ -171,21 +216,23 @@ class Potd(Cog):
                     potd_row = potd
                 else:  # There is no potd.
                     fail = True
-                    await self.bot.get_channel(cfg.Config.config['helper_lounge']).send("There is no potd today!")
+                    await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
+                        f"There is no potd today! {self.responsible(int(potd[0]), True)}")
             if passed_current:
                 if len(potd) < 8:  # Then there has not been a potd on that day.
                     if fail:
                         await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
-                            "There was no potd on {}. ".format(potd[1]))
+                            f"There was no potd on {potd[1]}! {self.responsible(int(potd[0]), True)}")
                     else:
                         await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
-                            "There is a potd today, but there wasn't one on {}. ".format(potd[1]))
+                            f"There is a potd today, but there wasn't one on {potd[1]}! {self.responsible(int(potd[0]), True)}")
                     fail = True
             if potd[1] == tmr:
                 if len(potd) >= 8:  # Then there is a potd tomorrow.
                     has_tmr = True
         if not has_tmr:
-            await self.bot.get_channel(cfg.Config.config['helper_lounge']).send("There is no potd tomorrow!")
+            await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
+                f"There is no potd tomorrow! {self.responsible(int(potd_row[0]) + 1)}")
         if fail:
             return
 
@@ -223,18 +270,19 @@ class Potd(Cog):
             if self.late:
                 await source_msg.add_reaction('⏰')
 
+            ping_msg = None
             if self.ping_daily:
                 r = self.bot.get_guild(cfg.Config.config['mods_guild']).get_role(cfg.Config.config['potd_role'])
                 await r.edit(mentionable=True)
-                await message.channel.send('<@&{}>'.format(cfg.Config.config['potd_role']))
+                ping_msg = await message.channel.send('<@&{}>'.format(cfg.Config.config['potd_role']))
                 await r.edit(mentionable=False)
 
                 if self.enable_dm:
-                    bot_spam = message.guild.get_channel(cfg.Config.config['bot_spam_channel'])
+                    bot_spam = self.bot.get_channel(cfg.Config.config['bot_spam_channel'])
                     ping_embed = discord.Embed(title=f'POTD {self.latest_potd} has been posted: ',
                         description=f'{message.channel.mention}\n{message.jump_url}', colour=0xDCDCDC)
                     for id in self.dm_list:
-                        member = message.guild.get_member(int(id))
+                        member = self.bot.get_guild(cfg.Config.config['mods_guild']).get_member(int(id))
                         try:
                             if member is not None and not member.bot:
                                 await member.send(embed=ping_embed)
@@ -247,21 +295,30 @@ class Potd(Cog):
             except Exception:
                 pass
 
+            cursor = cfg.db.cursor()
+            if ping_msg == None:
+                cursor.execute(f'''INSERT INTO potd_info (potd_id, problem_msg_id, source_msg_id, ping_msg_id) VALUES
+                    ('{self.latest_potd}', '{message.id}', '{source_msg.id}', '')''')
+            else:
+                cursor.execute(f'''INSERT INTO potd_info (potd_id, problem_msg_id, source_msg_id, ping_msg_id) VALUES
+                    ('{self.latest_potd}', '{message.id}', '{source_msg.id}', '{ping_msg.id}')''')
+            cfg.db.commit()
+
             self.reset()
 
-    @commands.command(aliases=['potd'], brief='Displays the potd from the provided number. ')
+    @commands.command(aliases=['potd'], brief='Displays the potd with the provided number. ')
     @commands.check(is_pc)
     async def potd_display(self, ctx, number: int):
 
         # It can only handle one at a time!
         if not self.listening_in_channel == -1:
-            await ctx.send("Please wait until the previous potd call has finished!")
+            await ctx.send("Please wait until the previous call has finished!")
             return
 
         reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute()
         values = reply.get('values', [])
-        current_potd = int(values[0][0])  # this will be the top left cell which indicates the current potd
+        current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
         potd_row = values[current_potd - number]  # this gets the row requested
 
         # Create the message to send
@@ -285,6 +342,43 @@ class Potd(Cog):
         # In case Paradox unresponsive
         self.timer = threading.Timer(20, self.reset_if_necessary)
         self.timer.start()
+
+    @commands.command(aliases=['remove_potd'], brief='Deletes the potd with the provided number. ')
+    @commands.check(is_pc)
+    async def delete_potd(self, ctx, number: int):
+        
+        # It can only handle one at a time!
+        if not self.listening_in_channel == -1:
+            await ctx.send("Please wait until the previous call has finished!")
+            return
+        
+        # Delete old POTD
+        cursor = cfg.db.cursor()
+        cursor.execute(f"SELECT problem_msg_id, source_msg_id, ping_msg_id FROM potd_info WHERE potd_id = '{number}'")
+        result = cursor.fetchall()
+        if result == []:
+            await ctx.send("No posted POTDs with this ID were found!")
+            return
+        cursor.execute(f"DELETE FROM potd_info WHERE potd_id = '{number}'")
+        cfg.db.commit()
+        for i in result:
+            for j in i:
+                try:
+                    await self.bot.get_channel(cfg.Config.config['potd_channel']).get_partial_message(int(j)).delete()
+                except Exception:
+                    pass
+
+    @commands.command(aliases=['update_potd'], brief='Replaces the potd with the provided number. ')
+    @commands.check(is_pc)
+    async def replace_potd(self, ctx, number: int):
+        
+        # It can only handle one at a time!
+        if not self.listening_in_channel == -1:
+            await ctx.send("Please wait until the previous call has finished!")
+            return
+
+        await self.delete_potd(ctx, number)
+        await self.potd_display(ctx, number)
 
     @commands.command(aliases=['rate'], brief='Rates a potd based on difficulty. ')
     async def potd_rate(self, ctx, potd: int, rating: int, overwrite: bool = False):
@@ -452,7 +546,7 @@ class Potd(Cog):
         cursor = cfg.db.cursor()
         cursor.execute(f"UPDATE settings SET value = '{str(self.enable_dm)}' WHERE setting = 'potd_dm'")
         cfg.db.commit()
-        await ctx.guild.get_channel(cfg.Config.config['log_channel']).send(
+        await self.bot.get_channel(cfg.Config.config['log_channel']).send(
             f'**POTD notifications set to `{self.enable_dm}` by {ctx.author.nick} ({ctx.author.id})**')
 
 
