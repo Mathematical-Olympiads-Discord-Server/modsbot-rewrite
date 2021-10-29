@@ -55,18 +55,21 @@ class Potd(Cog):
             self.potd_ratings = {}
 
     def reset(self):
-        if self.listening_in_channel != -1: # Prevent reset during execution
-            self.requested_number = -1
-            self.listening_in_channel = -1
-            self.to_send = ''
-            self.late = False
-            self.ping_daily = False
-            self.dm_list = []
-            try:
-                self.timer.cancel()
-            except Exception:
-                pass
-            self.timer = None
+        self.requested_number = -1
+        self.listening_in_channel = -1
+        self.to_send = ''
+        self.late = False
+        self.ping_daily = False
+        self.dm_list = []
+        try:
+            self.timer.cancel()
+        except Exception:
+            pass
+        self.timer = None
+
+    def reset_if_necessary(self):
+        if self.listening_in_channel != -1:
+            self.reset()
 
     def prepare_dms(self, potd_row):
         try:
@@ -204,7 +207,7 @@ class Potd(Cog):
         self.ping_daily = True
         print('l149')
         # In case Paradox unresponsive
-        self.timer = threading.Timer(20, self.reset)
+        self.timer = threading.Timer(20, self.reset_if_necessary)
         self.timer.start()
 
     @Cog.listener()
@@ -280,7 +283,7 @@ class Potd(Cog):
         self.listening_in_channel = ctx.channel.id
         self.late = True
         # In case Paradox unresponsive
-        self.timer = threading.Timer(20, self.reset)
+        self.timer = threading.Timer(20, self.reset_if_necessary)
         self.timer.start()
 
     @commands.command(aliases=['rate'], brief='Rates a potd based on difficulty. ')
