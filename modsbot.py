@@ -51,6 +51,12 @@ class MODSBot(commands.Bot):
             min INT,
             max INT
             )''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS potd_info (
+            potd_id TEXT NOT NULL,
+            problem_msg_id TEXT,
+            source_msg_id TEXT,
+            ping_msg_id TEXT
+            )''')
         db.commit()
 
         for cog in self.config['cogs']:
