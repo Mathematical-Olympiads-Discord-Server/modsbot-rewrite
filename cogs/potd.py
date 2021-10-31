@@ -20,6 +20,14 @@ days = [None, 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 def is_pc(ctx):
     return ctx.author.id in cfg.Config.config['pc_codes']
 
+async def dm_or_channel(user: discord.User, channel: discord.abc.Messageable, content='', *args, **kargs):
+    try:
+        if user is not None and not user.bot:
+            await user.send(*args, content=content, **kargs)
+    except discord.Forbidden:
+        await channel.send(*args, content=user.mention+'\n'+content, **kargs)
+
+
 class Potd(Cog):
 
     def __init__(self, bot: commands.Bot):
@@ -283,11 +291,7 @@ class Potd(Cog):
                         description=f'{message.channel.mention}\n{message.jump_url}', colour=0xDCDCDC)
                     for id in self.dm_list:
                         member = self.bot.get_guild(cfg.Config.config['mods_guild']).get_member(int(id))
-                        try:
-                            if member is not None and not member.bot:
-                                await member.send(embed=ping_embed)
-                        except discord.Forbidden:
-                            await bot_spam.send(member.mention, embed=ping_embed)
+                        await dm_or_channel(member, bot_spam, embed=ping_embed)
 
             try:
                 await message.publish()
@@ -312,7 +316,8 @@ class Potd(Cog):
 
         # It can only handle one at a time!
         if not self.listening_in_channel == -1:
-            await ctx.send("Please wait until the previous call has finished!")
+            await dm_or_channel(ctx.author, self.bot.get_channel(cfg.Config.config['helper_lounge']),
+                "Please wait until the previous call has finished!")
             return
 
         reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
@@ -327,7 +332,8 @@ class Potd(Cog):
             to_tex = '```tex\n \\textbf{Day ' + str(number) + '} --- ' + str(potd_row[2]) + ' ' + str(
                 potd_row[1]) + '\n \\begin{flushleft} \n' + str(potd_row[8]) + '\n \\end{flushleft}```'
         except IndexError:
-            await ctx.send("There is no potd for day {}. ".format(number))
+            await dm_or_channel(ctx.author, self.bot.get_channel(cfg.Config.config['helper_lounge']),
+                f"There is no potd for day {number}. ")
             return
         print(to_tex)
 
@@ -348,17 +354,16 @@ class Potd(Cog):
     async def delete_potd(self, ctx, number: int):
         
         # It can only handle one at a time!
-        if not self.listening_in_channel == -1:
-            await ctx.send("Please wait until the previous call has finished!")
+        if not self.listening_in_channel in [-1, -2]:
+            await dm_or_channel(ctx.author, self.bot.get_channel(cfg.Config.config['helper_lounge']),
+                "Please wait until the previous call has finished!")
             return
+        self.listening_in_channel = 0
         
         # Delete old POTD
         cursor = cfg.db.cursor()
         cursor.execute(f"SELECT problem_msg_id, source_msg_id, ping_msg_id FROM potd_info WHERE potd_id = '{number}'")
         result = cursor.fetchall()
-        if result == []:
-            await ctx.send("No posted POTDs with this ID were found!")
-            return
         cursor.execute(f"DELETE FROM potd_info WHERE potd_id = '{number}'")
         cfg.db.commit()
         for i in result:
@@ -367,6 +372,7 @@ class Potd(Cog):
                     await self.bot.get_channel(cfg.Config.config['potd_channel']).get_partial_message(int(j)).delete()
                 except Exception:
                     pass
+        self.listening_in_channel = -1
 
     @commands.command(aliases=['update_potd'], brief='Replaces the potd with the provided number. ')
     @commands.check(is_pc)
@@ -374,7 +380,8 @@ class Potd(Cog):
         
         # It can only handle one at a time!
         if not self.listening_in_channel == -1:
-            await ctx.send("Please wait until the previous call has finished!")
+            await dm_or_channel(ctx.author, self.bot.get_channel(cfg.Config.config['helper_lounge']),
+                "Please wait until the previous call has finished!")
             return
 
         await self.delete_potd(ctx, number)
