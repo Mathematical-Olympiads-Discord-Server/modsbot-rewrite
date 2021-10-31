@@ -64,7 +64,9 @@ class Potd(Cog):
             self.latest_potd = 10000
             self.potd_ratings = {}
 
-    def reset(self):
+    @commands.command()
+    @commands.check(is_pc)
+    async def reset_potd(self, ctx=None):
         self.requested_number = -1
         self.listening_in_channel = -1
         self.to_send = ''
@@ -79,7 +81,7 @@ class Potd(Cog):
 
     def reset_if_necessary(self):
         if self.listening_in_channel != -1:
-            self.reset()
+            self.reset_potd()
 
     def prepare_dms(self, potd_row):
         try:
@@ -308,7 +310,7 @@ class Potd(Cog):
                     ('{self.latest_potd}', '{message.id}', '{source_msg.id}', '{ping_msg.id}')''')
             cfg.db.commit()
 
-            self.reset()
+            self.reset_potd()
 
     @commands.command(aliases=['potd'], brief='Displays the potd with the provided number. ')
     @commands.check(is_pc)
