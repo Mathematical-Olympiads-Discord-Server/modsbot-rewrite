@@ -45,11 +45,9 @@ class MODSBot(commands.Bot):
             setting CHAR(20) PRIMARY KEY NOT NULL,
             value TEXT
             )''')
-        cursor.execute('''CREATE TABLE IF NOT EXISTS potd_ping (
+        cursor.execute('''CREATE TABLE IF NOT EXISTS potd_ping2 (
             user_id CHAR(20) PRIMARY KEY NOT NULL,
-            categories CHAR(4),
-            min INT,
-            max INT
+            criteria TEXT
             )''')
         cursor.execute('''CREATE TABLE IF NOT EXISTS potd_info (
             potd_id TEXT NOT NULL,
@@ -59,6 +57,7 @@ class MODSBot(commands.Bot):
             )''')
         db.commit()
 
+        # Load cogs
         for cog in self.config['cogs']:
             try:
                 self.load_extension(cog)
@@ -76,9 +75,12 @@ class MODSBot(commands.Bot):
             if re.search('discord', message.content, re.I) and re.search('nitro', message.content, re.I):
                 spam = True
             for i in message.embeds:
-                print(i.title + i.description)
-                if re.search('discord', i.title + i.description, re.I) and re.search('nitro', i.title + i.description, re.I):
-                    spam = True
+                if (i.title != i.Empty):
+                    if re.search('discord', i.title, re.I) and re.search('nitro', i.title, re.I):
+                        spam = True
+                if (i.description != i.Empty):
+                    if re.search('discord', i.description, re.I) and re.search('nitro', i.description, re.I):
+                        spam = True
         if spam:
             try:
                 log_message = f'Muted {message.author.mention} ({message.author.id}) for spam:\n```{message.content}```'
