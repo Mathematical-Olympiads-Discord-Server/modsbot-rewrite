@@ -310,7 +310,7 @@ class Potd(Cog):
                     ('{self.latest_potd}', '{message.id}', '{source_msg.id}', '{ping_msg.id}')''')
             cfg.db.commit()
 
-            self.reset_potd()
+            await self.reset_potd()
 
     @commands.command(aliases=['potd'], brief='Displays the potd with the provided number. ')
     @commands.check(is_pc)
