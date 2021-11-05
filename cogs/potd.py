@@ -49,6 +49,27 @@ class Potd(Cog):
         cursor.execute("SELECT value FROM settings WHERE setting = 'potd_dm'")
         self.enable_dm = (cursor.fetchone()[0] == 'True')
 
+        # TRANSITION
+        cursor = cfg.db.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='potd_ping'")
+        result = cursor.fetchone()
+        if result != None:
+            cursor.execute("SELECT * FROM potd_ping")
+            result = cursor.fetchall()
+            for i in result:
+                minmax = str(i[2]).ljust(2) + str(i[3]).ljust(2)
+                criteria = ''
+                for j in 'ACGN':
+                    if j in i[1]:
+                        criteria += minmax
+                    else:
+                        criteria += 'xxxx'
+                cursor.execute(f'''INSERT OR IGNORE INTO potd_ping2 (user_id, criteria) VALUES
+                ('{i[0]}', '{criteria}')
+                ''')
+            cursor.execute("DROP TABLE potd_ping")
+            cfg.db.commit()
+
         schedule.every().day.at("10:00").do(self.schedule_potd).tag('cogs.potd')
 
         # Initialise potd_ratings
@@ -84,16 +105,22 @@ class Potd(Cog):
             self.reset_potd()
 
     def prepare_dms(self, potd_row):
+        def should_dm(x):
+            for i in range(4):
+                if (['a', 'c', 'g', 'n'][i] in potd_row[5].lower()) and not (x[1][4*i] == 'x'):
+                    if int(x[1][4*i:4*i+2]) <= d <= int(x[1][4*i+2:4*i+4]):
+                        return True
+            return False
+
         try:
             d = int(potd_row[6])
         except Exception:
             return
 
         cursor = cfg.db.cursor()
-        cursor.execute("SELECT * FROM potd_ping")
+        cursor.execute("SELECT * FROM potd_ping2")
         result = cursor.fetchall()
-        self.dm_list = [i[0] for i in filter(lambda x : (d >= x[2]) and (d <= x[3])
-            and (len(set(x[1]).intersection(potd_row[5])) != 0), result)]
+        self.dm_list = [i[0] for i in filter(should_dm, result)]
 
     def generate_source(self, potd_row):
         # Figure out whose potd it is
@@ -194,13 +221,13 @@ class Potd(Cog):
         print(to_tex)
 
         # Finish up
-        await ctx.send(to_tex, delete_after=20)
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
         self.update_ratings()
         self.to_send = self.generate_source(potd_row)
         self.listening_in_channel = ctx.channel.id
         self.late = True
+        await ctx.send(to_tex, delete_after=20)
 
     async def check_potd(self):
 
@@ -254,7 +281,6 @@ class Potd(Cog):
         print(to_tex)
 
         # Finish up
-        await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=20)
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
         self.update_ratings()
@@ -262,13 +288,14 @@ class Potd(Cog):
         self.to_send = self.generate_source(potd_row)
         self.listening_in_channel = cfg.Config.config['potd_channel']
         self.ping_daily = True
+        await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=20)
         print('l149')
         # In case Paradox unresponsive
         self.timer = threading.Timer(20, self.reset_if_necessary)
         self.timer.start()
 
     @Cog.listener()
-    async def on_message(self, message: discord.message):
+    async def on_message(self, message: discord.Message):
         if message.channel.id == self.listening_in_channel and int(message.author.id) == cfg.Config.config[
             'paradox_id']:
             # m = await message.channel.send(
@@ -288,12 +315,22 @@ class Potd(Cog):
                 await r.edit(mentionable=False)
 
                 if self.enable_dm:
+
                     bot_spam = self.bot.get_channel(cfg.Config.config['bot_spam_channel'])
+                    potd_discussion_channel = self.bot.get_channel(cfg.Config.config['potd_discussion_channel'])
+                    helper_lounge = self.bot.get_channel(cfg.Config.config['helper_lounge'])
+
                     ping_embed = discord.Embed(title=f'POTD {self.latest_potd} has been posted: ',
-                        description=f'{message.channel.mention}\n{message.jump_url}', colour=0xDCDCDC)
-                    for id in self.dm_list:
-                        member = self.bot.get_guild(cfg.Config.config['mods_guild']).get_member(int(id))
-                        await dm_or_channel(member, bot_spam, embed=ping_embed)
+                        description=f'{potd_discussion_channel.mention}\n{message.jump_url}', colour=0xDCDCDC)
+                    for field in self.to_send.to_dict()['fields']:
+                        ping_embed.add_field(name=field['name'], value=field['value'])
+                    if message.attachments == []:
+                        await helper_lounge.send('No attachments found! ')
+                    else:
+                        ping_embed.set_image(url=message.attachments[0].url)
+                        for id in self.dm_list:
+                            member = self.bot.get_guild(cfg.Config.config['mods_guild']).get_member(int(id))
+                            await dm_or_channel(member, bot_spam, embed=ping_embed)
 
             try:
                 await message.publish()
@@ -340,13 +377,13 @@ class Potd(Cog):
         print(to_tex)
 
         # Finish up
-        await ctx.send(to_tex, delete_after=20)
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
         self.update_ratings()
         self.to_send = self.generate_source(potd_row)
         self.listening_in_channel = ctx.channel.id
         self.late = True
+        await ctx.send(to_tex, delete_after=20)
         # In case Paradox unresponsive
         self.timer = threading.Timer(20, self.reset_if_necessary)
         self.timer.start()
@@ -465,8 +502,16 @@ class Potd(Cog):
             await ctx.author.send(f'Removed your rating of difficulty level {result[3]} for potd {potd}. ')
 
     def potd_notif_embed(self, ctx, colour):
+
+        result = None
+        def subcriteria(a):
+            if result[1][a] == 'x':
+                return 'Off'
+            else:
+                return f'D{int(result[1][a:a+2])}-{int(result[1][a+2:a+4])}'
+
         cursor = cfg.db.cursor()
-        cursor.execute(f'SELECT * FROM potd_ping WHERE user_id = {ctx.author.id}')
+        cursor.execute(f'SELECT * FROM potd_ping2 WHERE user_id = {ctx.author.id}')
         result = cursor.fetchone()
         if result == None:
             return None
@@ -478,8 +523,8 @@ class Potd(Cog):
                 embed.add_field(name='Nickname', value=ctx.author.nick)
         except Exception:
             embed.add_field(name='Username', value=ctx.author.name)
-        embed.add_field(name='Categories', value=result[1])
-        embed.add_field(name='Difficulty', value=f'{str(result[2])}-{str(result[3])}')
+        for i in range(4):
+            embed.add_field(name=['Algebra', 'Combinatorics', 'Geometry', 'Number Theory'][i], value=subcriteria(4*i))
         embed.set_footer(text='Use `-pn off` to turn this off. ')
         return embed
 
@@ -490,11 +535,11 @@ class Potd(Cog):
         cursor = cfg.db.cursor()
         criteria = list(criteria)
         if len(criteria) == 0:
-            cursor.execute(f"SELECT * FROM potd_ping WHERE user_id = '{ctx.author.id}'")
+            cursor.execute(f"SELECT * FROM potd_ping2 WHERE user_id = '{ctx.author.id}'")
             result = cursor.fetchone()
             if result == None:
-                cursor.execute(f'''INSERT INTO potd_ping (user_id, categories, min, max)
-                    VALUES('{ctx.author.id}', 'ACGN', 0, 12)''')
+                cursor.execute(f'''INSERT INTO potd_ping2 (user_id, criteria)
+                    VALUES('{ctx.author.id}', '0 120 120 120 12')''')
                 cfg.db.commit()
                 await ctx.send('Your POTD notification settings have been updated: ', embed=self.potd_notif_embed(ctx, 0x5FE36A))
             else:
@@ -502,46 +547,90 @@ class Potd(Cog):
             return
 
         # Turn off ping
-        if criteria[0].lower() in {'clear', 'delete', 'remove', 'off', 'false', 'reset'}:
-            cursor.execute(f"DELETE FROM potd_ping WHERE user_id = '{ctx.author.id}'")
+        if criteria[0].lower() == 'off':
+            cursor.execute(f"DELETE FROM potd_ping2 WHERE user_id = '{ctx.author.id}'")
             cfg.db.commit()
             await ctx.send('Your POTD notifications have been turned off. ')
             return
 
         # Run criteria
-        cursor.execute(f"SELECT * FROM potd_ping WHERE user_id = '{ctx.author.id}'")
+        cursor.execute(f"SELECT * FROM potd_ping2 WHERE user_id = '{ctx.author.id}'")
         result = cursor.fetchone()
         if result == None:
-            cursor.execute(f'''INSERT INTO potd_ping (user_id, categories, min, max)
-                VALUES('{ctx.author.id}', 'ACGN', 0, 12)''')
+            cursor.execute(f'''INSERT INTO potd_ping2 (user_id, criteria)
+                VALUES('{ctx.author.id}', 'xxxxxxxxxxxxxxxx')''')
+            cursor.execute(f"SELECT * FROM potd_ping2 WHERE user_id = '{ctx.author.id}'")
+            result = cursor.fetchone()
+        result = list(result)
 
-        categories = ''
-        for category in 'ACGN':
-            if category in criteria[0].upper():
-                categories += category
-        if categories != '':
-            cursor.execute(f"UPDATE potd_ping SET categories = '{categories}' WHERE user_id = '{ctx.author.id}'")
-            criteria.pop(0)
+        temp = "".join(criteria).lower()
+        criteria = [temp[0]]
+        for i in temp[1:]:
+            if i in ['a', 'c', 'g', 'n']:
+                criteria.append(i)
+            else:
+                criteria[len(criteria)-1] += i
+        
+        # Difficulty only
+        if len(criteria) == 1:
+            temp = criteria[0].split('-')
+            if len(temp) == 2:
+                try:
+                    min = int(temp[0])
+                    max = int(temp[1])
+                    if (0 <= min <= max <= 12):
+                        if result[1] == 'xxxxxxxxxxxxxxxx':
+                            result[1] = '                '
+                        temp = ''
+                        for i in range(4):
+                            if result[1][4*i] == 'x':
+                                temp += 'xxxx'
+                            else:
+                                temp += str(min).ljust(2) + str(max).ljust(2)
+                        cursor.execute(f"UPDATE potd_ping2 SET criteria = '{temp}' WHERE user_id = '{ctx.author.id}'")
+                        cfg.db.commit()
+                        await ctx.send('Your POTD notification settings have been updated: ', embed=self.potd_notif_embed(ctx, 0x5FE36A))
+                        return
+                    else:
+                        cfg.db.rollback()
+                        await ctx.send(f'`{criteria[0]}` Invalid difficulty range! ')
+                        return
+                except ValueError:
+                    pass
 
-        if len(criteria) > 0:
-            try:
-                max = int(criteria.pop())
-                min = int(criteria.pop())
-            except Exception:
-                cfg.db.rollback()
-                await ctx.send('Check your input! ')
-                return
-            if (min < 0) or (min > 12) or (max < 0) or (max > 12) or (min > max):
-                cfg.db.rollback()
-                await ctx.send('Check your input! ')
-                return
-            cursor.execute(f"UPDATE potd_ping SET min = {min}, max = {max} WHERE user_id = '{ctx.author.id}'")
+        remaining = ['a', 'c', 'g', 'n']
+        for i in criteria:
+            if i in remaining:
+                # Category without difficulty
+                remaining.remove(i)
+                index = ['a', 'c', 'g', 'n'].index(i[0])
+                if result[1][4*index] == 'x':
+                    result[1] = result[1][:4*index] + '0 12' + result[1][4*index+4:]
+                else:
+                    result[1] = result[1][:4*index] + 'xxxx' + result[1][4*index+4:]
+            else:
+                # Category with difficulty
+                criterion = i[1:].split('-')
+                if (i[0] not in remaining) or (len(criterion) != 2):
+                    cfg.db.rollback()
+                    await ctx.send(f'`{i}` Invalid input format! ')
+                    return
+                try:
+                    min = int(criterion[0])
+                    max = int(criterion[1])
+                    if not (0 <= min <= max <= 12):
+                        cfg.db.rollback()
+                        await ctx.send(f'`{i}` Invalid difficulty range! ')
+                        return
+                except ValueError:
+                    cfg.db.rollback()
+                    await ctx.send(f'`{i}` Invalid input format! ')
+                    return
+                remaining.remove(i[0])
+                index = ['a', 'c', 'g', 'n'].index(i[0])
+                result[1] = f'{result[1][:4*index]}{str(min).ljust(2)}{str(max).ljust(2)}{result[1][4*index+4:]}'
 
-        if len(criteria) > 0:
-            cfg.db.rollback()
-            await ctx.send('Check your input! ')
-            return
-
+        cursor.execute(f"UPDATE potd_ping2 SET criteria = '{result[1]}' WHERE user_id = '{ctx.author.id}'")
         cfg.db.commit()
         await ctx.send('Your POTD notification settings have been updated: ', embed=self.potd_notif_embed(ctx, 0x5FE36A))
 
