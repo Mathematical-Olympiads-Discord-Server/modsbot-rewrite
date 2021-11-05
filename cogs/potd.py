@@ -315,16 +315,22 @@ class Potd(Cog):
                 await r.edit(mentionable=False)
 
                 if self.enable_dm:
+
                     bot_spam = self.bot.get_channel(cfg.Config.config['bot_spam_channel'])
+                    potd_discussion_channel = self.bot.get_channel(cfg.Config.config['potd_discussion_channel'])
+                    helper_lounge = self.bot.get_channel(cfg.Config.config['helper_lounge'])
+
                     ping_embed = discord.Embed(title=f'POTD {self.latest_potd} has been posted: ',
-                        description=f'{message.channel.mention}\n{message.jump_url}', colour=0xDCDCDC)
+                        description=f'{potd_discussion_channel.mention}\n{message.jump_url}', colour=0xDCDCDC)
+                    for field in self.to_send.to_dict()['fields']:
+                        ping_embed.add_field(name=field['name'], value=field['value'])
                     if message.attachments == []:
-                        await self.bot.get_channel(cfg.Config.config['helper_lounge']).send('No attachments found! ')
+                        await helper_lounge.send('No attachments found! ')
                     else:
                         ping_embed.set_image(url=message.attachments[0].url)
-                    for id in self.dm_list:
-                        member = self.bot.get_guild(cfg.Config.config['mods_guild']).get_member(int(id))
-                        await dm_or_channel(member, bot_spam, embed=ping_embed)
+                        for id in self.dm_list:
+                            member = self.bot.get_guild(cfg.Config.config['mods_guild']).get_member(int(id))
+                            await dm_or_channel(member, bot_spam, embed=ping_embed)
 
             try:
                 await message.publish()
