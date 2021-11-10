@@ -49,27 +49,6 @@ class Potd(Cog):
         cursor.execute("SELECT value FROM settings WHERE setting = 'potd_dm'")
         self.enable_dm = (cursor.fetchone()[0] == 'True')
 
-        # TRANSITION
-        cursor = cfg.db.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='potd_ping'")
-        result = cursor.fetchone()
-        if result != None:
-            cursor.execute("SELECT * FROM potd_ping")
-            result = cursor.fetchall()
-            for i in result:
-                minmax = str(i[2]).ljust(2) + str(i[3]).ljust(2)
-                criteria = ''
-                for j in 'ACGN':
-                    if j in i[1]:
-                        criteria += minmax
-                    else:
-                        criteria += 'xxxx'
-                cursor.execute(f'''INSERT OR IGNORE INTO potd_ping2 (user_id, criteria) VALUES
-                ('{i[0]}', '{criteria}')
-                ''')
-            cursor.execute("DROP TABLE potd_ping")
-            cfg.db.commit()
-
         schedule.every().day.at("10:00").do(self.schedule_potd).tag('cogs.potd')
 
         # Initialise potd_ratings
@@ -237,39 +216,42 @@ class Potd(Cog):
 
         # Check today's potd
         date = datetime.now().strftime("%d %b %Y")
-        tmr = (datetime.now() + timedelta(days = 1)).strftime("%d %b %Y")
+        soon = [(datetime.now() + timedelta(days = i)).strftime("%d %b %Y") for i in range(1, 4)]
         if date[0] == '0':
             date = date[1:]
-        if tmr[0] == '0':
-            tmr = tmr[1:]
+        for i in range(3):
+            if soon[i][0] == '0':
+                soon[i] = soon[i][1:]
         passed_current = False
         potd_row = None
         fail = False
-        has_tmr = False
+        remind = []
         for potd in potds:
+            if passed_current:
+                if len(potd) < 8:  # Then there has not been a potd on that day.
+                    fail = True
+                    await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
+                        f"There was no potd on {potd[1]}! {self.responsible(int(potd[0]), True)}")
             if potd[1] == date:
-                if len(potd) >= 8:  # Then there is a potd.
-                    passed_current = True
-                    potd_row = potd
-                else:  # There is no potd.
+                passed_current = True
+                potd_row = potd
+                if len(potd) < 8:  # There is no potd.
                     fail = True
                     await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
                         f"There is no potd today! {self.responsible(int(potd[0]), True)}")
-            if passed_current:
-                if len(potd) < 8:  # Then there has not been a potd on that day.
-                    if fail:
-                        await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
-                            f"There was no potd on {potd[1]}! {self.responsible(int(potd[0]), True)}")
-                    else:
-                        await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
-                            f"There is a potd today, but there wasn't one on {potd[1]}! {self.responsible(int(potd[0]), True)}")
-                    fail = True
-            if potd[1] == tmr:
-                if len(potd) >= 8:  # Then there is a potd tomorrow.
-                    has_tmr = True
-        if not has_tmr:
+            if potd[1] in soon:
+                if len(potd) < 8:  # Then there is no potd on that day.
+                    remind.append(int(potd[0]))
+                soon.remove(potd[1])
+        if soon != []:
             await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
-                f"There is no potd tomorrow! {self.responsible(int(potd_row[0]) + 1)}")
+                f"Insufficient rows in the potd sheet! {self.responsible(int(potd_row[0]))}")
+        if remind != []:
+            mentions = ''
+            for i in remind:
+                mentions += self.responsible(i)
+            await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
+                f"Remember to fill in your POTDs! {mentions}")
         if fail:
             return
 
@@ -380,9 +362,11 @@ class Potd(Cog):
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
         self.update_ratings()
+        self.prepare_dms(potd_row)
         self.to_send = self.generate_source(potd_row)
         self.listening_in_channel = ctx.channel.id
         self.late = True
+        self.ping_daily = False
         await ctx.send(to_tex, delete_after=20)
         # In case Paradox unresponsive
         self.timer = threading.Timer(20, self.reset_if_necessary)
