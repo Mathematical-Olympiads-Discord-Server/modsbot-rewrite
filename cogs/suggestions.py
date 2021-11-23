@@ -86,7 +86,7 @@ class Suggestions(Cog):
 
         # Create message
         m = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).send(
-            f'**Suggestion `#{len(suggestion_list) + 1}` by <@!{ctx.author.id}>:** `[Pending]`\n{suggestion}')
+            f'**Suggestion `#{len(suggestion_list) + 1}` by <@!{ctx.author.id}>:** `[Pending]`\n<{ctx.message.jump_url}>\n{suggestion}')
         await m.add_reaction('👍')
         await m.add_reaction('🤷')
         await m.add_reaction('👎')
@@ -263,7 +263,7 @@ class Suggestions(Cog):
 
     @commands.command()
     @commands.check(cfg.is_staff)
-    async def force_unlock(self, ctx):
+    async def unlock_suggestions(self, ctx):
         self.lock = False
 
     @commands.command()
