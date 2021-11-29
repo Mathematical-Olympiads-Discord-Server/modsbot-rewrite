@@ -66,7 +66,7 @@ class MODSBot(commands.Bot):
             else:
                 self.logger.info('Loaded cog {}.'.format(cog))
 
-        await self.get_channel(self.config['log_channel']).send('MODSbot loaded')
+        await self.get_channel(self.config['tech_garage']).send('MODSbot loaded')
 
     async def on_message(self, message):
         if message.author.bot: return
@@ -74,15 +74,14 @@ class MODSBot(commands.Bot):
         # Mute for spam
         spam = False
         if re.search(r'http://|https://', message.content):
-            if re.search('discord', message.content, re.I) and re.search('nitro', message.content, re.I):
-                spam = True
+            search_str = message.content
             for i in message.embeds:
                 if (i.title != i.Empty):
-                    if re.search('discord', i.title, re.I) and re.search('nitro', i.title, re.I):
-                        spam = True
+                    search_str += ' ' + i.title
                 if (i.description != i.Empty):
-                    if re.search('discord', i.description, re.I) and re.search('nitro', i.description, re.I):
-                        spam = True
+                    search_str += ' ' + i.description
+            if re.search('discord', search_str, re.I) and re.search('nitro', search_str, re.I):
+                spam = True
         if spam:
             try:
                 log_message = f'Muted {message.author.mention} ({message.author.id}) for spam:\n```{message.content}```'
