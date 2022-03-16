@@ -18,7 +18,7 @@ days = [None, 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 
 def is_pc(ctx):
-    return ctx.author.id in cfg.Config.config['pc_codes']
+    return cfg.Config.config['problem_curator_role'] in [x.id for x in ctx.author.roles]
 
 async def dm_or_channel(user: discord.User, channel: discord.abc.Messageable, content='', *args, **kargs):
     try:
@@ -147,7 +147,7 @@ class Potd(Cog):
         for curator in curators:
             try:
                 if (curator[4] == day) or (curator[4] == 'back-up'):
-                    mentions += f'<@{curator[0]}>'
+                    mentions += f'<@{curator[0]}> '
                     if curator[4] != 'back-up':
                         r_list.append(curator)
             except Exception:
@@ -165,7 +165,7 @@ class Potd(Cog):
             except Exception:
                 pass
             i += 7
-        return f'<@{r_list[0][0]}>'
+        return f'<@{r_list[0][0]}> '
 
     def update_ratings(self):
         with open('data/potd_ratings.txt', 'r+') as f:
@@ -193,7 +193,7 @@ class Potd(Cog):
         to_tex = ''
         try:
             to_tex = '```tex\n \\textbf{Day ' + str(number) + '} --- ' + str(potd_row[2]) + ' ' + str(
-                potd_row[1]) + '\n \\begin{flushleft} \n' + str(potd_row[8]) + '\n \\end{flushleft}```'
+                potd_row[1]) + '\n\\vspace{8pt}' + str(potd_row[8]) + '```'
         except IndexError:
             await ctx.send("There is no potd for day {}. ".format(number))
             return
@@ -310,9 +310,17 @@ class Potd(Cog):
                         await helper_lounge.send('No attachments found! ')
                     else:
                         ping_embed.set_image(url=message.attachments[0].url)
+                        dm_failed = []
                         for id in self.dm_list:
                             member = self.bot.get_guild(cfg.Config.config['mods_guild']).get_member(int(id))
-                            await dm_or_channel(member, bot_spam, embed=ping_embed)
+                            try:
+                                await member.send(embed=ping_embed)
+                            except discord.Forbidden:
+                                dm_failed.append(id)
+                        if dm_failed != []:
+                            msg = 'Remember to turn on DMs from this server to get private notifications! '
+                            for id in dm_failed: msg += f'<@{id}> '
+                            await bot_spam.send(msg, embed=ping_embed)
 
             try:
                 await message.publish()
