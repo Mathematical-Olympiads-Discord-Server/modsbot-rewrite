@@ -206,14 +206,19 @@ class Suggestions(Cog):
                  'about suggestion changes, please react with 🔕. ')
 
         if notify:
-            for u in ids_to_dm:
+            dm_failed = []
+            for id in ids_to_dm:
                 # Spam people :_)
-                member = ctx.guild.get_member(u)
+                member = ctx.guild.get_member(id)
                 try:
                     if member is not None and not member.bot:
                         await member.send(embed=embed)
                 except discord.Forbidden:
-                    await bot_spam.send(member.mention, embed=embed)
+                    dm_failed.append(id)
+            if dm_failed != []:
+                msg = 'Remember to turn on DMs from this server to get private notifications! '
+                for id in dm_failed: msg += f'<@{id}> '
+                await bot_spam.send(msg, embed=embed)
 
         # Actually update the suggestion
         suggestion.status = new_status
