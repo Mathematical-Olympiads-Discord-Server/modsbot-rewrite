@@ -15,6 +15,9 @@ db = sqlite3.connect('data/modsdb.db')
 def is_staff(ctx):
     return ctx.author.id in Config.config['staff']
 
+def is_well_manager(ctx):
+    return Config.config['well_manager_role'] in [x.id for x in ctx.author.roles]
+
 
 class Config(Cog):
     config = None
