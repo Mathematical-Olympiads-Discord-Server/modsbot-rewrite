@@ -193,7 +193,7 @@ class Potd(Cog):
         to_tex = ''
         try:
             to_tex = '```tex\n \\textbf{Day ' + str(number) + '} --- ' + str(potd_row[2]) + ' ' + str(
-                potd_row[1]) + '\n\\vspace{8pt}' + str(potd_row[8]) + '```'
+                potd_row[1]) + '\\vspace{8pt}\\\\' + str(potd_row[8]) + '```'
         except IndexError:
             await ctx.send("There is no potd for day {}. ".format(number))
             return
@@ -258,8 +258,8 @@ class Potd(Cog):
         print('l123')
         # Otherwise, everything has passed and we are good to go.
         # Create the message to send
-        to_tex = '```tex\n \\textbf{Day ' + str(potd_row[0]) + '} --- ' + str(potd_row[2]) + ' ' + str(
-            potd_row[1]) + '\n \\begin{flushleft} \n' + str(potd_row[8]) + '\n \\end{flushleft}```'
+        to_tex = '```tex\n\\textbf{Day ' + str(potd_row[0]) + '} --- ' + str(potd_row[2]) + ' ' + str(
+                potd_row[1]) + '\\vspace{8pt}\\\\' + str(potd_row[8]) + '```'
         print(to_tex)
 
         # Finish up
@@ -358,8 +358,8 @@ class Potd(Cog):
         # Create the message to send
         to_tex = ''
         try:
-            to_tex = '```tex\n \\textbf{Day ' + str(number) + '} --- ' + str(potd_row[2]) + ' ' + str(
-                potd_row[1]) + '\n \\begin{flushleft} \n' + str(potd_row[8]) + '\n \\end{flushleft}```'
+            to_tex = '```tex\n\\textbf{Day ' + str(potd_row[0]) + '} --- ' + str(potd_row[2]) + ' ' + str(
+                potd_row[1]) + '\\vspace{8pt}\\\\' + str(potd_row[8]) + '```'
         except IndexError:
             await dm_or_channel(ctx.author, self.bot.get_channel(cfg.Config.config['helper_lounge']),
                 f"There is no potd for day {number}. ")
