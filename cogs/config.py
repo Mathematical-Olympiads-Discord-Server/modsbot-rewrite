@@ -1,7 +1,6 @@
 import bidict
 from discord.ext import commands
-
-from discord.ext import commands
+from datetime import datetime, timezone
 from ruamel import yaml
 import os
 from apiclient import discovery
@@ -15,8 +14,10 @@ db = sqlite3.connect('data/modsdb.db')
 def is_staff(ctx):
     return ctx.author.id in Config.config['staff']
 
-def is_well_manager(ctx):
-    return Config.config['well_manager_role'] in [x.id for x in ctx.author.roles]
+def timestamp(dt: datetime):
+    if dt.tzinfo == None:
+        dt = dt.astimezone()
+    return int((dt - datetime(1970, 1, 1, tzinfo=timezone.utc)).total_seconds())
 
 
 class Config(Cog):
