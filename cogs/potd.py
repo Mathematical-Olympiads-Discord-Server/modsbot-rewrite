@@ -81,7 +81,7 @@ class Potd(Cog):
 
     def reset_if_necessary(self):
         if self.listening_in_channel != -1:
-            self.reset_potd()
+            self.bot.loop.create_task(self.reset_potd())
 
     def prepare_dms(self, potd_row):
         def should_dm(x):
@@ -226,7 +226,13 @@ class Potd(Cog):
         potd_row = None
         fail = False
         remind = []
+        j = 1                   # TESTING
         for potd in potds:
+            j += 1              # TESTING
+            if len(potd) < 2:   # TESTING
+                await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
+                        f"Invalid entry at row {j}, potd = {potd}")
+                pass
             if passed_current:
                 if len(potd) < 8:  # Then there has not been a potd on that day.
                     fail = True
