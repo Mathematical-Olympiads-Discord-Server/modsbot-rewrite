@@ -74,7 +74,7 @@ class Well(Cog):
 		today = self.today()
 		if hour == None:
 			next_period = now + (today + self.time - now) % timedelta(days = 1)
-			await ctx.send(f"Next well period ({(next_period-self.time).strftime(r'%b %d')}) starts on <t:{cfg.timestamp(next_period)}>.\n"
+			await ctx.send(f"Next well day ({(next_period-self.time).strftime(r'%b %d')}) starts on <t:{cfg.timestamp(next_period)}>.\n"
 							f"Use {cfg.Config.config['prefix']}well_time [hour] [min] to adjust well time.")
 		else:
 			self.time += timedelta(hours = hour, minutes = min)
@@ -90,7 +90,7 @@ class Well(Cog):
 				''')
 			cfg.db.commit()
 			next_period = now + (today + self.time - now) % timedelta(days = 1)
-			await ctx.send(f"Next well period ({(next_period-self.time).strftime(r'%b %d')}) starts on <t:{cfg.timestamp(next_period)}>.")
+			await ctx.send(f"Next well day ({(next_period-self.time).strftime(r'%b %d')}) starts on <t:{cfg.timestamp(next_period)}>.")
 
 	@commands.command()
 	@commands.check(is_well_manager)
