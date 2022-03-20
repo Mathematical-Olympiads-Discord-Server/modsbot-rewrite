@@ -11,6 +11,7 @@ cogs:
   - cogs.potd
   - cogs.suggestions
   - cogs.mathjams
+  - cogs.well
 potd_sheet: '10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA'
 paradox_id: 419356082981568522
 potd_channel: 537763636161150976
@@ -48,3 +49,5 @@ mathjams_timeslot_b: 880756210800922686
 mathjams_timeslot_c: 880756539789570089
 well_manager_role: 887344625562558496
 problem_curator_role: 537768046903951370
+well_channel: 954687946697637908
+well_sheet: '1eI2PzhwFzPJKEXskpG_ynY1SZYCxpU8eK_zGUH5SMxE'
