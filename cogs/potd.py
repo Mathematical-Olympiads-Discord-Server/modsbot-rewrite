@@ -230,7 +230,7 @@ class Potd(Cog):
         for potd in potds:
             j += 1              # TESTING
             if len(potd) < 2:   # TESTING
-                await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
+                await self.bot.get_channel(cfg.Config.config['log_channel']).send(
                         f"Invalid entry at row {j}, potd = {potd}")
                 pass
             if passed_current:
