@@ -316,7 +316,7 @@ class Potd(Cog):
                     for field in self.to_send.to_dict()['fields']:
                         ping_embed.add_field(name=field['name'], value=field['value'])
                     if message.attachments == []:
-                        await helper_lounge.send('No attachments found! ')
+                        await bot_log.send('No attachments found! ')
                     else:
                         ping_embed.set_image(url=message.attachments[0].url)
                         dm_failed = []
@@ -324,7 +324,7 @@ class Potd(Cog):
                             member = self.bot.get_guild(cfg.Config.config['mods_guild']).get_member(int(id))
                             try:
                                 await member.send(embed=ping_embed)
-                            except discord.Forbidden:
+                            except Exception:
                                 dm_failed.append(id)
                         if dm_failed != []:
                             try:
