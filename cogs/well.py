@@ -11,6 +11,8 @@ Cog = commands.Cog
 WELL_RANGE = 'A2:E'
 
 def is_well_manager(ctx):
+	if ctx.guild is None:
+		return False
 	return cfg.Config.config['well_manager_role'] in [x.id for x in ctx.author.roles]
 
 class Well(Cog):
@@ -72,7 +74,7 @@ class Well(Cog):
 		
 		now = datetime.now(timezone.utc)
 		today = self.today()
-		if hour == None:
+		if hour is None:
 			next_period = now + (today + self.time - now) % timedelta(days = 1)
 			await ctx.send(f"Next well day ({(next_period-self.time).strftime(r'%b %d')}) starts on <t:{cfg.timestamp(next_period)}>.\n"
 							f"Use {cfg.Config.config['prefix']}well_time [hour] [min] to adjust well time.")
@@ -105,8 +107,8 @@ class Well(Cog):
 			await ctx.reply('Invalid number of days!')
 			return
 		
-		if person == None:
-			if ctx.message.reference == None:
+		if person is None:
+			if ctx.message.reference is None:
 				await ctx.reply('Reply to a person or specify their ID!')
 				return
 			else:
@@ -115,7 +117,7 @@ class Well(Cog):
 				person = person_na.id
 		else:
 			person_na = ctx.guild.get_member(person)
-		if person_na == None:
+		if person_na is None:
 			await ctx.reply("This person can't be found!")
 			return
 		person_name = f'{person_na.name}#{person_na.discriminator}'

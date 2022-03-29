@@ -101,6 +101,9 @@ class MODSBot(commands.Bot):
         await self.change_presence(activity=game)
 
     async def on_command_error(self, ctx: commands.Context, exception: Exception):
+
+        log_channel = self.get_channel(self.config['log_channel'])
+
         if isinstance(exception, commands.CommandInvokeError):
             # all exceptions are wrapped in CommandInvokeError if they are not a subclass of CommandError
             # you can access the original exception with .original
@@ -124,13 +127,18 @@ class MODSBot(commands.Bot):
 
             # Print to log then notify developers
             try:
-                lines = traceback.format_exception(type(exception),
+                log_message = ''.join(traceback.format_exception(type(exception),
                                                    exception,
-                                                   exception.__traceback__)
+                                                   exception.__traceback__))
             except RecursionError:
                 raise exception
 
-            self.logger.error(''.join(lines))
+            self.logger.error(log_message)
+            try:
+                await log_channel.send(f'```{log_message}```')
+            except Exception:
+                try: await log_channel.send('Failed to send error message.')
+                except Exception: pass
 
             return
 
@@ -153,7 +161,13 @@ class MODSBot(commands.Bot):
                 await ctx.send('Huh? I thought `{1}` was supposed to be a `{0}`...'.format(*error_data[0]))
         else:
             info = traceback.format_exception(type(exception), exception, exception.__traceback__, chain=False)
-            self.logger.error('Unhandled command exception - {}'.format(''.join(info)))
+            log_message = 'Unhandled command exception - {}'.format(''.join(info))
+            self.logger.error(log_message)
+            try:
+                await log_channel.send(f'```{log_message}```')
+            except Exception:
+                try: await log_channel.send('Failed to send error message.')
+                except Exception: pass
 
 
 def executor():
