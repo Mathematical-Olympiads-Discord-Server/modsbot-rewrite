@@ -12,10 +12,12 @@ db = sqlite3.connect('data/modsdb.db')
 
 
 def is_staff(ctx):
+    if ctx.guild is None:
+        return False
     return ctx.author.id in Config.config['staff']
 
 def timestamp(dt: datetime):
-    if dt.tzinfo == None:
+    if dt.tzinfo is None:
         dt = dt.astimezone()
     return int((dt - datetime(1970, 1, 1, tzinfo=timezone.utc)).total_seconds())
 
