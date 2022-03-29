@@ -18,6 +18,8 @@ days = [None, 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 
 def is_pc(ctx):
+    if ctx.guild is None:
+        return False
     return cfg.Config.config['problem_curator_role'] in [x.id for x in ctx.author.roles]
 
 async def dm_or_channel(user: discord.User, channel: discord.abc.Messageable, content='', *args, **kargs):
@@ -307,6 +309,7 @@ class Potd(Cog):
                     bot_spam = self.bot.get_channel(cfg.Config.config['bot_spam_channel'])
                     potd_discussion_channel = self.bot.get_channel(cfg.Config.config['potd_discussion_channel'])
                     helper_lounge = self.bot.get_channel(cfg.Config.config['helper_lounge'])
+                    bot_log = self.bot.get_channel(cfg.Config.config['log_channel'])
 
                     ping_embed = discord.Embed(title=f'POTD {self.latest_potd} has been posted: ',
                         description=f'{potd_discussion_channel.mention}\n{message.jump_url}', colour=0xDCDCDC)
@@ -324,18 +327,21 @@ class Potd(Cog):
                             except discord.Forbidden:
                                 dm_failed.append(id)
                         if dm_failed != []:
-                            msg = 'Remember to turn on DMs from this server to get private notifications! '
-                            for id in dm_failed: msg += f'<@{id}> '
-                            await bot_spam.send(msg, embed=ping_embed)
+                            try:
+                                msg = 'Remember to turn on DMs from this server to get private notifications! '
+                                for id in dm_failed: msg += f'<@{id}> '
+                                await bot_spam.send(msg, embed=ping_embed)
+                            except Exception:
+                                await bot_log.send(f'DM failed!\nmsg = {msg}\ndm_failed = {dm_failed}')
 
             try:
                 await message.publish()
                 await source_msg.publish()
             except Exception:
-                pass
+                await bot_log.send('Failed to publish!')
 
             cursor = cfg.db.cursor()
-            if ping_msg == None:
+            if ping_msg is None:
                 cursor.execute(f'''INSERT INTO potd_info (potd_id, problem_msg_id, source_msg_id, ping_msg_id) VALUES
                     ('{self.latest_potd}', '{message.id}', '{source_msg.id}', '')''')
             else:
@@ -511,11 +517,11 @@ class Potd(Cog):
         cursor = cfg.db.cursor()
         cursor.execute(f'SELECT * FROM potd_ping2 WHERE user_id = {ctx.author.id}')
         result = cursor.fetchone()
-        if result == None:
+        if result is None:
             return None
         embed = discord.Embed(colour=colour)
         try:
-            if ctx.author.nick == None:
+            if ctx.author.nick is None:
                 embed.add_field(name='Username', value=ctx.author.name)
             else:
                 embed.add_field(name='Nickname', value=ctx.author.nick)
@@ -635,7 +641,7 @@ class Potd(Cog):
     @commands.command()
     @commands.check(cfg.is_staff)
     async def enable_potd_dm(self, ctx, status:bool=None):
-        if status == None:
+        if status is None:
             self.enable_dm = not self.enable_dm
         else:
             self.enable_dm = status
