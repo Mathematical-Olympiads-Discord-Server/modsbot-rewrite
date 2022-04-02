@@ -321,18 +321,15 @@ class Potd(Cog):
                         ping_embed.set_image(url=message.attachments[0].url)
                         dm_failed = []
                         for id in self.dm_list:
-                            member = self.bot.get_guild(cfg.Config.config['mods_guild']).get_member(int(id))
+                            user = self.bot.get_user(int(id))
                             try:
-                                await member.send(embed=ping_embed)
+                                await user.send(embed=ping_embed)
                             except Exception:
                                 dm_failed.append(id)
                         if dm_failed != []:
-                            try:
-                                msg = 'Remember to turn on DMs from this server to get private notifications! '
-                                for id in dm_failed: msg += f'<@{id}> '
-                                await bot_spam.send(msg, embed=ping_embed)
-                            except Exception:
-                                await bot_log.send(f'DM failed!\nmsg = {msg}\ndm_failed = {dm_failed}')
+                            msg = 'Remember to turn on DMs from this server to get private notifications! '
+                            for id in dm_failed: msg += f'<@{id}> '
+                            await bot_spam.send(msg, embed=ping_embed)
 
             try:
                 await message.publish()
