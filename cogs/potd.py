@@ -52,6 +52,10 @@ class Potd(Cog):
         self.enable_dm = (cursor.fetchone()[0] == 'True')
 
         schedule.every().day.at("10:00").do(self.schedule_potd).tag('cogs.potd')
+        schedule.every().day.at("09:00").do(lambda: self.schedule_potd(1)).tag('cogs.potd')
+        schedule.every().day.at("07:00").do(lambda: self.schedule_potd(3)).tag('cogs.potd')
+        schedule.every().day.at("04:00").do(lambda: self.schedule_potd(6)).tag('cogs.potd')
+        schedule.every().day.at("22:00").do(lambda: self.schedule_potd(12)).tag('cogs.potd')
 
         # Initialise potd_ratings
         try:
@@ -123,8 +127,8 @@ class Potd(Cog):
 
         return source
 
-    def schedule_potd(self):
-        self.bot.loop.create_task(self.check_potd())
+    def schedule_potd(self, mode=None):
+        self.bot.loop.create_task(self.check_potd(mode))
 
     def responsible(self, potd_id:int, urgent:bool=False):     # Mentions of responsible curators
 
@@ -136,7 +140,7 @@ class Potd(Cog):
         try:
             i = int(potds[0][0]) - int(potd_id)
         except Exception:
-            return 'Invalid entry (A2) in spreadsheet. '
+            return 'Invalid entry (A2) in spreadsheet! '
         potd_row = potds[i]
 
         # Searches for relevant curators
@@ -148,14 +152,15 @@ class Potd(Cog):
             return 'Day not recognized. '
         for curator in curators:
             try:
-                if (curator[4] == day) or (curator[4] == 'back-up'):
+                if (curator[4] == day):
                     mentions += f'<@{curator[0]}> '
-                    if curator[4] != 'back-up':
-                        r_list.append(curator)
+                    r_list.append(curator)
             except Exception:
                 pass
-        if urgent or (len(r_list) == 0):
-            return mentions
+        if urgent:
+            return mentions + f'<@&{cfg.Config.config["problem_curator_role"]}> '
+        if mentions == '':
+            return f'No responsible curators found for the potd on {potd_row[1]}!'
 
         # Searches for curator whose last curation on this day of the week was longest ago.
         i += 7
@@ -195,7 +200,7 @@ class Potd(Cog):
         to_tex = ''
         try:
             to_tex = '```tex\n \\textbf{Day ' + str(number) + '} --- ' + str(potd_row[2]) + ' ' + str(
-                potd_row[1]) + '\\vspace{11pt}\\\\' + str(potd_row[8]) + '```'
+                potd_row[1]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(potd_row[8]) + '```'
         except IndexError:
             await ctx.send("There is no potd for day {}. ".format(number))
             return
@@ -210,18 +215,24 @@ class Potd(Cog):
         self.late = True
         await ctx.send(to_tex, delete_after=20)
 
-    async def check_potd(self):
+    async def check_potd(self, mode=None):
 
         # Get the potds from the sheet (API call)
         potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute().get('values', [])
 
         # Check today's potd
-        date = datetime.now().strftime("%d %b %Y")
-        soon = [(datetime.now() + timedelta(days = i)).strftime("%d %b %Y") for i in range(1, 4)]
+        if mode is None:
+            next = datetime.now()
+            date = next.strftime("%d %b %Y")
+            soon = [(next + timedelta(days = i)).strftime("%d %b %Y") for i in range(1, 4)]
+        else:
+            next = datetime.now() + timedelta(hours = mode)
+            date = next.strftime("%d %b %Y")
+            soon = [date]
         if date[0] == '0':
             date = date[1:]
-        for i in range(3):
+        for i in range(len(soon)):
             if soon[i][0] == '0':
                 soon[i] = soon[i][1:]
         passed_current = False
@@ -243,7 +254,7 @@ class Potd(Cog):
             if potd[1] == date:
                 passed_current = True
                 potd_row = potd
-                if len(potd) < 8:  # There is no potd.
+                if len(potd) < 8 and (mode is None):  # There is no potd.
                     fail = True
                     await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
                         f"There is no potd today! {self.responsible(int(potd[0]), True)}")
@@ -257,17 +268,17 @@ class Potd(Cog):
         if remind != []:
             mentions = ''
             for i in remind:
-                mentions += self.responsible(i)
+                mentions += self.responsible(i, mode == 1)
             await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
                 f"Remember to fill in your POTDs! {mentions}")
-        if fail:
+        if fail or not (mode is None):
             return
 
         print('l123')
         # Otherwise, everything has passed and we are good to go.
         # Create the message to send
         to_tex = '```tex\n\\textbf{Day ' + str(potd_row[0]) + '} --- ' + str(potd_row[2]) + ' ' + str(
-            potd_row[1]) + '\\vspace{11pt}\\\\' + str(potd_row[8]) + '```'
+            potd_row[1]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(potd_row[8]) + '```'
         print(to_tex)
 
         # Finish up
@@ -368,7 +379,7 @@ class Potd(Cog):
         to_tex = ''
         try:
             to_tex = '```tex\n\\textbf{Day ' + str(potd_row[0]) + '} --- ' + str(potd_row[2]) + ' ' + str(
-                potd_row[1]) + '\\vspace{11pt}\\\\' + str(potd_row[8]) + '```'
+                potd_row[1]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(potd_row[8]) + '```'
         except IndexError:
             await dm_or_channel(ctx.author, self.bot.get_channel(cfg.Config.config['helper_lounge']),
                 f"There is no potd for day {number}. ")
