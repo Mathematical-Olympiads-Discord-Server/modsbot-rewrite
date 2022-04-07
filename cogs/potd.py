@@ -107,11 +107,25 @@ class Potd(Cog):
         result = cursor.fetchall()
         self.dm_list = [i[0] for i in filter(should_dm, result)]
 
+    def curator_id(self, curators, value):
+        value = str(value)
+        if value == '':
+            return None
+        for i in curators:
+            for j in range(min(len(i), 4)):
+                if value == str(i[j]):
+                    return i[0]
+        return None
+
     def generate_source(self, potd_row):
         # Figure out whose potd it is
-        curator = 'Unknown Curator'
-        if potd_row[3] in cfg.Config.config['pc_codes'].inverse:
-            curator = '<@!{}>'.format(cfg.Config.config['pc_codes'].inverse[potd_row[3]])
+        curators = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=CURATOR_RANGE).execute().get('values', [])
+        curator_id = self.curator_id(curators, potd_row[3])
+        if curator_id is None:
+            curator = 'Unknown Curator'
+        else:
+            curator = f'<@!{curator_id}>'
         difficulty_length = len(potd_row[5]) + len(potd_row[6])
         padding = (' ' * (max(35 - len(potd_row[4]), 1)))
 
@@ -167,7 +181,7 @@ class Potd(Cog):
         while (i < len(potds)) and (len(r_list) > 1):
             try:
                 for curator in r_list:
-                    if curator[2] == potds[i][3]:
+                    if curator[0] == self.curator_id(curators, potds[i][3]):
                         r_list.remove(curator)
             except Exception:
                 pass
@@ -264,7 +278,7 @@ class Potd(Cog):
                 soon.remove(potd[1])
         if soon != []:
             await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
-                f"Insufficient rows in the potd sheet! {self.responsible(int(potd_row[0]))}")
+                f"Insufficient rows in the potd sheet! ")
         if remind != []:
             mentions = ''
             for i in remind:
