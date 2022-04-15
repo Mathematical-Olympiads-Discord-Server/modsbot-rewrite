@@ -213,7 +213,7 @@ class Suggestions(Cog):
                 try:
                     if member is not None and not member.bot:
                         await member.send(embed=embed)
-                except discord.Forbidden:
+                except Exception:
                     dm_failed.append(id)
             if dm_failed != []:
                 msg = 'Remember to turn on DMs from this server to get private notifications! '
