@@ -26,7 +26,7 @@ async def dm_or_channel(user: discord.User, channel: discord.abc.Messageable, co
     try:
         if user is not None and not user.bot:
             await user.send(*args, content=content, **kargs)
-    except discord.Forbidden:
+    except Exception:
         await channel.send(*args, content=user.mention+'\n'+content, **kargs)
 
 
@@ -200,7 +200,7 @@ class Potd(Cog):
 
     async def potd_embedded(self, ctx, *, number: int):
         # It can only handle one at a time!
-        if not self.listening_in_channel == -1:
+        if self.listening_in_channel != -1:
             await ctx.send("Please wait until the previous potd call has finished!")
             return
 
@@ -253,6 +253,7 @@ class Potd(Cog):
         potd_row = None
         fail = False
         remind = []
+        curator_role = (await self.bot.fetch_guild(cfg.Config.config['mods_guild'])).get_role(cfg.Config.config['problem_curator_role'])
         j = 1                   # TESTING
         for potd in potds:
             j += 1              # TESTING
@@ -263,15 +264,19 @@ class Potd(Cog):
             if passed_current:
                 if len(potd) < 8:  # Then there has not been a potd on that day.
                     fail = True
+                    await curator_role.edit(mentionable = True)
                     await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
                         f"There was no potd on {potd[1]}! {self.responsible(int(potd[0]), True)}")
+                    await curator_role.edit(mentionable = False)
             if potd[1] == date:
                 passed_current = True
                 potd_row = potd
                 if len(potd) < 8 and (mode is None):  # There is no potd.
                     fail = True
+                    await curator_role.edit(mentionable = True)
                     await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
                         f"There is no potd today! {self.responsible(int(potd[0]), True)}")
+                    await curator_role.edit(mentionable = False)
             if potd[1] in soon:
                 if len(potd) < 8:  # Then there is no potd on that day.
                     remind.append(int(potd[0]))
@@ -283,8 +288,10 @@ class Potd(Cog):
             mentions = ''
             for i in remind:
                 mentions += self.responsible(i, mode == 1)
+            await curator_role.edit(mentionable = True)
             await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
                 f"Remember to fill in your POTDs! {mentions}")
+            await curator_role.edit(mentionable = False)
         if fail or not (mode is None):
             return
 
@@ -303,6 +310,7 @@ class Potd(Cog):
         self.to_send = self.generate_source(potd_row)
         self.listening_in_channel = cfg.Config.config['potd_channel']
         self.ping_daily = True
+        self.late = False
         await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=20)
         print('l149')
         # In case Paradox unresponsive
@@ -321,6 +329,7 @@ class Potd(Cog):
             await source_msg.add_reaction("👍")
             if self.late:
                 await source_msg.add_reaction('⏰')
+            bot_log = self.bot.get_channel(cfg.Config.config['log_channel'])
 
             ping_msg = None
             if self.ping_daily:
@@ -333,8 +342,6 @@ class Potd(Cog):
 
                     bot_spam = self.bot.get_channel(cfg.Config.config['bot_spam_channel'])
                     potd_discussion_channel = self.bot.get_channel(cfg.Config.config['potd_discussion_channel'])
-                    helper_lounge = self.bot.get_channel(cfg.Config.config['helper_lounge'])
-                    bot_log = self.bot.get_channel(cfg.Config.config['log_channel'])
 
                     ping_embed = discord.Embed(title=f'POTD {self.latest_potd} has been posted: ',
                         description=f'{potd_discussion_channel.mention}\n{message.jump_url}', colour=0xDCDCDC)
@@ -356,11 +363,12 @@ class Potd(Cog):
                             for id in dm_failed: msg += f'<@{id}> '
                             await bot_spam.send(msg, embed=ping_embed)
 
-            try:
-                await message.publish()
-                await source_msg.publish()
-            except Exception:
-                await bot_log.send('Failed to publish!')
+            if message.channel.id == cfg.Config.config['potd_channel']:
+                try:
+                    await message.publish()
+                    await source_msg.publish()
+                except Exception:
+                    await bot_log.send('Failed to publish!')
 
             cursor = cfg.db.cursor()
             if ping_msg is None:
@@ -372,13 +380,14 @@ class Potd(Cog):
             cfg.db.commit()
 
             await self.reset_potd()
+            await bot_log.send('POTD execution successful.')
 
     @commands.command(aliases=['potd'], brief='Displays the potd with the provided number. ')
     @commands.check(is_pc)
     async def potd_display(self, ctx, number: int):
 
         # It can only handle one at a time!
-        if not self.listening_in_channel == -1:
+        if self.listening_in_channel != -1:
             await dm_or_channel(ctx.author, self.bot.get_channel(cfg.Config.config['helper_lounge']),
                 "Please wait until the previous call has finished!")
             return
