@@ -560,10 +560,14 @@ class Potd(Cog):
             embed.add_field(name='Username', value=ctx.author.name)
         for i in range(4):
             embed.add_field(name=['Algebra', 'Combinatorics', 'Geometry', 'Number Theory'][i], value=subcriteria(4*i))
-        embed.set_footer(text='Use `-pn off` to turn this off. ')
+        embed.set_footer(text='Use `-help pn` for help. ')
         return embed
 
-    @commands.command(aliases=['pn'], brief='Customizes potd pings. ')
+    @commands.command(aliases=['pn'], brief='Customizes potd pings. ', help='`-pn`: enable POTD notifications or show settings\n'
+                                                                            '`-pn a1-7`: set difficulty range for category\n'
+                                                                            '`-pn c`: toggle notifications for category\n'
+                                                                            '`-pn a1-7 c`: combine commands\n'
+                                                                            '`-pn off`: disable notifications')
     async def potd_notif(self, ctx, *criteria:str):
 
         # Empty criteria
