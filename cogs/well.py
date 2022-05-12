@@ -77,9 +77,9 @@ class Well(Cog):
 		if hour is None:
 			next_period = now + (today + self.time - now) % timedelta(days = 1)
 			await ctx.send(f"Next well day ({(next_period-self.time).strftime(r'%b %d')}) starts on <t:{cfg.timestamp(next_period)}>.\n"
-							f"Use {cfg.Config.config['prefix']}well_time [hour] [min] to adjust well time.")
+							f"Use {cfg.Config.config['prefix']}well_time [hour] [min] (in GMT) to adjust well time.")
 		else:
-			self.time += timedelta(hours = hour, minutes = min)
+			self.time = timedelta(hours = hour, minutes = min)
 			self.hour = int(self.time.total_seconds()) // 3600
 			self.minute = int(self.time.total_seconds()) % 3600 // 60
 			local_time = (today + self.time).astimezone()
