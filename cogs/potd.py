@@ -401,7 +401,7 @@ class Potd(Cog):
         # Create the message to send
         to_tex = ''
         try:
-            to_tex = '```tex\n\\textbf{Day ' + str(potd_row[0]) + '} --- ' + str(potd_row[2]) + ' ' + str(
+            to_tex = '<@419356082981568522>\n```tex\n\\textbf{Day ' + str(potd_row[0]) + '} --- ' + str(potd_row[2]) + ' ' + str(
                 potd_row[1]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(potd_row[8]) + '```'
         except IndexError:
             await dm_or_channel(ctx.author, self.bot.get_channel(cfg.Config.config['helper_lounge']),
