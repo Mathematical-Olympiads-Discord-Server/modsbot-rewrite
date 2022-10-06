@@ -32,7 +32,7 @@ def update_suggestions():
 
     # Clear the sheet
     cfg.Config.service.spreadsheets().values().clear(spreadsheetId=cfg.Config.config['suggestion_sheet'],
-                                                     range='Suggestions!A2:I').execute()
+                                                     range='Suggestions!A2:J').execute()
     # Write new data
     r_body = {'values': [s.to_list() for s in suggestion_list]}
     cfg.Config.service.spreadsheets().values().append(spreadsheetId=cfg.Config.config['suggestion_sheet'],
@@ -44,7 +44,7 @@ class Suggestion:
     def __str__(self):
         return '{}: \t {}'.format(self.id, self.body)
 
-    def __init__(self, id, msgid, time, username, userid, status, body, reason):
+    def __init__(self, id, msgid, time, username, userid, status, body, reason, jump_url):
         self.id = id
         self.msgid = msgid
         self.time = time
@@ -53,10 +53,11 @@ class Suggestion:
         self.status = status
         self.body = body
         self.reason = reason
+        self.jump_url = jump_url
 
     def to_list(self):
         return [self.id, str(self.msgid), self.time.isoformat(), self.username, str(self.userid), self.status,
-                statuses.inverse[self.status], self.body, self.reason]
+                statuses.inverse[self.status], self.body, self.reason, self.jump_url]
 
 
 class Suggestions(Cog):
@@ -68,7 +69,7 @@ class Suggestions(Cog):
         suggestion_list.clear()
         suggestions = cfg.Config.service.spreadsheets().values().get(
             spreadsheetId=cfg.Config.config['suggestion_sheet'],
-            range='Suggestions!A2:I').execute().get('values', [])
+            range='Suggestions!A2:J').execute().get('values', [])
         for s in suggestions:
             suggestion_list.append(from_list(s))
         suggestion_list.sort(key=operator.attrgetter('id'))
@@ -96,7 +97,7 @@ class Suggestions(Cog):
         # Add the new suggestion
         suggestion_list.append(
             Suggestion(len(suggestion_list) + 1, str(m.id), datetime.now(), ctx.author.name, ctx.author.id, 'Pending',
-                       suggestion, None))
+                       suggestion, None, ctx.message.jump_url))
 
         # Update the sheet
         update_suggestions()
@@ -225,7 +226,7 @@ class Suggestions(Cog):
         suggestion.reason = reason
         update_suggestions()
         await suggestion_message.edit(
-            content=f'**Suggestion `#{sugg_id}` by <@!{suggestion.userid}>:** `[{new_status}]`\n{suggestion.body}')
+            content=f'**Suggestion `#{sugg_id}` by <@!{suggestion.userid}>:** `[{new_status}]`\n{suggestion.jump_url}\n{suggestion.body}')
 
         # Finish up
         await bot_spam.send('Finished.')
