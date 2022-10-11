@@ -22,7 +22,7 @@ status_aliases = bidict.bidict(
 def from_list(s):
     """Creates a Suggestion object from a list. """
     return Suggestion(int(s[0]), s[1], datetime.fromisoformat(s[2]), s[3], int(s[4]), s[5], s[7],
-                      s[8] if len(s) > 8 else None)
+                      s[8] if len(s) > 8 else None, s[9] if len(s) > 9 else None)
 
 
 def update_suggestions():
@@ -110,7 +110,7 @@ class Suggestions(Cog):
         values = []
         for message in messages:
             values.append([message.created_at.isoformat(), message.author.name, str(message.author.id), 'Pending', 0,
-                           message.content])
+                           message.content], "", message.jump_url)
         r_body = {'values': values}
         cfg.Config.service.spreadsheets().values().append(spreadsheetId=cfg.Config.config['suggestion_sheet'],
                                                           range='Suggestions!A1', valueInputOption='RAW',
