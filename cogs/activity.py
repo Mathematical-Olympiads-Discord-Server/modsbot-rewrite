@@ -3,6 +3,7 @@ import datetime as dt
 import logging
 import math
 import pickle
+import schedule
 from datetime import datetime
 
 import discord
@@ -41,6 +42,8 @@ class Activity(Cog):
         self.bot = bot
         self.logger = logging.getLogger('cogs.activity')
         self.new_message = False
+
+        schedule.every().day.at("10:00").do(self.call_ua).tag('cogs.activity')
 
     @Cog.listener()
     async def on_message(self, message):
@@ -287,6 +290,17 @@ class Activity(Cog):
         await ctx.send(file=discord.File(open(fname, 'rb')))
         plt.clf()
         plt.close('all')
+
+    async def call_ua(self):
+        channel = self.bot.get_channel(cfg.Config.config['bot_spam_channel'])
+
+        # post something so we know it is working
+        await channel.send('-ua')
+
+        # do the update active
+        message = await channel.fetch_message(channel.last_message_id)
+        ctx = await self.bot.get_context(message)
+        await self.update_actives(ctx)
 
 
 def setup(bot):
