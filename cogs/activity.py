@@ -107,7 +107,7 @@ class Activity(Cog):
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
-        AND discord_channel_id != 537818427675377677 and discord_channel_id != 565824284669509642
+        AND discord_channel_id != {cfg.Config.config['bot_spam_channel']} and discord_channel_id != {cfg.Config.config['muted_channel']}
         and discord_user_id = {to_check.id}
         LIMIT 1000000;''')
         messages = cursor.fetchall()
@@ -127,13 +127,13 @@ class Activity(Cog):
 
     @commands.command(aliases=['ua'])
     @commands.check(cfg.is_staff)
-    async def update_actives(self, ctx, threshold: int = 750):
+    async def update_actives(self, ctx, threshold: int = cfg.Config.config['active_threshold']):
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT discord_user_id, message_date, message_length 
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(30 - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
-        AND discord_channel_id != 537818427675377677 and discord_channel_id != 565824284669509642
+        AND discord_channel_id != {cfg.Config.config['bot_spam_channel']} and discord_channel_id != {cfg.Config.config['muted_channel']}
         LIMIT 1000000;''')
         messages = cursor.fetchall()
         tss = [(x[0], datetime.fromisoformat(x[1]).timestamp(), x[2]) for x in messages]
@@ -194,7 +194,7 @@ class Activity(Cog):
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
-        AND discord_channel_id != 537818427675377677 and discord_channel_id != 565824284669509642
+        AND discord_channel_id != {cfg.Config.config['bot_spam_channel']} and discord_channel_id != {cfg.Config.config['muted_channel']}
         LIMIT 1000000;''')
         messages = cursor.fetchall()
         tss = [(x[0], datetime.fromisoformat(x[1]).timestamp(), x[2]) for x in messages]
