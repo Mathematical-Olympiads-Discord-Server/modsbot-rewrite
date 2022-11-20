@@ -425,7 +425,7 @@ class Potd(Cog):
         self.timer.start()
 
     @commands.command(aliases=['fetch'], brief='Fetch a potd by id.')
-    async def fetch_potd(self, ctx, number: int, show_source: bool = False):
+    async def fetch_potd(self, ctx, number: int):
         # Read from the spreadsheet
         reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute()
@@ -445,11 +445,6 @@ class Potd(Cog):
             await ctx.send(f"There is no potd for day {number}. ")
             return
         print(to_tex)
-                
-        # Send the problem source
-        if show_source:
-            source_msg = self.generate_source(potd_row)
-            await ctx.send(source_msg)
         
         # Send the problem tex
         await ctx.send(to_tex, delete_after=20)
