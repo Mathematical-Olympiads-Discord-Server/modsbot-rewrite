@@ -19,7 +19,7 @@ potd_sheet_day_col: 2
 potd_sheet_curator_col: 3
 potd_sheet_source_col: 4
 potd_sheet_genre_col: 5
-potd_sheet_rating_col: 6
+potd_sheet_difficulty_col: 6
 potd_sheet_tags_col: 7
 potd_sheet_statement_col: 8
 paradox_id: 419356082981568522
