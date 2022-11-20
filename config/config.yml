@@ -13,6 +13,15 @@ cogs:
   - cogs.mathjams
   - cogs.well
 potd_sheet: '10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA'
+potd_sheet_id_col: 0
+potd_sheet_date_col: 1
+potd_sheet_day_col: 2
+potd_sheet_curator_col: 3
+potd_sheet_source_col: 4
+potd_sheet_genre_col: 5
+potd_sheet_rating_col: 6
+potd_sheet_tags_col: 7
+potd_sheet_statement_col: 8
 paradox_id: 419356082981568522
 potd_channel: 537763636161150976
 potd_discussion_channel: 533159339968692225

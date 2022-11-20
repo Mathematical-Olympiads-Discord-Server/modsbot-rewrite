@@ -392,6 +392,7 @@ class Potd(Cog):
                 "Please wait until the previous call has finished!")
             return
 
+        # Read from the spreadsheet
         reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute()
         values = reply.get('values', [])
@@ -422,6 +423,36 @@ class Potd(Cog):
         # In case Paradox unresponsive
         self.timer = threading.Timer(20, self.reset_if_necessary)
         self.timer.start()
+
+    @commands.command(aliases=['fetch'], brief='Fetch a potd by id.')
+    async def fetch_potd(self, ctx, number: int, show_source: bool = False):
+        # Read from the spreadsheet
+        reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute()
+        values = reply.get('values', [])
+        current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+        potd_row = values[current_potd - number]  # this gets the row requested
+
+        # Create the message to send
+        to_tex = ''
+        try:
+            to_tex = '<@' + str(cfg.Config.config['paradox_id']) + '>\n```tex\n\\textbf{Day ' + str(
+                potd_row[cfg.Config.config['potd_sheet_id_col']]) + '} --- ' + str(
+                potd_row[cfg.Config.config['potd_sheet_day_col']]) + ' ' + str(
+                potd_row[cfg.Config.config['potd_sheet_date_col']]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(
+                potd_row[cfg.Config.config['potd_sheet_statement_col']]) + '```'
+        except IndexError:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
+        print(to_tex)
+                
+        # Send the problem source
+        if show_source:
+            source_msg = self.generate_source(potd_row)
+            await ctx.send(source_msg)
+        
+        # Send the problem tex
+        await ctx.send(to_tex, delete_after=20)
 
     @commands.command(aliases=['remove_potd'], brief='Deletes the potd with the provided number. ')
     @commands.check(is_pc)
