@@ -432,6 +432,11 @@ class Potd(Cog):
                                                                range=POTD_RANGE).execute()
         values = reply.get('values', [])
         current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+
+        if number > current_potd:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
+
         potd_row = values[current_potd - number]  # this gets the row requested
 
         # Create the message to send
