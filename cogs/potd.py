@@ -478,11 +478,11 @@ class Potd(Cog):
                                                                range=POTD_RANGE).execute().get('values', [])
 
         # filter and pick a POTD
-        filtered_potds = filter(lambda c: isinstance(c[cfg.Config.config['potd_sheet_difficulty_col']], int) 
-                                and c[cfg.Config.config['potd_sheet_difficulty_col']] >= diff_lower_bound_filter
-                                and c[cfg.Config.config['potd_sheet_difficulty_col']] <= diff_upper_bound_filter
-                                and len(set(c[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0
-                                , potds) 
+        filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
+                        and x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
+                        and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter
+                        and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) <= diff_upper_bound_filter
+                        and len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0]                        
 
         if len(filtered_potds) > 0:
             filtered_potds_id = map(lambda x: x[cfg.Config.config['potd_sheet_id_col']], filtered_potds)
