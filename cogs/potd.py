@@ -426,12 +426,17 @@ class Potd(Cog):
         self.timer.start()
 
     @commands.command(aliases=['fetch'], brief='Fetch a potd by id.')
-    async def fetch_potd(self, ctx, number: int):
+    async def potd_fetch(self, ctx, number: int):
         # Read from the spreadsheet
         reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute()
         values = reply.get('values', [])
         current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+
+        if number > current_potd:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
+
         potd_row = values[current_potd - number]  # this gets the row requested
 
         # Create the message to send
@@ -448,10 +453,10 @@ class Potd(Cog):
         print(to_tex)
         
         # Send the problem tex
-        await ctx.send(to_tex, delete_after=20)
+        await ctx.send(to_tex, delete_after=5)
 
     @commands.command(aliases=['search'], brief='Search a potd by genre and difficulty.')
-    async def search_potd(self, ctx, diff_lower_bound:int, diff_upper_bound:int, genre:str='ACGN'):
+    async def potd_search(self, ctx, diff_lower_bound:int, diff_upper_bound:int, genre:str='ACGN'):
         if diff_lower_bound > diff_upper_bound:
             await ctx.send(f"Difficulty lower bound cannot be higher than upper bound.")
             return
@@ -478,11 +483,11 @@ class Potd(Cog):
                                                                range=POTD_RANGE).execute().get('values', [])
 
         # filter and pick a POTD
-        filtered_potds = filter(lambda c: isinstance(c[cfg.Config.config['potd_sheet_difficulty_col']], int) 
-                                and c[cfg.Config.config['potd_sheet_difficulty_col']] >= diff_lower_bound_filter
-                                and c[cfg.Config.config['potd_sheet_difficulty_col']] <= diff_upper_bound_filter
-                                and len(set(c[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0
-                                , potds) 
+        filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
+                        and x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
+                        and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter
+                        and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) <= diff_upper_bound_filter
+                        and len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0]                        
 
         if len(filtered_potds) > 0:
             filtered_potds_id = map(lambda x: x[cfg.Config.config['potd_sheet_id_col']], filtered_potds)
