@@ -448,7 +448,7 @@ class Potd(Cog):
         print(to_tex)
         
         # Send the problem tex
-        await ctx.send(to_tex, delete_after=20)
+        await ctx.send(to_tex, delete_after=5)
 
     @commands.command(aliases=['search'], brief='Search a potd by genre and difficulty.')
     async def search_potd(self, ctx, diff_lower_bound:int, diff_upper_bound:int, genre:str='ACGN'):
