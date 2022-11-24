@@ -426,7 +426,7 @@ class Potd(Cog):
         self.timer.start()
 
     @commands.command(aliases=['fetch'], brief='Fetch a potd by id.')
-    async def fetch_potd(self, ctx, number: int):
+    async def potd_fetch(self, ctx, number: int):
         # Read from the spreadsheet
         reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute()
@@ -456,7 +456,7 @@ class Potd(Cog):
         await ctx.send(to_tex, delete_after=5)
 
     @commands.command(aliases=['search'], brief='Search a potd by genre and difficulty.')
-    async def search_potd(self, ctx, diff_lower_bound:int, diff_upper_bound:int, genre:str='ACGN'):
+    async def potd_search(self, ctx, diff_lower_bound:int, diff_upper_bound:int, genre:str='ACGN'):
         if diff_lower_bound > diff_upper_bound:
             await ctx.send(f"Difficulty lower bound cannot be higher than upper bound.")
             return
