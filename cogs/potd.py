@@ -490,10 +490,10 @@ class Potd(Cog):
                         and len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0]                        
 
         if len(filtered_potds) > 0:
-            filtered_potds_id = map(lambda x: x[cfg.Config.config['potd_sheet_id_col']], filtered_potds)
+            filtered_potds_id = list(map(lambda x: x[cfg.Config.config['potd_sheet_id_col']], filtered_potds))
             picked_potd = random.choice(filtered_potds_id)
             # fetch the picked POTD
-            self.fetch_potd(ctx, picked_potd)
+            await self.potd_fetch(ctx, picked_potd)
         else:
             await ctx.send(f"No POTD found!")
 
