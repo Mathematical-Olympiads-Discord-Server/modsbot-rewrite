@@ -493,7 +493,7 @@ class Potd(Cog):
             filtered_potds_id = list(map(lambda x: x[cfg.Config.config['potd_sheet_id_col']], filtered_potds))
             picked_potd = random.choice(filtered_potds_id)
             # fetch the picked POTD
-            await self.potd_fetch(ctx, picked_potd)
+            await self.potd_fetch(ctx, int(picked_potd))
         else:
             await ctx.send(f"No POTD found!")
 
