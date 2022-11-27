@@ -43,7 +43,7 @@ class Activity(Cog):
         self.logger = logging.getLogger('cogs.activity')
         self.new_message = False
 
-        schedule.every().day.at("10:00").do(self.call_ua).tag('cogs.activity')
+        schedule.every().day.at("10:00").do(self.schedule_ua).tag('cogs.activity')
 
     @Cog.listener()
     async def on_message(self, message):
@@ -290,6 +290,9 @@ class Activity(Cog):
         await ctx.send(file=discord.File(open(fname, 'rb')))
         plt.clf()
         plt.close('all')
+
+    def schedule_ua(self, mode=None):
+        self.bot.loop.create_task(self.call_ua())
 
     async def call_ua(self):
         channel = self.bot.get_channel(cfg.Config.config['bot_spam_channel'])

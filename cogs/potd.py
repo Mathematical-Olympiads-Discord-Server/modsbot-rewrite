@@ -1,4 +1,5 @@
 import ast
+import random
 import statistics
 from datetime import datetime, timedelta
 
@@ -392,6 +393,7 @@ class Potd(Cog):
                 "Please wait until the previous call has finished!")
             return
 
+        # Read from the spreadsheet
         reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute()
         values = reply.get('values', [])
@@ -422,6 +424,78 @@ class Potd(Cog):
         # In case Paradox unresponsive
         self.timer = threading.Timer(20, self.reset_if_necessary)
         self.timer.start()
+
+    @commands.command(aliases=['fetch'], brief='Fetch a potd by id.')
+    async def potd_fetch(self, ctx, number: int):
+        # Read from the spreadsheet
+        reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute()
+        values = reply.get('values', [])
+        current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+
+        if number > current_potd:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
+
+        potd_row = values[current_potd - number]  # this gets the row requested
+
+        # Create the message to send
+        to_tex = ''
+        try:
+            to_tex = '<@' + str(cfg.Config.config['paradox_id']) + '>\n```tex\n\\textbf{Day ' + str(
+                potd_row[cfg.Config.config['potd_sheet_id_col']]) + '} --- ' + str(
+                potd_row[cfg.Config.config['potd_sheet_day_col']]) + ' ' + str(
+                potd_row[cfg.Config.config['potd_sheet_date_col']]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(
+                potd_row[cfg.Config.config['potd_sheet_statement_col']]) + '```'
+        except IndexError:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
+        print(to_tex)
+        
+        # Send the problem tex
+        await ctx.send(to_tex, delete_after=5)
+
+    @commands.command(aliases=['search'], brief='Search a potd by genre and difficulty.')
+    async def potd_search(self, ctx, diff_lower_bound:int, diff_upper_bound:int, genre:str='ACGN'):
+        if diff_lower_bound > diff_upper_bound:
+            await ctx.send(f"Difficulty lower bound cannot be higher than upper bound.")
+            return
+
+        # Set up the genre filter
+        genre_filter = ""
+        if "A" in genre.upper():
+            genre_filter += "A"
+        if "C" in genre.upper():
+            genre_filter += "C"
+        if "G" in genre.upper():
+            genre_filter += "G"
+        if "N" in genre.upper():
+            genre_filter += "N"
+        if len(genre_filter) == 0: # If not filled, search all genre
+            genre_filter = "ACGN"
+
+        # set up the difficulty filter
+        diff_lower_bound_filter = max(0,diff_lower_bound)
+        diff_upper_bound_filter = max(min(99, diff_upper_bound), diff_lower_bound_filter)
+        
+        # get data from spreadsheet
+        potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute().get('values', [])
+
+        # filter and pick a POTD
+        filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
+                        and x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
+                        and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter
+                        and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) <= diff_upper_bound_filter
+                        and len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0]                        
+
+        if len(filtered_potds) > 0:
+            filtered_potds_id = list(map(lambda x: x[cfg.Config.config['potd_sheet_id_col']], filtered_potds))
+            picked_potd = random.choice(filtered_potds_id)
+            # fetch the picked POTD
+            await self.potd_fetch(ctx, int(picked_potd))
+        else:
+            await ctx.send(f"No POTD found!")
 
     @commands.command(aliases=['remove_potd'], brief='Deletes the potd with the provided number. ')
     @commands.check(is_pc)
