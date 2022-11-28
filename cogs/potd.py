@@ -495,7 +495,7 @@ class Potd(Cog):
     @commands.cooldown(1, 30, BucketType.user)
     async def potd_mock(self, ctx, template:str="IMO"):
         template = template.upper()
-        template_list = ["IMO", "AMO", "APMO", "BMO1", "BMO2", "SMO2"]
+        template_list = ["IMO", "AMO", "APMO", "BMO1", "BMO2", "NZMO2", "SMO2", "CHINA"]
         if template not in template_list:
             await ctx.send(f"Template not found. Possible templates: {', '.join(template_list)}")
             return
@@ -510,8 +510,12 @@ class Potd(Cog):
                 difficulty_bounds = [[1,2],[1,2],[2,3],[2,3],[3,4],[3,4]]
             elif template == "BMO2":
                 difficulty_bounds = [[3,4],[4,5],[5,6],[6,7]]
+            elif template == "NZMO2":
+                difficulty_bounds = [[1,2],[2,3],[3,4],[4,5],[5,6]]
             elif template == "SMO2":
                 difficulty_bounds = [[4,5],[5,6],[6,7],[7,8],[8,9]]
+            elif template == "CHINA":
+                difficulty_bounds = [[7,8],[8,10],[10,12],[7,8],[8,10],[10,12]]
 
         genres=[]
         genre_pool = ["A","C","G","N"] * math.ceil(len(difficulty_bounds)/4)
@@ -527,8 +531,8 @@ class Potd(Cog):
             potd_statement = self.get_potd_statement(int(picked_potd), potds)
             problems_tex.append(f'\\textbf{{Problem {i+1}. (POTD {str(picked_potd)})}}\\\\ ' + potd_statement)
         
-        if template in ["IMO","AMO"] : 
-            if template in ["IMO"]:
+        if template in ["IMO","AMO","CHINA"] : 
+            if template in ["IMO","CHINA"]:
                 index_day1 = [0,1,2]
                 index_day2 = [3,4,5]
             elif template in ["AMO"]:
