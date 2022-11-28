@@ -534,20 +534,26 @@ class Potd(Cog):
             elif template in ["AMO"]:
                 index_day1 = [0,1,2,3]
                 index_day2 = [4,5,6,7]
-            title_day1 = r'\begin{center}\textbf{\textsf{MODSBot Mock ' + template + r' (Day 1)}}\end{center}'
-            problems_day1 = r'\\ \\'.join([problems_tex[index] for index in index_day1])
-            to_tex_day1 = f'<@419356082981568522>\n```tex\n {title_day1} {problems_day1}```'
-            await ctx.send(to_tex_day1, delete_after=5)
-            title_day2 = r'\begin{center}\textbf{\textsf{MODSBot Mock ' + template + r' (Day 2)}}\end{center}'
-            problems_day2 = r'\\ \\'.join([problems_tex[index] for index in index_day2])
-            to_tex_day2 = f'<@419356082981568522>\n```tex\n {title_day2} {problems_day2}```'
-            await ctx.send(to_tex_day2, delete_after=5)
+
+            name_day1 = template + ' (Day 1)'
+            problems_tex_day1 = [problems_tex[index] for index in index_day1]
+            await self.send_out_mock(ctx, name_day1, problems_tex_day1)
+
+            name_day2 = template + ' (Day 2)'
+            problems_tex_day2 = [problems_tex[index] for index in index_day2]
+            await self.send_out_mock(ctx, name_day2, problems_tex_day2)
         else:
-            title = r'\begin{center}\textbf{\textsf{MODSBot Mock ' + template + r'}}\end{center}'
-            problems = r'\\ \\'.join(problems_tex)
+            await self.send_out_mock(ctx, template, problems_tex)
+
+    async def send_out_mock(self, ctx, name, problems_tex):
+        while len(problems_tex) > 0: # still has problems to send out
+            title = r'\begin{center}\textbf{\textsf{MODSBot Mock ' + name + r'}}\end{center}'
+            problems = ''
+            while len(problems_tex) > 0 and len(problems + problems_tex[0]) < 1800 : # add problems one-by-one until no problems left or it's too long
+                problems = problems + problems_tex.pop(0) + r'\\ \\'
+            problems = problems[0:-5]
             to_tex = f'<@419356082981568522>\n```tex\n {title} {problems}```'
             await ctx.send(to_tex, delete_after=5) 
-
 
     def is_genre_legit(self, genres, template, difficulty_bounds):
         if len(genres) != len(difficulty_bounds):
@@ -583,7 +589,7 @@ class Potd(Cog):
             picked_potd = int(random.choice(filtered_potds_id))
             return picked_potd
         else:
-            return None        
+            return None
 
     def get_potd_statement(self, number:int, potds):
         current_potd = int(potds[0][0])  # this will be the top left cell which indicates the latest added potd
