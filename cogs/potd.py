@@ -482,7 +482,9 @@ class Potd(Cog):
         diff_lower_bound_filter = max(0,diff_lower_bound)
         diff_upper_bound_filter = max(min(99, diff_upper_bound), diff_lower_bound_filter)
         
-        picked_potd = self.pick_potd(diff_lower_bound_filter, diff_upper_bound_filter, genre_filter)
+        potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute().get('values', [])
+        picked_potd = self.pick_potd(diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds)
         if picked_potd is not None:
             # fetch the picked POTD
             await self.potd_fetch(ctx, int(picked_potd))
@@ -517,9 +519,11 @@ class Potd(Cog):
             genres = random.sample(genre_pool, len(difficulty_bounds))
         
         problems_tex = []
+        potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute().get('values', [])
         # render the mock paper
         for i in range(0,len(difficulty_bounds)):
-            picked_potd = self.pick_potd(difficulty_bounds[i][0], difficulty_bounds[i][1], genres[i])
+            picked_potd = self.pick_potd(difficulty_bounds[i][0], difficulty_bounds[i][1], genres[i], potds)
             potd_statement = self.get_potd_statement(int(picked_potd))
             problems_tex.append(f'\\textbf{{Problem {i+1}. (POTD {str(picked_potd)})}}\\\\ ' + potd_statement)
         
@@ -565,10 +569,7 @@ class Potd(Cog):
 
         return True
 
-    def pick_potd(self, diff_lower_bound_filter, diff_upper_bound_filter, genre_filter):
-        # get data from spreadsheet
-        potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
-                                                               range=POTD_RANGE).execute().get('values', [])
+    def pick_potd(self, diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds):
 
         # filter and pick a POTD
         filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
