@@ -525,9 +525,12 @@ class Potd(Cog):
         problems_tex = []
         potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute().get('values', [])
+        already_picked = []
+
         # render the mock paper
         for i in range(0,len(difficulty_bounds)):
-            picked_potd = self.pick_potd(difficulty_bounds[i][0], difficulty_bounds[i][1], genres[i], potds)
+            picked_potd = self.pick_potd(difficulty_bounds[i][0], difficulty_bounds[i][1], genres[i], potds, already_picked)
+            already_picked.append(picked_potd)
             potd_statement = self.get_potd_statement(int(picked_potd), potds)
             problems_tex.append(f'\\textbf{{Problem {i+1}. (POTD {str(picked_potd)})}}\\\\ ' + potd_statement)
         
@@ -579,7 +582,7 @@ class Potd(Cog):
 
         return True
 
-    def pick_potd(self, diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds):
+    def pick_potd(self, diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds, already_picked):
 
         # filter and pick a POTD
         filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
@@ -590,7 +593,11 @@ class Potd(Cog):
 
         if len(filtered_potds) > 0:
             filtered_potds_id = list(map(lambda x: x[cfg.Config.config['potd_sheet_id_col']], filtered_potds))
-            picked_potd = int(random.choice(filtered_potds_id))
+            repeated = True
+            while repeated:
+                picked_potd = int(random.choice(filtered_potds_id))
+                if picked_potd not in already_picked:
+                    repeated = False
             return picked_potd
         else:
             return None
