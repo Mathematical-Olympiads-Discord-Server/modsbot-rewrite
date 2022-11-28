@@ -524,7 +524,7 @@ class Potd(Cog):
         # render the mock paper
         for i in range(0,len(difficulty_bounds)):
             picked_potd = self.pick_potd(difficulty_bounds[i][0], difficulty_bounds[i][1], genres[i], potds)
-            potd_statement = self.get_potd_statement(int(picked_potd))
+            potd_statement = self.get_potd_statement(int(picked_potd), potds)
             problems_tex.append(f'\\textbf{{Problem {i+1}. (POTD {str(picked_potd)})}}\\\\ ' + potd_statement)
         
         if template in ["IMO","AMO"] : 
@@ -585,17 +585,13 @@ class Potd(Cog):
         else:
             return None        
 
-    def get_potd_statement(self, number:int):
-        # Read from the spreadsheet
-        reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
-                                                               range=POTD_RANGE).execute()
-        values = reply.get('values', [])
-        current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+    def get_potd_statement(self, number:int, potds):
+        current_potd = int(potds[0][0])  # this will be the top left cell which indicates the latest added potd
 
         if number > current_potd:
             return None
 
-        potd_row = values[current_potd - number]  # this gets the row requested
+        potd_row = potds[current_potd - number]  # this gets the row requested
 
         # Create the tex
         potd_statement = ''
