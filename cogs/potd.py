@@ -541,7 +541,7 @@ class Potd(Cog):
             await ctx.send(to_tex, delete_after=5) 
 
 
-    def is_genre_legit(genres, template, difficulty_bounds):
+    def is_genre_legit(self, genres, template, difficulty_bounds):
         if len(genres) != len(difficulty_bounds):
             return False
         
@@ -561,7 +561,7 @@ class Potd(Cog):
 
         return True
 
-    def pick_potd(diff_lower_bound_filter, diff_upper_bound_filter, genre_filter):
+    def pick_potd(self, diff_lower_bound_filter, diff_upper_bound_filter, genre_filter):
         # get data from spreadsheet
         potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute().get('values', [])
@@ -580,7 +580,7 @@ class Potd(Cog):
         else:
             return None        
 
-    def get_potd_statement(number:int):
+    def get_potd_statement(self, number:int):
         # Read from the spreadsheet
         reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute()
