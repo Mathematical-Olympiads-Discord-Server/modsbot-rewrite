@@ -1,4 +1,5 @@
 import ast
+import math
 import random
 import statistics
 from datetime import datetime, timedelta
@@ -478,6 +479,89 @@ class Potd(Cog):
         diff_lower_bound_filter = max(0,diff_lower_bound)
         diff_upper_bound_filter = max(min(99, diff_upper_bound), diff_lower_bound_filter)
         
+        picked_potd = self.pick_potd(diff_lower_bound_filter, diff_upper_bound_filter, genre_filter)
+        if picked_potd is not None:
+            # fetch the picked POTD
+            await self.potd_fetch(ctx, int(picked_potd))
+        else:
+            await ctx.send(f"No POTD found!")
+
+    @commands.command(aliases=['mock'], brief='Create a mock paper using past POTDs.')
+    async def potd_mock(self, ctx, template:str="IMO"):
+        template = template.upper()
+        template_list = ["IMO", "AMO", "APMO", "BMO1", "BMO2", "SMO2"]
+        if template not in template_list:
+            await ctx.send(f"Template not found. Possible templates: {', '.join(template_list)}")
+            return
+        else:
+            if template == "IMO":
+                difficulty_bounds = [[5,7],[7,9],[9,11],[5,7],[7,9],[9,11]]
+            elif template == "AMO":
+                difficulty_bounds = [[2,3],[3,4],[4,5],[5,6],[2,3],[3,4],[4,5],[5,6]]
+            elif template == "APMO":
+                difficulty_bounds = [[4,5],[5,6],[6,7],[7,8],[8,10]]
+            elif template == "BMO1":
+                difficulty_bounds = [[1,2],[1,2],[2,3],[2,3],[3,4],[3,4]]
+            elif template == "BMO2":
+                difficulty_bounds = [[3,4],[4,5],[5,6],[6,7]]
+            elif template == "SMO2":
+                difficulty_bounds = [[4,5],[5,6],[6,7],[7,8],[8,9]]
+
+        genres=[]
+        genre_pool = ["A","C","G","N"] * math.ceil(len(difficulty_bounds)/4)
+        while not self.is_genre_legit(genres, template, difficulty_bounds):
+            genres = random.sample(genre_pool, len(difficulty_bounds))
+        
+        problems_tex = []
+        # render the mock paper
+        for i in range(0,len(difficulty_bounds)):
+            picked_potd = self.pick_potd(difficulty_bounds[i][0], difficulty_bounds[i][1], genres[i])
+            potd_statement = self.get_potd_statement(int(picked_potd))
+            problems_tex.append(f'\\textbf{{Problem {i+1}. (POTD {str(picked_potd)})}}\\\\ ' + potd_statement)
+        
+        if template in ["IMO","AMO"] : 
+            if template in ["IMO"]:
+                index_day1 = [0,1,2]
+                index_day2 = [3,4,5]
+            elif template in ["AMO"]:
+                index_day1 = [0,1,2,3]
+                index_day2 = [4,5,6,7]
+            title_day1 = r'\begin{center}\textbf{\textsf{MODSBot Mock ' + template + r' (Day 1)}}\end{center}'
+            problems_day1 = r'\\ \\'.join([problems_tex[index] for index in index_day1])
+            to_tex_day1 = f'<@419356082981568522>\n```tex\n {title_day1} {problems_day1}```'
+            await ctx.send(to_tex_day1, delete_after=5)
+            title_day2 = r'\begin{center}\textbf{\textsf{MODSBot Mock ' + template + r' (Day 2)}}\end{center}'
+            problems_day2 = r'\\ \\'.join([problems_tex[index] for index in index_day2])
+            to_tex_day2 = f'<@419356082981568522>\n```tex\n {title_day2} {problems_day2}```'
+            await ctx.send(to_tex_day2, delete_after=5)
+        else:
+            title = r'\begin{center}\textbf{\textsf{MODSBot Mock ' + template + r'}}\end{center}'
+            problems = r'\\ \\'.join(problems_tex)
+            to_tex = f'<@419356082981568522>\n```tex\n {title} {problems}```'
+            await ctx.send(to_tex, delete_after=5) 
+
+
+    def is_genre_legit(genres, template, difficulty_bounds):
+        if len(genres) != len(difficulty_bounds):
+            return False
+        
+        # the paper need to contain all ACGN
+        if not ("A" in genres and "C" in genres and "G" in genres and "N" in genres): 
+            return False
+
+        if template == "IMO":
+            # P3 and P6 should be different genre
+            if genres[2] == genres[5]: 
+                return False
+
+            # Geoff Smith Rule
+            genres_geoff_smith = [genres[index] for index in [0,1,3,4]]
+            if not ("A" in genres_geoff_smith and "C" in genres_geoff_smith and "G" in genres_geoff_smith and "N" in genres_geoff_smith):
+                return False
+
+        return True
+
+    def pick_potd(diff_lower_bound_filter, diff_upper_bound_filter, genre_filter):
         # get data from spreadsheet
         potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute().get('values', [])
@@ -491,11 +575,30 @@ class Potd(Cog):
 
         if len(filtered_potds) > 0:
             filtered_potds_id = list(map(lambda x: x[cfg.Config.config['potd_sheet_id_col']], filtered_potds))
-            picked_potd = random.choice(filtered_potds_id)
-            # fetch the picked POTD
-            await self.potd_fetch(ctx, int(picked_potd))
+            picked_potd = int(random.choice(filtered_potds_id))
+            return picked_potd
         else:
-            await ctx.send(f"No POTD found!")
+            return None        
+
+    def get_potd_statement(number:int):
+        # Read from the spreadsheet
+        reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute()
+        values = reply.get('values', [])
+        current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+
+        if number > current_potd:
+            return None
+
+        potd_row = values[current_potd - number]  # this gets the row requested
+
+        # Create the tex
+        potd_statement = ''
+        try:
+            potd_statement = potd_row[cfg.Config.config['potd_sheet_statement_col']]
+            return potd_statement
+        except IndexError:
+            return None
 
     @commands.command(aliases=['remove_potd'], brief='Deletes the potd with the provided number. ')
     @commands.check(is_pc)
