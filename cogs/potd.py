@@ -8,6 +8,7 @@ import discord
 import schedule
 import threading
 from discord.ext import commands
+from discord.ext.commands import BucketType
 
 from cogs import config as cfg
 
@@ -427,6 +428,7 @@ class Potd(Cog):
         self.timer.start()
 
     @commands.command(aliases=['fetch'], brief='Fetch a potd by id.')
+    @commands.cooldown(1, 10, BucketType.user)
     async def potd_fetch(self, ctx, number: int):
         # Read from the spreadsheet
         reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
@@ -457,6 +459,7 @@ class Potd(Cog):
         await ctx.send(to_tex, delete_after=5)
 
     @commands.command(aliases=['search'], brief='Search a potd by genre and difficulty.')
+    @commands.cooldown(1, 10, BucketType.user)
     async def potd_search(self, ctx, diff_lower_bound:int, diff_upper_bound:int, genre:str='ACGN'):
         if diff_lower_bound > diff_upper_bound:
             await ctx.send(f"Difficulty lower bound cannot be higher than upper bound.")
@@ -487,6 +490,7 @@ class Potd(Cog):
             await ctx.send(f"No POTD found!")
 
     @commands.command(aliases=['mock'], brief='Create a mock paper using past POTDs.')
+    @commands.cooldown(1, 30, BucketType.user)
     async def potd_mock(self, ctx, template:str="IMO"):
         template = template.upper()
         template_list = ["IMO", "AMO", "APMO", "BMO1", "BMO2", "SMO2"]
