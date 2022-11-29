@@ -1,4 +1,5 @@
 import ast
+from functools import reduce
 import math
 import random
 import statistics
@@ -495,8 +496,8 @@ class Potd(Cog):
     @commands.cooldown(1, 30, BucketType.user)
     async def potd_mock(self, ctx, template:str="IMO"):
         template = template.upper()
-        template_list = ["IMO", "AMO", "APMO", "BMO1", "BMO2", "NZMO2", "SMO2", "CHINA"]
-        if template not in template_list:
+        template_list = ["IMO", "AMO", "APMO", "BMO1", "BMO2", "IGO", "NZMO2", "SMO2", "CHINA"]
+        if template not in template_list and template != "AFMO":
             await ctx.send(f"Template not found. Possible templates: {', '.join(template_list)}")
             return
         else:
@@ -509,24 +510,30 @@ class Potd(Cog):
             elif template == "BMO1":
                 difficulty_bounds = [[1,2],[1,2],[2,3],[2,3],[3,4],[3,4]]
             elif template == "BMO2":
-                difficulty_bounds = [[3,4],[4,5],[5,6],[6,7]]
+                difficulty_bounds = [[3,4],[4,5],[5,6],[6,7]]         
+            elif template == "IGO":
+                difficulty_bounds = [[5,6],[5,6],[6,7],[7,8],[8,10]]
             elif template == "NZMO2":
                 difficulty_bounds = [[1,2],[2,3],[3,4],[4,5],[5,6]]
             elif template == "SMO2":
                 difficulty_bounds = [[4,5],[5,6],[6,7],[7,8],[8,9]]
             elif template == "CHINA":
                 difficulty_bounds = [[7,8],[8,10],[10,12],[7,8],[8,10],[10,12]]
+            elif template == "AFMO": # easter egg
+                difficulty_bounds = [[12,"T"],[12,"T"],[12,"T"],[13,"T"]]
 
+        # SMO2 seems to have an unspoken rule to start with geometry at P1 and nowhere else
         if template == "SMO2":
             genre_rule = ["G","ACN","ACN","ACN","ACN"]
+        elif template == "IGO":
+            genre_rule = ["G","G","G","G","G"]
         else:
             genre_rule = ["ACGN"] * len(difficulty_bounds)
 
         genres=[]
-        genre_pool = ["A","C","G","N"] * math.ceil(len(difficulty_bounds)/4)
         while not self.is_genre_legit(genres, template, difficulty_bounds, genre_rule):
-            genres = random.sample(genre_pool, len(difficulty_bounds))
-        
+            genres=list(map(lambda x: random.choice(x),genre_rule))
+
         problems_tex = []
         potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute().get('values', [])
@@ -571,10 +578,12 @@ class Potd(Cog):
         if len(genres) != len(difficulty_bounds):
             return False
         
-        # the paper need to contain all ACGN
-        if not ("A" in genres and "C" in genres and "G" in genres and "N" in genres): 
-            return False
+        # the paper need to contain all genres listed in genre_rule
+        for genre in set(reduce(lambda x, y: x+y, genre_rule)):
+            if not genre in genres:
+                return False
 
+        # the selected genres need to match the genre_rule
         for i in range(0,len(genres)):
             if genres[i] not in genre_rule[i]:
                 return False
@@ -594,11 +603,18 @@ class Potd(Cog):
     def pick_potd(self, diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds, already_picked):
 
         # filter and pick a POTD
-        filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
-                        and x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
-                        and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter
-                        and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) <= diff_upper_bound_filter
-                        and len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0]                        
+        if type(diff_upper_bound_filter) == int:
+            filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
+                            and x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
+                            and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter
+                            and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) <= diff_upper_bound_filter
+                            and len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0]
+        else: # if diff bound is "T"
+            filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
+                            and ((x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
+                                and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter)
+                                or not x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric())
+                            and len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0]
 
         if len(filtered_potds) > 0:
             filtered_potds_id = list(map(lambda x: x[cfg.Config.config['potd_sheet_id_col']], filtered_potds))
