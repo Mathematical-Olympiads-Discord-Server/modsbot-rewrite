@@ -485,7 +485,7 @@ class Potd(Cog):
         
         potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute().get('values', [])
-        picked_potd = self.pick_potd(diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds)
+        picked_potd = self.pick_potd(diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds, [])
         if picked_potd is not None:
             # fetch the picked POTD
             await self.potd_fetch(ctx, int(picked_potd))
