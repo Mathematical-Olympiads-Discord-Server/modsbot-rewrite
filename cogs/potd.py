@@ -517,9 +517,14 @@ class Potd(Cog):
             elif template == "CHINA":
                 difficulty_bounds = [[7,8],[8,10],[10,12],[7,8],[8,10],[10,12]]
 
+        if template == "SMO2":
+            genre_rule = ["G","ACN","ACN","ACN","ACN"]
+        else:
+            genre_rule = ["ACGN"] * len(difficulty_bounds)
+
         genres=[]
         genre_pool = ["A","C","G","N"] * math.ceil(len(difficulty_bounds)/4)
-        while not self.is_genre_legit(genres, template, difficulty_bounds):
+        while not self.is_genre_legit(genres, template, difficulty_bounds, genre_rule):
             genres = random.sample(genre_pool, len(difficulty_bounds))
         
         problems_tex = []
@@ -562,13 +567,17 @@ class Potd(Cog):
             to_tex = f'<@419356082981568522>\n```tex\n {title} {problems}```'
             await ctx.send(to_tex, delete_after=5) 
 
-    def is_genre_legit(self, genres, template, difficulty_bounds):
+    def is_genre_legit(self, genres, template, difficulty_bounds, genre_rule):
         if len(genres) != len(difficulty_bounds):
             return False
         
         # the paper need to contain all ACGN
         if not ("A" in genres and "C" in genres and "G" in genres and "N" in genres): 
             return False
+
+        for i in range(0,len(genres)):
+            if genres[i] not in genre_rule[i]:
+                return False
 
         if template == "IMO":
             # P3 and P6 should be different genre
