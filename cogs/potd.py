@@ -592,6 +592,12 @@ class Potd(Cog):
             # P3 and P6 should be different genre
             if genres[2] == genres[5]: 
                 return False
+            
+            # The three problems on each day should be different genre
+            if len({genres[0],genres[1],genres[2]}) < 3:
+                return False
+            if len({genres[3],genres[4],genres[5]}) < 3:
+                return False
 
             # Geoff Smith Rule
             genres_geoff_smith = [genres[index] for index in [0,1,3,4]]
