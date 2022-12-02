@@ -8,8 +8,8 @@ from datetime import datetime
 
 import discord
 import matplotlib.pyplot as plt
-from discord.ext import commands, flags
-from discord.ext.commands import BucketType
+from discord.ext import commands
+from discord.ext.commands import BucketType, flags
 
 from cogs import config as cfg
 
