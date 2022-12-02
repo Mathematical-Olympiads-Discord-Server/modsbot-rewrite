@@ -60,7 +60,7 @@ class MODSBot(commands.Bot):
         # Load cogs
         for cog in self.config['cogs']:
             try:
-                self.load_extension(cog)
+                await self.load_extension(cog)
             except Exception:
                 self.logger.exception('Failed to load cog {}.'.format(cog))
             else:
@@ -168,7 +168,6 @@ class MODSBot(commands.Bot):
             except Exception:
                 try: await log_channel.send('Failed to send error message.')
                 except Exception: pass
-
 
 def executor():
     while True:

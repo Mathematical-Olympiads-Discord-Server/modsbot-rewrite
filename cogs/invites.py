@@ -56,6 +56,6 @@ class Invites(Cog):
             await self.bot.get_channel(cfg.Config.config['warn_channel']).send(embed=embed)
 
 
-def setup(bot: commands.Bot):
+async def setup(bot: commands.Bot):
     i = Invites(bot)
-    bot.add_cog(i)
+    await bot.add_cog(i)

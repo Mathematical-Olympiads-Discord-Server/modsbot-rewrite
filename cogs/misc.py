@@ -102,5 +102,5 @@ class Misc(Cog):
             await message.channel.send(f'{message.author.mention}: {x}')
 
 
-def setup(bot):
-    bot.add_cog(Misc(bot))
+async def setup(bot):
+    await bot.add_cog(Misc(bot))

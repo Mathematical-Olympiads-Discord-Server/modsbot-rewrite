@@ -917,5 +917,5 @@ class Potd(Cog):
             f'**POTD notifications set to `{self.enable_dm}` by {ctx.author.nick} ({ctx.author.id})**')
 
 
-def setup(bot):
-    bot.add_cog(Potd(bot))
+async def setup(bot):
+    await bot.add_cog(Potd(bot))

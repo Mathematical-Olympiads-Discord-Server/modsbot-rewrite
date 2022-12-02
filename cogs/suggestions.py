@@ -328,5 +328,5 @@ class Suggestions(Cog):
             await message.delete(delay=15)
 
 
-def setup(bot):
-    bot.add_cog(Suggestions(bot))
+async def setup(bot):
+    await bot.add_cog(Suggestions(bot))

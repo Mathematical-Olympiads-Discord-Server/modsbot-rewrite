@@ -12,7 +12,7 @@ class Core(Cog):
         """Reloads an extension"""
         schedule.clear(tag=cog)
         try:
-            ctx.bot.reload_extension(cog)
+            await ctx.bot.reload_extension(cog)
         except Exception as e:
             await ctx.send('Failed to load: `{}`\n```py\n{}\n```'.format(cog, e))
         else:
@@ -27,5 +27,5 @@ class Core(Cog):
             await ctx.send(schedule.jobs, delete_after=10)
 
 
-def setup(bot):
-    bot.add_cog(Core(bot))
+async def setup(bot):
+    await bot.add_cog(Core(bot))
