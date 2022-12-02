@@ -496,7 +496,7 @@ class Potd(Cog):
     @commands.cooldown(1, 30, BucketType.user)
     async def potd_mock(self, ctx, template:str="IMO"):
         template = template.upper()
-        template_list = ["IMO", "AMO", "APMO", "BMO1", "BMO2", "IGO", "NZMO2", "SMO2", "CHINA"]
+        template_list = ["IMO", "AMO", "APMO", "BMO1", "BMO2", "IGO", "NZMO2", "SMO2", "USAMO", "USAJMO", "CHINA"]
         if template not in template_list and template != "AFMO":
             await ctx.send(f"Template not found. Possible templates: {', '.join(template_list)}")
             return
@@ -517,6 +517,10 @@ class Potd(Cog):
                 difficulty_bounds = [[1,2],[2,3],[3,4],[4,5],[5,6]]
             elif template == "SMO2":
                 difficulty_bounds = [[4,5],[5,6],[6,7],[7,8],[8,9]]
+            elif template == "USAMO":
+                difficulty_bounds = [[5,7],[7,9],[9,11],[5,7],[7,9],[9,11]]
+            elif template == "USAJMO":
+                difficulty_bounds = [[3,5],[5,7],[7,8],[3,5],[5,7],[7,8]]
             elif template == "CHINA":
                 difficulty_bounds = [[7,8],[8,10],[10,12],[7,8],[8,10],[10,12]]
             elif template == "AFMO": # easter egg
@@ -546,8 +550,8 @@ class Potd(Cog):
             potd_statement = self.get_potd_statement(int(picked_potd), potds)
             problems_tex.append(f'\\textbf{{Problem {i+1}. (POTD {str(picked_potd)})}}\\\\ ' + potd_statement)
         
-        if template in ["IMO","AMO","CHINA"] : 
-            if template in ["IMO","CHINA"]:
+        if template in ["IMO","AMO","USAMO","USAJMO","CHINA"] : # 2-day contests
+            if template in ["IMO","CHINA","USAMO","USAJMO"]:
                 index_day1 = [0,1,2]
                 index_day2 = [3,4,5]
             elif template in ["AMO"]:
@@ -561,7 +565,7 @@ class Potd(Cog):
             name_day2 = template + ' (Day 2)'
             problems_tex_day2 = [problems_tex[index] for index in index_day2]
             await self.send_out_mock(ctx, name_day2, problems_tex_day2)
-        else:
+        else: # 1-day contests
             await self.send_out_mock(ctx, template, problems_tex)
 
     async def send_out_mock(self, ctx, name, problems_tex):
