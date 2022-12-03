@@ -182,13 +182,15 @@ class Activity(Cog):
         await ctx.guild.get_channel(cfg.Config.config['log_channel']).send(
             f'Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```')
 
-    @flags.add_flag('--interval', type=int, default=30)
-    @flags.add_flag('--users', type=int, default=15)
-    @flags.command(aliases=['acttop'])
+    class ActtopFlags(commands.FlagConverter):
+        interval: int = 30
+        users: int = 15
+        
+    @commands.command(aliases=['acttop'])
     @commands.cooldown(1, 10, BucketType.user)
-    async def activity_top(self, ctx, **flags):
-        interval = flags['interval'] if flags['interval'] < 30 else 30
-        users = flags['users'] if flags['users'] < 30 else 30
+    async def activity_top(self, ctx, flags:ActtopFlags):
+        interval = flags.interval if flags.interval < 30 else 30
+        users = flags.users if flags.users < 30 else 30
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT discord_user_id, message_date, message_length 
         FROM messages
@@ -219,18 +221,20 @@ class Activity(Cog):
                         value='\n'.join([f'`{i + 1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(users)]))
         await ctx.send(embed=embed)
 
-    @flags.add_flag('--interval', type=int, default=30)
-    @flags.add_flag('--user', type=discord.User, default=None)
+    class ActivityFlags(commands.FlagConverter):
+        interval: int = 30
+        users: discord.User = None
+
     @commands.cooldown(1, 10, BucketType.user)
-    @flags.command()
-    async def activity(self, ctx, **flags):
+    @commands.command()
+    async def activity(self, ctx, flags:ActivityFlags):
         messages = []
         ticks = []
         delta = dt.timedelta(days=1)
         index = 0
         end = datetime.now().date()
-        interval = flags['interval']
-        user = flags['user']
+        interval = flags.interval
+        user = flags.users
 
         epoch = dt.date(2019, 1, 11)  # This is when the server was created
         if interval is None:
