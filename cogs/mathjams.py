@@ -49,5 +49,5 @@ class Mathjams(Cog):
 
 
 
-def setup(bot):
-    bot.add_cog(Mathjams(bot))
+async def setup(bot):
+    await bot.add_cog(Mathjams(bot))

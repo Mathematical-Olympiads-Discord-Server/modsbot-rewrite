@@ -51,5 +51,5 @@ class Config(Cog):
             await ctx.send(str(Config.config[name]))
 
 
-def setup(bot):
-    bot.add_cog(Config(bot))
+async def setup(bot):
+    await bot.add_cog(Config(bot))
