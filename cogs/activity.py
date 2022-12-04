@@ -186,7 +186,10 @@ class Activity(Cog):
         interval: int = 30
         users: int = 15
         
-    @commands.command(aliases=['acttop'])
+    @commands.command(aliases=['acttop'], help= '`-acttop`: show activity leaderboard\n'
+                                                '`-acttop --interval 15`: show leaderboard for the last 15 days\n'
+                                                '`-acttop --users 27`: show leaderboard up to 27 users\n'
+                                                '`-acttop --interval 15 --users 27`: combine commands')
     @commands.cooldown(1, 10, BucketType.user)
     async def activity_top(self, ctx, *, flags:ActtopFlags):
         interval = flags.interval if flags.interval < 30 else 30
@@ -226,7 +229,10 @@ class Activity(Cog):
         user: discord.User = None
 
     @commands.cooldown(1, 10, BucketType.user)
-    @commands.command()
+    @commands.command(help = '`-activity`: show my activity graph\n'
+                            '`-activity --interval 60`: show my activity graph for past 60 days\n'
+                            '`-activity --user @user`: show activity graph for @user\n'
+                            '`-activity --interval 60 --user @user`: combine commands')
     async def activity(self, ctx, *, flags:ActivityFlags):
         messages = []
         ticks = []
