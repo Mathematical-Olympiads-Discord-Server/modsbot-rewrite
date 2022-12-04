@@ -467,7 +467,34 @@ class Potd(Cog):
         else:
             await ctx.send(f"No POTD found!")
 
-    @commands.command(aliases=['mock'], brief='Create a mock paper using past POTDs.')
+    @commands.command(aliases=['mock'], brief='Create a mock paper using past POTDs.',
+        help='`-mock IMO`: create mock IMO paper\n'
+            '\n'
+            'See below for list of available templates and respectively difficulty ranges\n'
+            '(e.g. [5,7],[7,9],[9,11],[5,7],[7,9],[9,11] means problem 1 is d5-7, problem 2 is d7-9, etc.) \n'
+            '\n'
+            'IMO (International Mathematical Olympiad):\n'
+            '[5,7],[7,9],[9,11],[5,7],[7,9],[9,11]\n'
+            'AMO (Australian Mathematical Olympiad):\n'
+            '[2,3],[3,4],[4,5],[5,6],[2,3],[3,4],[4,5],[5,6]\n'
+            'APMO (Asian Pacific Mathematics Olympiad):\n'
+            '[4,5],[5,6],[6,7],[7,8],[8,10]\n'
+            'BMO1 (British Mathematical Olympiad Round 1):\n'
+            '[1,2],[1,2],[2,3],[2,3],[3,4],[3,4]\n'
+            'BMO2 (British Mathematical Olympiad Round 2):\n'
+            '[3,4],[4,5],[5,6],[6,7]\n'
+            'IGO (Iranian Geometry Olympiad):\n'
+            '[5,6],[5,6],[6,7],[7,8],[8,10]\n'
+            'NZMO2 (New Zealand Mathematical Olympiad Round 2):\n'
+            '[1,2],[2,3],[3,4],[4,5],[5,6]\n'
+            'SMO2 (Singapore Mathematical Olympiad Open Round 2):\n'
+            '[4,5],[5,6],[6,7],[7,8],[8,9]\n'
+            'USAMO (United States of America Mathematical Olympiad):\n'
+            '[5,7],[7,9],[9,11],[5,7],[7,9],[9,11]\n'
+            'USAJMO (United States of America Junior Mathematical Olympiad):\n'
+            '[3,5],[5,7],[7,8],[3,5],[5,7],[7,8]\n'
+            'CHINA (Crushingly Hard Imbalanced Nightmarish Assessment):\n'
+            '[7,8],[8,10],[10,12],[7,8],[8,10],[10,12]')
     @commands.cooldown(1, 30, BucketType.user)
     async def potd_mock(self, ctx, template:str="IMO"):
         template = template.upper()
