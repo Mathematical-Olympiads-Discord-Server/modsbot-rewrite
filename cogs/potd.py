@@ -61,18 +61,6 @@ class Potd(Cog):
         schedule.every().day.at("04:00").do(lambda: self.schedule_potd(6)).tag('cogs.potd')
         schedule.every().day.at("22:00").do(lambda: self.schedule_potd(12)).tag('cogs.potd')
 
-        # Initialise potd_ratings
-        try:
-            with open('data/potd_ratings.txt', 'r') as f:
-                self.latest_potd = int(f.readline())
-                self.potd_ratings = ast.literal_eval(f.read())
-        except FileNotFoundError as e:
-            self.latest_potd = 10000
-            self.potd_ratings = {}
-        except ValueError as e:
-            print("Corrupted potd_ratings file!")
-            self.latest_potd = 10000
-            self.potd_ratings = {}
 
     @commands.command()
     @commands.check(is_pc)
@@ -192,16 +180,6 @@ class Potd(Cog):
             i += 7
         return f'<@{r_list[0][0]}> '
 
-    def update_ratings(self):
-        with open('data/potd_ratings.txt', 'r+') as f:
-            # Clear
-            f.truncate()
-
-            # Re-write
-            f.write(str(self.latest_potd))
-            f.write('\n')
-            f.write(str(self.potd_ratings))
-
     async def potd_embedded(self, ctx, *, number: int):
         # It can only handle one at a time!
         if self.listening_in_channel != -1:
@@ -227,7 +205,6 @@ class Potd(Cog):
         # Finish up
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
-        self.update_ratings()
         self.to_send = self.generate_source(potd_row)
         self.listening_in_channel = ctx.channel.id
         self.late = True
@@ -309,7 +286,6 @@ class Potd(Cog):
         # Finish up
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
-        self.update_ratings()
         self.prepare_dms(potd_row)
         self.to_send = self.generate_source(potd_row)
         self.listening_in_channel = cfg.Config.config['potd_channel']
@@ -417,7 +393,6 @@ class Potd(Cog):
         # Finish up
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
-        self.update_ratings()
         self.prepare_dms(potd_row)
         self.to_send = self.generate_source(potd_row)
         self.listening_in_channel = ctx.channel.id
