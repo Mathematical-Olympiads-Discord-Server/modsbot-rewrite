@@ -292,10 +292,15 @@ class Potd(Cog):
         self.ping_daily = True
         self.late = False
         await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=20)
+        await self.create_potd_forum_post(self.requested_number)
         print('l149')
         # In case Paradox unresponsive
         self.timer = threading.Timer(20, self.reset_if_necessary)
         self.timer.start()
+
+    async def create_potd_forum_post(self, number):
+        forum = self.bot.get_channel(cfg.Config.config['potd_forum'])
+        await forum.create_thread(name=f"POTD {number}", content="potd")
 
     @Cog.listener()
     async def on_message(self, message: discord.Message):
