@@ -5,8 +5,10 @@ import math
 import pickle
 import schedule
 from datetime import datetime
+import os
 
 import discord
+import matplotlib
 import matplotlib.pyplot as plt
 from discord.ext import commands
 from discord.ext.commands import BucketType
@@ -234,6 +236,8 @@ class Activity(Cog):
                             '`-activity --user @user`: show activity graph for @user\n'
                             '`-activity --interval 60 --user @user`: combine commands')
     async def activity(self, ctx, *, flags:ActivityFlags):
+        matplotlib.use('agg')
+
         messages = []
         ticks = []
         delta = dt.timedelta(days=1)
