@@ -17,7 +17,7 @@ config = yaml.safe_load(cfgfile)
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('agg')
-
+logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
 
 class MODSBot(commands.Bot):
     def __init__(self, prefix):
