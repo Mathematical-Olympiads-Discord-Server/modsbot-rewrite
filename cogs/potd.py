@@ -61,18 +61,6 @@ class Potd(Cog):
         schedule.every().day.at("04:00").do(lambda: self.schedule_potd(6)).tag('cogs.potd')
         schedule.every().day.at("22:00").do(lambda: self.schedule_potd(12)).tag('cogs.potd')
 
-        # Initialise potd_ratings
-        try:
-            with open('data/potd_ratings.txt', 'r') as f:
-                self.latest_potd = int(f.readline())
-                self.potd_ratings = ast.literal_eval(f.read())
-        except FileNotFoundError as e:
-            self.latest_potd = 10000
-            self.potd_ratings = {}
-        except ValueError as e:
-            print("Corrupted potd_ratings file!")
-            self.latest_potd = 10000
-            self.potd_ratings = {}
 
     @commands.command()
     @commands.check(is_pc)
@@ -192,16 +180,6 @@ class Potd(Cog):
             i += 7
         return f'<@{r_list[0][0]}> '
 
-    def update_ratings(self):
-        with open('data/potd_ratings.txt', 'r+') as f:
-            # Clear
-            f.truncate()
-
-            # Re-write
-            f.write(str(self.latest_potd))
-            f.write('\n')
-            f.write(str(self.potd_ratings))
-
     async def potd_embedded(self, ctx, *, number: int):
         # It can only handle one at a time!
         if self.listening_in_channel != -1:
@@ -227,7 +205,6 @@ class Potd(Cog):
         # Finish up
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
-        self.update_ratings()
         self.to_send = self.generate_source(potd_row)
         self.listening_in_channel = ctx.channel.id
         self.late = True
@@ -309,17 +286,21 @@ class Potd(Cog):
         # Finish up
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
-        self.update_ratings()
         self.prepare_dms(potd_row)
         self.to_send = self.generate_source(potd_row)
         self.listening_in_channel = cfg.Config.config['potd_channel']
         self.ping_daily = True
         self.late = False
         await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=20)
+        await self.create_potd_forum_post(self.requested_number)
         print('l149')
         # In case Paradox unresponsive
         self.timer = threading.Timer(20, self.reset_if_necessary)
         self.timer.start()
+
+    async def create_potd_forum_post(self, number):
+        forum = self.bot.get_channel(cfg.Config.config['potd_forum'])
+        await forum.create_thread(name=f"POTD {number}", content="potd")
 
     @Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -417,7 +398,6 @@ class Potd(Cog):
         # Finish up
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
-        self.update_ratings()
         self.prepare_dms(potd_row)
         self.to_send = self.generate_source(potd_row)
         self.listening_in_channel = ctx.channel.id
@@ -492,7 +472,34 @@ class Potd(Cog):
         else:
             await ctx.send(f"No POTD found!")
 
-    @commands.command(aliases=['mock'], brief='Create a mock paper using past POTDs.')
+    @commands.command(aliases=['mock'], brief='Create a mock paper using past POTDs.',
+        help='`-mock IMO`: create mock IMO paper\n'
+            '\n'
+            'See below for list of available templates and respectively difficulty ranges\n'
+            '(e.g. [5,7],[7,9],[9,11],[5,7],[7,9],[9,11] means problem 1 is d5-7, problem 2 is d7-9, etc.) \n'
+            '\n'
+            'IMO (International Mathematical Olympiad):\n'
+            '[5,7],[7,9],[9,11],[5,7],[7,9],[9,11]\n'
+            'AMO (Australian Mathematical Olympiad):\n'
+            '[2,3],[3,4],[4,5],[5,6],[2,3],[3,4],[4,5],[5,6]\n'
+            'APMO (Asian Pacific Mathematics Olympiad):\n'
+            '[4,5],[5,6],[6,7],[7,8],[8,10]\n'
+            'BMO1 (British Mathematical Olympiad Round 1):\n'
+            '[1,2],[1,2],[2,3],[2,3],[3,4],[3,4]\n'
+            'BMO2 (British Mathematical Olympiad Round 2):\n'
+            '[3,4],[4,5],[5,6],[6,7]\n'
+            'IGO (Iranian Geometry Olympiad):\n'
+            '[5,6],[5,6],[6,7],[7,8],[8,10]\n'
+            'NZMO2 (New Zealand Mathematical Olympiad Round 2):\n'
+            '[1,2],[2,3],[3,4],[4,5],[5,6]\n'
+            'SMO2 (Singapore Mathematical Olympiad Open Round 2):\n'
+            '[4,5],[5,6],[6,7],[7,8],[8,9]\n'
+            'USAMO (United States of America Mathematical Olympiad):\n'
+            '[5,7],[7,9],[9,11],[5,7],[7,9],[9,11]\n'
+            'USAJMO (United States of America Junior Mathematical Olympiad):\n'
+            '[3,5],[5,7],[7,8],[3,5],[5,7],[7,8]\n'
+            'CHINA (Crushingly Hard Imbalanced Nightmarish Assessment):\n'
+            '[7,8],[8,10],[10,12],[7,8],[8,10],[10,12]')
     @commands.cooldown(1, 30, BucketType.user)
     async def potd_mock(self, ctx, template:str="IMO"):
         template = template.upper()

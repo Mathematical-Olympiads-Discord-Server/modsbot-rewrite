@@ -5,11 +5,13 @@ import math
 import pickle
 import schedule
 from datetime import datetime
+import os
 
 import discord
+import matplotlib
 import matplotlib.pyplot as plt
 from discord.ext import commands
-from discord.ext.commands import BucketType, flags
+from discord.ext.commands import BucketType
 
 from cogs import config as cfg
 
@@ -182,13 +184,16 @@ class Activity(Cog):
         await ctx.guild.get_channel(cfg.Config.config['log_channel']).send(
             f'Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```')
 
-    class ActtopFlags(commands.FlagConverter):
+    class ActtopFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
         interval: int = 30
         users: int = 15
         
-    @commands.command(aliases=['acttop'])
+    @commands.command(aliases=['acttop'], help= '`-acttop`: show activity leaderboard\n'
+                                                '`-acttop --interval 15`: show leaderboard for the last 15 days\n'
+                                                '`-acttop --users 27`: show leaderboard up to 27 users\n'
+                                                '`-acttop --interval 15 --users 27`: combine commands')
     @commands.cooldown(1, 10, BucketType.user)
-    async def activity_top(self, ctx, flags:ActtopFlags):
+    async def activity_top(self, ctx, *, flags:ActtopFlags):
         interval = flags.interval if flags.interval < 30 else 30
         users = flags.users if flags.users < 30 else 30
         cursor = cfg.db.cursor()
@@ -221,20 +226,25 @@ class Activity(Cog):
                         value='\n'.join([f'`{i + 1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(users)]))
         await ctx.send(embed=embed)
 
-    class ActivityFlags(commands.FlagConverter):
+    class ActivityFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
         interval: int = 30
-        users: discord.User = None
+        user: discord.User = None
 
     @commands.cooldown(1, 10, BucketType.user)
-    @commands.command()
-    async def activity(self, ctx, flags:ActivityFlags):
+    @commands.command(help = '`-activity`: show my activity graph\n'
+                            '`-activity --interval 60`: show my activity graph for past 60 days\n'
+                            '`-activity --user @user`: show activity graph for @user\n'
+                            '`-activity --interval 60 --user @user`: combine commands')
+    async def activity(self, ctx, *, flags:ActivityFlags):
+        matplotlib.use('agg')
+
         messages = []
         ticks = []
         delta = dt.timedelta(days=1)
         index = 0
         end = datetime.now().date()
         interval = flags.interval
-        user = flags.users
+        user = flags.user
 
         epoch = dt.date(2019, 1, 11)  # This is when the server was created
         if interval is None:
