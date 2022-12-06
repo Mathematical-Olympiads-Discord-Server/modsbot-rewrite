@@ -222,8 +222,9 @@ class Activity(Cog):
         embed = discord.Embed()
         s = 's'
         blank = ''
+        length = min(users, len([x for x in scores if x[1] > 0]))
         embed.add_field(name=f'Top {users} user{s if users > 1 else blank} by activity score ({interval} day)',
-                        value='\n'.join([f'`{i + 1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(users)]))
+                        value='\n'.join([f'`{i + 1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(length)]))
         await ctx.send(embed=embed)
 
     class ActivityFlags(commands.FlagConverter, delimiter=' ', prefix='--'):

@@ -475,7 +475,7 @@ class Potd(Cog):
     @commands.command(aliases=['mock'], brief='Create a mock paper using past POTDs.',
         help='`-mock IMO`: create mock IMO paper\n'
             '\n'
-            'See below for list of available templates and respectively difficulty ranges\n'
+            'See below for list of available templates and respective difficulty ranges\n'
             '(e.g. [5,7],[7,9],[9,11],[5,7],[7,9],[9,11] means problem 1 is d5-7, problem 2 is d7-9, etc.) \n'
             '\n'
             'IMO (International Mathematical Olympiad):\n'
