@@ -14,6 +14,10 @@ import sqlite3
 cfgfile = open("config/config.yml")
 config = yaml.safe_load(cfgfile)
 
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('agg')
+
 
 class MODSBot(commands.Bot):
     def __init__(self, prefix):
