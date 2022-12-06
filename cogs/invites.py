@@ -17,7 +17,6 @@ class Invites(Cog):
             temp = pickle.load(open('data/invites.p', 'rb'))
             for invite in temp:
                 invites[invite] = temp[invite]
-            print(invites)
 
     @commands.is_owner()
     @commands.command(aliases=['ui'])
