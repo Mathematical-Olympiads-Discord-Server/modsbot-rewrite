@@ -292,15 +292,25 @@ class Potd(Cog):
         self.ping_daily = True
         self.late = False
         await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=20)
-        await self.create_potd_forum_post(self.requested_number)
+        await self.create_potd_forum_post(potd_row)
         print('l149')
         # In case Paradox unresponsive
         self.timer = threading.Timer(20, self.reset_if_necessary)
         self.timer.start()
 
-    async def create_potd_forum_post(self, number):
+    async def create_potd_forum_post(self, potd_row):
         forum = self.bot.get_channel(cfg.Config.config['potd_forum'])
-        await forum.create_thread(name=f"POTD {number}", content="potd")
+        applied_tags = []
+        genres = potd_row[cfg.Config.config['potd_sheet_genre_col']].upper()
+        if 'A' in genres:            
+            applied_tags.append(forum.get_tag(cfg.Config.config['potd_forum_tag_algebra']))
+        if 'C' in genres:
+            applied_tags.append(forum.get_tag(cfg.Config.config['potd_forum_tag_combinatorics']))
+        if 'G' in genres:
+            applied_tags.append(forum.get_tag(cfg.Config.config['potd_forum_tag_geometry']))
+        if 'N' in genres:
+            applied_tags.append(forum.get_tag(cfg.Config.config['potd_forum_tag_number_theory']))
+        await forum.create_thread(name=f"POTD {int(potd_row[cfg.Config.config['potd_sheet_id_col']])}", content="potd", applied_tags=applied_tags)
 
     @Cog.listener()
     async def on_message(self, message: discord.Message):
