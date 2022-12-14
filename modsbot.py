@@ -58,7 +58,7 @@ class MODSBot(commands.Bot):
             )''')
         cursor.execute('''CREATE TABLE IF NOT EXISTS potd_solves (
             discord_user_id TEXT,
-            potd_id TEXT NOT NULL,
+            potd_id INT NOT NULL,
             create_date DATE
             )''' )
         db.commit()

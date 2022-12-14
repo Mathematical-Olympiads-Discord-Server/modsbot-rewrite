@@ -441,7 +441,7 @@ class Potd(Cog):
 
     @commands.command(aliases=['search'], brief='Search a potd by genre and difficulty.')
     @commands.cooldown(1, 10, BucketType.user)
-    async def potd_search(self, ctx, diff_lower_bound:int, diff_upper_bound:int, genre:str='ACGN'):
+    async def potd_search(self, ctx, diff_lower_bound:int, diff_upper_bound:int, genre:str='ACGN', search_unsolved:bool=True):
         if diff_lower_bound > diff_upper_bound:
             await ctx.send(f"Difficulty lower bound cannot be higher than upper bound.")
             return
@@ -465,7 +465,7 @@ class Potd(Cog):
         
         potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute().get('values', [])
-        picked_potd = self.pick_potd(diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds, [])
+        picked_potd = self.pick_potd(diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds, [], ctx, search_unsolved)
         if picked_potd is not None:
             # fetch the picked POTD
             await self.potd_fetch(ctx, int(picked_potd))
@@ -501,7 +501,7 @@ class Potd(Cog):
             'CHINA (Crushingly Hard Imbalanced Nightmarish Assessment):\n'
             '[7,8],[8,10],[10,12],[7,8],[8,10],[10,12]')
     @commands.cooldown(1, 30, BucketType.user)
-    async def potd_mock(self, ctx, template:str="IMO"):
+    async def potd_mock(self, ctx, template:str="IMO", search_unsolved:bool=True):
         template = template.upper()
         template_list = ["IMO", "AMO", "APMO", "BMO1", "BMO2", "IGO", "NZMO2", "SMO2", "USAMO", "USAJMO", "CHINA"]
         if template not in template_list and template != "AFMO":
@@ -552,7 +552,7 @@ class Potd(Cog):
 
         # render the mock paper
         for i in range(0,len(difficulty_bounds)):
-            picked_potd = self.pick_potd(difficulty_bounds[i][0], difficulty_bounds[i][1], genres[i], potds, already_picked)
+            picked_potd = self.pick_potd(difficulty_bounds[i][0], difficulty_bounds[i][1], genres[i], potds, already_picked, ctx, search_unsolved)
             already_picked.append(picked_potd)
             potd_statement = self.get_potd_statement(int(picked_potd), potds)
             problems_tex.append(f'\\textbf{{Problem {i+1}. (POTD {str(picked_potd)})}}\\\\ ' + potd_statement)
@@ -617,7 +617,10 @@ class Potd(Cog):
 
         return True
 
-    def pick_potd(self, diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds, already_picked):
+    def pick_potd(self, diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds, already_picked, ctx, search_unsolved:bool):
+        solved_potd = []
+        if search_unsolved == True:
+            solved_potd = self.get_potd_solved(ctx)
 
         # filter and pick a POTD
         if type(diff_upper_bound_filter) == int:
@@ -634,12 +637,16 @@ class Potd(Cog):
                             and len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0]
 
         if len(filtered_potds) > 0:
-            filtered_potds_id = list(map(lambda x: x[cfg.Config.config['potd_sheet_id_col']], filtered_potds))
-            repeated = True
-            while repeated:
-                picked_potd = int(random.choice(filtered_potds_id))
-                if picked_potd not in already_picked:
-                    repeated = False
+            filtered_potds_id = list(map(lambda x: int(x[cfg.Config.config['potd_sheet_id_col']]), filtered_potds))
+            unsolved_potds_id = [x for x in filtered_potds_id if x not in solved_potd if x not in already_picked]
+            if len(unsolved_potds_id) > 0:
+                picked_potd = int(random.choice(unsolved_potds_id))
+            else:
+                repeated = True
+                while repeated:
+                    picked_potd = int(random.choice(filtered_potds_id))
+                    if picked_potd not in already_picked:
+                        repeated = False
             return picked_potd
         else:
             return None
@@ -661,7 +668,7 @@ class Potd(Cog):
             return None
 
     @commands.command(aliases=['mark'], brief='Mark the potd you have solved')
-    @commands.cooldown(1, 10, BucketType.user)
+    @commands.cooldown(1, 5, BucketType.user)
     async def potd_mark(self, ctx, potd_number:int):
         cursor = cfg.db.cursor()
         cursor.execute(f'''INSERT INTO potd_solves (discord_user_id, potd_id, create_date) VALUES
@@ -669,7 +676,7 @@ class Potd(Cog):
         await ctx.send(f'POTD {potd_number} is marked as solved. ')
 
     @commands.command(aliases=['unmark'], brief='Unmark the potd you have solved')
-    @commands.cooldown(1, 10, BucketType.user)
+    @commands.cooldown(1, 5, BucketType.user)
     async def potd_unmark(self, ctx, potd_number:int):
         cursor = cfg.db.cursor()
         cursor.execute(f'''DELETE FROM potd_solves 
@@ -677,15 +684,17 @@ class Potd(Cog):
         await ctx.send(f'POTD {potd_number} is removed from your solved list. ')
 
     @commands.command(aliases=['solved'], brief='Show the potd you have solved')
-    @commands.cooldown(1, 10, BucketType.user)
+    @commands.cooldown(1, 5, BucketType.user)
     async def potd_solved(self, ctx):
+        solved = self.get_potd_solved(ctx)
+        await ctx.send(f'POTD solved: \n {solved}')    
+    
+    def get_potd_solved(self, ctx):
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT discord_user_id, potd_id, create_date FROM potd_solves 
                             WHERE discord_user_id = {ctx.author.id} 
                             ORDER BY potd_id DESC''')
-        solved = [x[1] for x in cursor.fetchall()]
-        await ctx.send(f'POTD solved: \n {solved}')    
-        
+        return [x[1] for x in cursor.fetchall()]
 
     @commands.command(aliases=['remove_potd'], brief='Deletes the potd with the provided number. ')
     @commands.check(is_pc)
