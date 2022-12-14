@@ -660,6 +660,33 @@ class Potd(Cog):
         except IndexError:
             return None
 
+    @commands.command(aliases=['mark'], brief='Mark the potd you have solved')
+    @commands.cooldown(1, 10, BucketType.user)
+    async def potd_mark(self, ctx, potd_number:int):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'''INSERT INTO potd_solves (discord_user_id, potd_id, create_date) VALUES
+            ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
+        await ctx.send(f'POTD {potd_number} is marked as solved. ')
+
+    @commands.command(aliases=['unmark'], brief='Unmark the potd you have solved')
+    @commands.cooldown(1, 10, BucketType.user)
+    async def potd_unmark(self, ctx, potd_number:int):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'''DELETE FROM potd_solves 
+                            WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
+        await ctx.send(f'POTD {potd_number} is removed from your solved list. ')
+
+    @commands.command(aliases=['solved'], brief='Show the potd you have solved')
+    @commands.cooldown(1, 10, BucketType.user)
+    async def potd_solved(self, ctx):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'''SELECT discord_user_id, potd_id, create_date FROM potd_solves 
+                            WHERE discord_user_id = {ctx.author.id} 
+                            ORDER BY potd_id DESC''')
+        solved = [x[1] for x in cursor.fetchall()]
+        await ctx.send(f'POTD solved: \n {solved}')    
+        
+
     @commands.command(aliases=['remove_potd'], brief='Deletes the potd with the provided number. ')
     @commands.check(is_pc)
     async def delete_potd(self, ctx, number: int):
