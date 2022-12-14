@@ -56,6 +56,11 @@ class MODSBot(commands.Bot):
             source_msg_id TEXT,
             ping_msg_id TEXT
             )''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS potd_solves (
+            discord_user_id TEXT,
+            potd_id TEXT NOT NULL,
+            create_date DATE
+            )''' )
         db.commit()
 
         # Load cogs
