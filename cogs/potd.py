@@ -505,7 +505,7 @@ class Potd(Cog):
         template = template.upper()
         template_list = ["IMO", "AMO", "APMO", "BMO1", "BMO2", "IGO", "NZMO2", "SMO2", "USAMO", "USAJMO", "CHINA"]
         if template not in template_list and template != "AFMO":
-            await ctx.send(f"Template not found. Possible templates: {', '.join(template_list)}")
+            await ctx.send(f"Template not found. Possible templates: {', '.join(template_list)}. Use `-help potd_mock` for more details.")
             return
         else:
             if template == "IMO":
