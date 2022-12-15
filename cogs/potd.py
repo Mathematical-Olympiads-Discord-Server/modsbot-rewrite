@@ -475,7 +475,7 @@ class Potd(Cog):
     @commands.command(aliases=['mock'], brief='Create a mock paper using past POTDs.',
         help='`-mock IMO`: create mock IMO paper\n'
             '\n'
-            'See below for list of available templates and respective difficulty ranges\n'
+            'See below for a list of available templates and respective difficulty ranges\n'
             '(e.g. [5,7],[7,9],[9,11],[5,7],[7,9],[9,11] means problem 1 is d5-7, problem 2 is d7-9, etc.) \n'
             '\n'
             'IMO (International Mathematical Olympiad):\n'
@@ -642,11 +642,11 @@ class Potd(Cog):
             if len(unsolved_potds_id) > 0:
                 picked_potd = int(random.choice(unsolved_potds_id))
             else:
-                repeated = True
-                while repeated:
+                not_repeated_potds_id = [x for x in filtered_potds_id if x not in already_picked]
+                if len(not_repeated_potds_id) > 0:
+                    picked_potd = int(random.choice(not_repeated_potds_id))
+                else:
                     picked_potd = int(random.choice(filtered_potds_id))
-                    if picked_potd not in already_picked:
-                        repeated = False
             return picked_potd
         else:
             return None
@@ -673,7 +673,7 @@ class Potd(Cog):
         cursor = cfg.db.cursor()
         cursor.execute(f'''INSERT INTO potd_solves (discord_user_id, potd_id, create_date) VALUES
             ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
-        await ctx.send(f'POTD {potd_number} is marked as solved. ')
+        await ctx.send(f'POTD {potd_number} is added to your solved list. ')
 
     @commands.command(aliases=['unmark'], brief='Unmark the potd you have solved')
     @commands.cooldown(1, 5, BucketType.user)
@@ -687,7 +687,7 @@ class Potd(Cog):
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_solved(self, ctx):
         solved = self.get_potd_solved(ctx)
-        await ctx.send(f'POTD solved: \n {solved}')    
+        await ctx.send(f'Your solved POTD: \n {solved}')    
     
     def get_potd_solved(self, ctx):
         cursor = cfg.db.cursor()
