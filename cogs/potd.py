@@ -671,9 +671,16 @@ class Potd(Cog):
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_mark(self, ctx, potd_number:int):
         cursor = cfg.db.cursor()
-        cursor.execute(f'''INSERT INTO potd_solves (discord_user_id, potd_id, create_date) VALUES
-            ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
-        await ctx.send(f'POTD {potd_number} is added to your solved list. ')
+        cursor.execute(f'''SELECT discord_user_id, potd_id, create_date FROM potd_solves 
+                            WHERE discord_user_id = {ctx.author.id} 
+                            AND potd_id = {potd_number}''')
+        result = cursor.fetchall()
+        if len(result) > 0:
+            await ctx.send(f'POTD {potd_number} is already in your solved list. ')
+        else:
+            cursor.execute(f'''INSERT INTO potd_solves (discord_user_id, potd_id, create_date) VALUES
+                ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
+            await ctx.send(f'POTD {potd_number} is added to your solved list. ')
 
     @commands.command(aliases=['unmark'], brief='Unmark the potd you have solved')
     @commands.cooldown(1, 5, BucketType.user)
@@ -687,7 +694,9 @@ class Potd(Cog):
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_solved(self, ctx):
         solved = self.get_potd_solved(ctx)
-        await ctx.send(f'Your solved POTD: \n {solved}')    
+        await ctx.send(f'Your solved POTD: \n')    
+        for i in range(0, len(solved), 300):            
+            await ctx.send(f'{list(solved[i:i+300])}')
     
     def get_potd_solved(self, ctx):
         cursor = cfg.db.cursor()
