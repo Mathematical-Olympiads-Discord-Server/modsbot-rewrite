@@ -15,7 +15,7 @@ from cogs import config as cfg
 
 Cog = commands.Cog
 
-POTD_RANGE = 'History!A2:M'
+POTD_RANGE = 'POTD!A2:M'
 CURATOR_RANGE = 'Curators!A3:E'
 
 days = [None, 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
