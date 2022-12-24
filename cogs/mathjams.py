@@ -30,9 +30,9 @@ class Mathjams(Cog):
             role_id = cfg.Config.config[f'mathjams_timeslot_{timeslot}']
             mathjams_channel = await self.bot.fetch_channel(cfg.Config.config['mathjams_channel'])
             r = self.bot.get_guild(cfg.Config.config['mods_guild']).get_role(role_id)
-            await r.edit(mentionable=True)
+            r = await r.edit(mentionable=True)
             await mathjams_channel.send('Mathjams in 5 minutes XD! <@&{}>'.format(role_id))
-            await r.edit(mentionable=False)
+            r = await r.edit(mentionable=False)
 
     @commands.command()
     @commands.check(cfg.is_staff)
@@ -49,5 +49,5 @@ class Mathjams(Cog):
 
 
 
-def setup(bot):
-    bot.add_cog(Mathjams(bot))
+async def setup(bot):
+    await bot.add_cog(Mathjams(bot))
