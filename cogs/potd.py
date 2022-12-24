@@ -76,7 +76,7 @@ class Potd(Cog):
 
     @commands.command()
     @commands.check(is_pc)
-    async def reset_potd(self, ctx=None):
+    async def reset_potd(self, ctx):
         self.requested_number = -1
         self.listening_in_channel = -1
         self.to_send = ''
@@ -91,7 +91,7 @@ class Potd(Cog):
 
     def reset_if_necessary(self):
         if self.listening_in_channel != -1:
-            self.bot.loop.create_task(self.reset_potd())
+            self.bot.loop.create_task(self.reset_potd(None))
 
     def prepare_dms(self, potd_row):
         def should_dm(x):
@@ -268,19 +268,19 @@ class Potd(Cog):
             if passed_current:
                 if len(potd) < 8:  # Then there has not been a potd on that day.
                     fail = True
-                    await curator_role.edit(mentionable = True)
+                    curator_role = await curator_role.edit(mentionable = True)
                     await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
                         f"There was no potd on {potd[1]}! {self.responsible(int(potd[0]), True)}")
-                    await curator_role.edit(mentionable = False)
+                    curator_role = await curator_role.edit(mentionable = False)
             if potd[1] == date:
                 passed_current = True
                 potd_row = potd
                 if len(potd) < 8 and (mode is None):  # There is no potd.
                     fail = True
-                    await curator_role.edit(mentionable = True)
+                    curator_role = await curator_role.edit(mentionable = True)
                     await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
                         f"There is no potd today! {self.responsible(int(potd[0]), True)}")
-                    await curator_role.edit(mentionable = False)
+                    curator_role = await curator_role.edit(mentionable = False)
             if potd[1] in soon:
                 if len(potd) < 8:  # Then there is no potd on that day.
                     remind.append(int(potd[0]))
@@ -292,10 +292,10 @@ class Potd(Cog):
             mentions = ''
             for i in remind:
                 mentions += self.responsible(i, mode == 1)
-            await curator_role.edit(mentionable = True)
+            curator_role = await curator_role.edit(mentionable = True)
             await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
                 f"Remember to fill in your POTDs! {mentions}")
-            await curator_role.edit(mentionable = False)
+            curator_role = await curator_role.edit(mentionable = False)
         if fail or not (mode is None):
             return
 
@@ -338,9 +338,9 @@ class Potd(Cog):
             ping_msg = None
             if self.ping_daily:
                 r = self.bot.get_guild(cfg.Config.config['mods_guild']).get_role(cfg.Config.config['potd_role'])
-                await r.edit(mentionable=True)
+                r = await r.edit(mentionable=True)
                 ping_msg = await message.channel.send('<@&{}>'.format(cfg.Config.config['potd_role']))
-                await r.edit(mentionable=False)
+                r = await r.edit(mentionable=False)
 
                 if self.enable_dm:
 
@@ -383,7 +383,7 @@ class Potd(Cog):
                     ('{self.latest_potd}', '{message.id}', '{source_msg.id}', '{ping_msg.id}')''')
             cfg.db.commit()
 
-            await self.reset_potd()
+            await self.reset_potd(None)
             await bot_log.send('POTD execution successful.')
 
     @commands.command(aliases=['potd'], brief='Displays the potd with the provided number. ')
@@ -907,5 +907,5 @@ class Potd(Cog):
             f'**POTD notifications set to `{self.enable_dm}` by {ctx.author.nick} ({ctx.author.id})**')
 
 
-def setup(bot):
-    bot.add_cog(Potd(bot))
+async def setup(bot):
+    await bot.add_cog(Potd(bot))
