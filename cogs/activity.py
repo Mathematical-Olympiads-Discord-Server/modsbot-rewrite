@@ -306,5 +306,5 @@ class Activity(Cog):
         await self.update_actives(ctx)
 
 
-def setup(bot):
-    bot.add_cog(Activity(bot))
+async def setup(bot):
+    await bot.add_cog(Activity(bot))
