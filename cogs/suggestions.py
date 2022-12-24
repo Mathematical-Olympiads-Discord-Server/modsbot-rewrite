@@ -106,7 +106,7 @@ class Suggestions(Cog):
     @commands.command()
     @commands.is_owner()
     async def index_suggestions(self, ctx, *, channel: int):
-        messages = await self.bot.get_channel(channel).history(limit=200).flatten()
+        messages = [message async for message in await self.bot.get_channel(channel).history(limit=200)]
         values = []
         for message in messages:
             values.append([message.created_at.isoformat(), message.author.name, str(message.author.id), 'Pending', 0,
@@ -225,7 +225,7 @@ class Suggestions(Cog):
         suggestion.status = new_status
         suggestion.reason = reason
         update_suggestions()
-        await suggestion_message.edit(
+        suggestion_message = await suggestion_message.edit(
             content=f'**Suggestion `#{sugg_id}` by <@!{suggestion.userid}>:** `[{new_status}]`\n{suggestion.jump_url}\n{suggestion.body}')
 
         # Finish up
@@ -328,5 +328,5 @@ class Suggestions(Cog):
             await message.delete(delay=15)
 
 
-def setup(bot):
-    bot.add_cog(Suggestions(bot))
+async def setup(bot):
+    await bot.add_cog(Suggestions(bot))
