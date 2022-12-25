@@ -722,7 +722,8 @@ class Potd(Cog):
                 await ctx.send(f"There is no hint for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
                 return
             else:
-                await ctx.send(f"Hint for POTD {number}:\n||{potd_row[cfg.Config.config['potd_sheet_hint1_col']]}||")
+                await ctx.send(f"Hint for POTD {number}:\n")
+                await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint1_col']]}||")
                 if len(potd_row) > cfg.Config.config['potd_sheet_hint2_col'] and potd_row[cfg.Config.config['potd_sheet_hint2_col']] != None:
                     await ctx.send(f"There is another hint for this POTD. Use `-hint2 {number}` to get the hint.")
 
@@ -738,7 +739,8 @@ class Potd(Cog):
                 await ctx.send(f"There is no hint 2 for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
                 return
             else:
-                await ctx.send(f"Hint 2 for POTD {number}:\n||{potd_row[cfg.Config.config['potd_sheet_hint2_col']]}||")
+                await ctx.send(f"Hint 2 for POTD {number}:\n")
+                await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint2_col']]}||")
                 if len(potd_row) > cfg.Config.config['potd_sheet_hint3_col'] and potd_row[cfg.Config.config['potd_sheet_hint3_col']] != None:
                     await ctx.send(f"There is another hint for this POTD. Use `-hint3 {number}` to get the hint.")
 
@@ -754,7 +756,8 @@ class Potd(Cog):
                 await ctx.send(f"There is no hint 3 for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
                 return
             else:
-                await ctx.send(f"Hint 3 for POTD {number}:\n||{potd_row[cfg.Config.config['potd_sheet_hint3_col']]}||")
+                await ctx.send(f"Hint 3 for POTD {number}:\n")
+                await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint3_col']]}||")
 
 
     def get_potd_row(self, number):
