@@ -710,54 +710,41 @@ class Potd(Cog):
                             ORDER BY potd_id DESC''')
         return [x[1] for x in cursor.fetchall()]
 
-    @commands.command(aliases=['hint','hint1'], brief='Get hint1 for the POTD.')
+    @commands.command(aliases=['hint'], brief='Get hint for the POTD.')
     @commands.cooldown(1, 10, BucketType.user)
-    async def potd_hint(self, ctx, number: int):
+    async def potd_hint(self, ctx, number: int, hint_number: int = 1):
         potd_row = self.get_potd_row(number)
         if potd_row == None:
             await ctx.send(f"There is no potd for day {number}. ")
             return
         else:  
-            if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
-                await ctx.send(f"There is no hint for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
-                return
+            if hint_number == 1:
+                if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
+                    await ctx.send(f"There is no hint for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+                    return
+                else:
+                    await ctx.send(f"Hint for POTD {number}:\n")
+                    await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint1_col']]}||")
+                    if len(potd_row) > cfg.Config.config['potd_sheet_hint2_col'] and potd_row[cfg.Config.config['potd_sheet_hint2_col']] != None:
+                        await ctx.send(f"There is another hint for this POTD. Use `-hint {number} 2` to get the hint.")
+            elif hint_number == 2:
+                if len(potd_row) <= cfg.Config.config['potd_sheet_hint2_col'] or potd_row[cfg.Config.config['potd_sheet_hint2_col']] == None:
+                    await ctx.send(f"There is no hint 2 for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+                    return
+                else:
+                    await ctx.send(f"Hint 2 for POTD {number}:\n")
+                    await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint2_col']]}||")
+                    if len(potd_row) > cfg.Config.config['potd_sheet_hint3_col'] and potd_row[cfg.Config.config['potd_sheet_hint3_col']] != None:
+                        await ctx.send(f"There is another hint for this POTD. Use `-hint {number} 3` to get the hint.")
+            elif hint_number == 3:
+                if len(potd_row) <= cfg.Config.config['potd_sheet_hint3_col'] or potd_row[cfg.Config.config['potd_sheet_hint3_col']] == None:
+                    await ctx.send(f"There is no hint 3 for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+                    return
+                else:
+                    await ctx.send(f"Hint 3 for POTD {number}:\n")
+                    await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint3_col']]}||")
             else:
-                await ctx.send(f"Hint for POTD {number}:\n")
-                await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint1_col']]}||")
-                if len(potd_row) > cfg.Config.config['potd_sheet_hint2_col'] and potd_row[cfg.Config.config['potd_sheet_hint2_col']] != None:
-                    await ctx.send(f"There is another hint for this POTD. Use `-hint2 {number}` to get the hint.")
-
-    @commands.command(aliases=['hint2'], brief='Get hint2 for the POTD.')
-    @commands.cooldown(1, 10, BucketType.user)
-    async def potd_hint2(self, ctx, number: int):
-        potd_row = self.get_potd_row(number)
-        if potd_row == None:
-            await ctx.send(f"There is no potd for day {number}. ")
-            return
-        else:  
-            if len(potd_row) <= cfg.Config.config['potd_sheet_hint2_col'] or potd_row[cfg.Config.config['potd_sheet_hint2_col']] == None:
-                await ctx.send(f"There is no hint 2 for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
-                return
-            else:
-                await ctx.send(f"Hint 2 for POTD {number}:\n")
-                await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint2_col']]}||")
-                if len(potd_row) > cfg.Config.config['potd_sheet_hint3_col'] and potd_row[cfg.Config.config['potd_sheet_hint3_col']] != None:
-                    await ctx.send(f"There is another hint for this POTD. Use `-hint3 {number}` to get the hint.")
-
-    @commands.command(aliases=['hint3'], brief='Get hint3 for the POTD.')
-    @commands.cooldown(1, 10, BucketType.user)
-    async def potd_hint3(self, ctx, number: int):
-        potd_row = self.get_potd_row(number)
-        if potd_row == None:
-            await ctx.send(f"There is no potd for day {number}. ")
-            return
-        else:        
-            if len(potd_row) <= cfg.Config.config['potd_sheet_hint3_col'] or potd_row[cfg.Config.config['potd_sheet_hint3_col']] == None:
-                await ctx.send(f"There is no hint 3 for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
-                return
-            else:
-                await ctx.send(f"Hint 3 for POTD {number}:\n")
-                await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint3_col']]}||")
+                await ctx.send("Hint number should be from 1 to 3.")
 
 
     def get_potd_row(self, number):
