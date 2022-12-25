@@ -682,6 +682,11 @@ class Potd(Cog):
                 ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
             await ctx.send(f'POTD {potd_number} is added to your solved list. ')
 
+            potd_row = self.get_potd_row(potd_number)
+            if potd_row != None and random.random() <  0.25:
+                if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
+                    await ctx.send(f"There is no hint for POTD {potd_number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+
     @commands.command(aliases=['unmark'], brief='Unmark the potd you have solved')
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_unmark(self, ctx, potd_number:int):
@@ -704,6 +709,66 @@ class Potd(Cog):
                             WHERE discord_user_id = {ctx.author.id} 
                             ORDER BY potd_id DESC''')
         return [x[1] for x in cursor.fetchall()]
+
+    @commands.command(aliases=['hint','hint1'], brief='Get hint1 for the POTD.')
+    @commands.cooldown(1, 10, BucketType.user)
+    async def potd_hint(self, ctx, number: int):
+        potd_row = self.get_potd_row(number)
+        if potd_row == None:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
+        else:  
+            if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
+                await ctx.send(f"There is no hint for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+                return
+            else:
+                await ctx.send(f"Hint for POTD {number}:\n||{potd_row[cfg.Config.config['potd_sheet_hint1_col']]}||")
+                if len(potd_row) > cfg.Config.config['potd_sheet_hint2_col'] and potd_row[cfg.Config.config['potd_sheet_hint2_col']] != None:
+                    await ctx.send(f"There is another hint for this POTD. Use `-hint2 {number}` to get the hint.")
+
+    @commands.command(aliases=['hint2'], brief='Get hint2 for the POTD.')
+    @commands.cooldown(1, 10, BucketType.user)
+    async def potd_hint2(self, ctx, number: int):
+        potd_row = self.get_potd_row(number)
+        if potd_row == None:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
+        else:  
+            if len(potd_row) <= cfg.Config.config['potd_sheet_hint2_col'] or potd_row[cfg.Config.config['potd_sheet_hint2_col']] == None:
+                await ctx.send(f"There is no hint 2 for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+                return
+            else:
+                await ctx.send(f"Hint 2 for POTD {number}:\n||{potd_row[cfg.Config.config['potd_sheet_hint2_col']]}||")
+                if len(potd_row) > cfg.Config.config['potd_sheet_hint3_col'] and potd_row[cfg.Config.config['potd_sheet_hint3_col']] != None:
+                    await ctx.send(f"There is another hint for this POTD. Use `-hint3 {number}` to get the hint.")
+
+    @commands.command(aliases=['hint3'], brief='Get hint3 for the POTD.')
+    @commands.cooldown(1, 10, BucketType.user)
+    async def potd_hint3(self, ctx, number: int):
+        potd_row = self.get_potd_row(number)
+        if potd_row == None:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
+        else:        
+            if len(potd_row) <= cfg.Config.config['potd_sheet_hint3_col'] or potd_row[cfg.Config.config['potd_sheet_hint3_col']] == None:
+                await ctx.send(f"There is no hint 3 for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+                return
+            else:
+                await ctx.send(f"Hint 3 for POTD {number}:\n||{potd_row[cfg.Config.config['potd_sheet_hint3_col']]}||")
+
+
+    def get_potd_row(self, number):
+        # Read from the spreadsheet
+        reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute()
+        values = reply.get('values', [])
+        current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+
+        if number > current_potd:
+            return None
+
+        potd_row = values[current_potd - number]  # this gets the row requested
+        return potd_row
 
     @commands.command(aliases=['remove_potd'], brief='Deletes the potd with the provided number. ')
     @commands.check(is_pc)

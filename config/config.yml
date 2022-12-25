@@ -22,8 +22,12 @@ potd_sheet_genre_col: 5
 potd_sheet_difficulty_col: 6
 potd_sheet_tags_col: 7
 potd_sheet_statement_col: 8
+potd_sheet_hint1_col: 9
+potd_sheet_hint2_col: 10
+potd_sheet_hint3_col: 11
 potd_forum: 1020855322006540428
 paradox_id: 419356082981568522
+staffmail_id: 696261358932721694
 potd_channel: 537763636161150976
 potd_discussion_channel: 533159339968692225
 potd_role: 561876362776936459
