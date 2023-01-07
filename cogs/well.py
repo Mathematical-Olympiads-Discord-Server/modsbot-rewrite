@@ -142,5 +142,5 @@ class Well(Cog):
 		await ctx.reply(f"Scheduled <@{person}> for {days} days of well starting {new.strftime(r'%b %d')} (<t:{cfg.timestamp(new + self.time)}>).")
 
 
-def setup(bot):
-    bot.add_cog(Well(bot))
+async def setup(bot):
+    await bot.add_cog(Well(bot))

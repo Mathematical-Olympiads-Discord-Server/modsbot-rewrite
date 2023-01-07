@@ -106,7 +106,7 @@ class Suggestions(Cog):
     @commands.command()
     @commands.is_owner()
     async def index_suggestions(self, ctx, *, channel: int):
-        messages = await self.bot.get_channel(channel).history(limit=200).flatten()
+        messages = [x async for x in self.bot.get_channel(channel).history(limit=200)]
         values = []
         for message in messages:
             values.append([message.created_at.isoformat(), message.author.name, str(message.author.id), 'Pending', 0,
@@ -167,11 +167,17 @@ class Suggestions(Cog):
             for reaction in suggestion_message.reactions:
                 # Add everyone who reacted
                 if reaction.emoji == '🔔':
-                    bell = set([x.id for x in await reaction.users().flatten()])
+                    bell = set()
+                    users = [x async for x in reaction.users()]
+                    for u in users:
+                        bell.add(u.id)
                 elif reaction.emoji == '🔕':
-                    no_bell = set([x.id for x in await reaction.users().flatten()])
+                    no_bell = set()
+                    users = [x async for x in reaction.users()]
+                    for u in users:
+                        no_bell.add(u.id)
                 else:
-                    users = await reaction.users().flatten()
+                    users = [x async for x in reaction.users()]
                     votes_for[reaction.emoji] = len(users) - 1
                     for u in users:
                         voted.add(u.id)
@@ -328,5 +334,5 @@ class Suggestions(Cog):
             await message.delete(delay=15)
 
 
-def setup(bot):
-    bot.add_cog(Suggestions(bot))
+async def setup(bot):
+    await bot.add_cog(Suggestions(bot))

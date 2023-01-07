@@ -14,11 +14,16 @@ import sqlite3
 cfgfile = open("config/config.yml")
 config = yaml.safe_load(cfgfile)
 
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('agg')
+logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
 
 class MODSBot(commands.Bot):
     def __init__(self, prefix):
         intents = discord.Intents.default()
         intents.members = True
+        intents.message_content = True
         super().__init__(prefix, intents=intents)
         self.config = config
         logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
@@ -55,12 +60,17 @@ class MODSBot(commands.Bot):
             source_msg_id TEXT,
             ping_msg_id TEXT
             )''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS potd_solves (
+            discord_user_id TEXT,
+            potd_id INT NOT NULL,
+            create_date DATE
+            )''' )
         db.commit()
 
         # Load cogs
         for cog in self.config['cogs']:
             try:
-                self.load_extension(cog)
+                await self.load_extension(cog)
             except Exception:
                 self.logger.exception('Failed to load cog {}.'.format(cog))
             else:
@@ -168,7 +178,6 @@ class MODSBot(commands.Bot):
             except Exception:
                 try: await log_channel.send('Failed to send error message.')
                 except Exception: pass
-
 
 def executor():
     while True:

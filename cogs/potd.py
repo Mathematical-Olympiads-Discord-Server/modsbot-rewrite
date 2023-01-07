@@ -15,7 +15,7 @@ from cogs import config as cfg
 
 Cog = commands.Cog
 
-POTD_RANGE = 'History!A2:M'
+POTD_RANGE = 'POTD!A2:M'
 CURATOR_RANGE = 'Curators!A3:E'
 
 days = [None, 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -61,18 +61,6 @@ class Potd(Cog):
         schedule.every().day.at("04:00").do(lambda: self.schedule_potd(6)).tag('cogs.potd')
         schedule.every().day.at("22:00").do(lambda: self.schedule_potd(12)).tag('cogs.potd')
 
-        # Initialise potd_ratings
-        try:
-            with open('data/potd_ratings.txt', 'r') as f:
-                self.latest_potd = int(f.readline())
-                self.potd_ratings = ast.literal_eval(f.read())
-        except FileNotFoundError as e:
-            self.latest_potd = 10000
-            self.potd_ratings = {}
-        except ValueError as e:
-            print("Corrupted potd_ratings file!")
-            self.latest_potd = 10000
-            self.potd_ratings = {}
 
     @commands.command()
     @commands.check(is_pc)
@@ -192,16 +180,6 @@ class Potd(Cog):
             i += 7
         return f'<@{r_list[0][0]}> '
 
-    def update_ratings(self):
-        with open('data/potd_ratings.txt', 'r+') as f:
-            # Clear
-            f.truncate()
-
-            # Re-write
-            f.write(str(self.latest_potd))
-            f.write('\n')
-            f.write(str(self.potd_ratings))
-
     async def potd_embedded(self, ctx, *, number: int):
         # It can only handle one at a time!
         if self.listening_in_channel != -1:
@@ -227,7 +205,6 @@ class Potd(Cog):
         # Finish up
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
-        self.update_ratings()
         self.to_send = self.generate_source(potd_row)
         self.listening_in_channel = ctx.channel.id
         self.late = True
@@ -309,17 +286,21 @@ class Potd(Cog):
         # Finish up
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
-        self.update_ratings()
         self.prepare_dms(potd_row)
         self.to_send = self.generate_source(potd_row)
         self.listening_in_channel = cfg.Config.config['potd_channel']
         self.ping_daily = True
         self.late = False
         await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=20)
+        await self.create_potd_forum_post(self.requested_number)
         print('l149')
         # In case Paradox unresponsive
         self.timer = threading.Timer(20, self.reset_if_necessary)
         self.timer.start()
+
+    async def create_potd_forum_post(self, number):
+        forum = self.bot.get_channel(cfg.Config.config['potd_forum'])
+        await forum.create_thread(name=f"POTD {number}", content="potd")
 
     @Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -417,7 +398,6 @@ class Potd(Cog):
         # Finish up
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
-        self.update_ratings()
         self.prepare_dms(potd_row)
         self.to_send = self.generate_source(potd_row)
         self.listening_in_channel = ctx.channel.id
@@ -461,7 +441,7 @@ class Potd(Cog):
 
     @commands.command(aliases=['search'], brief='Search a potd by genre and difficulty.')
     @commands.cooldown(1, 10, BucketType.user)
-    async def potd_search(self, ctx, diff_lower_bound:int, diff_upper_bound:int, genre:str='ACGN'):
+    async def potd_search(self, ctx, diff_lower_bound:int, diff_upper_bound:int, genre:str='ACGN', search_unsolved:bool=True):
         if diff_lower_bound > diff_upper_bound:
             await ctx.send(f"Difficulty lower bound cannot be higher than upper bound.")
             return
@@ -485,20 +465,47 @@ class Potd(Cog):
         
         potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute().get('values', [])
-        picked_potd = self.pick_potd(diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds, [])
+        picked_potd = self.pick_potd(diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds, [], ctx, search_unsolved)
         if picked_potd is not None:
             # fetch the picked POTD
             await self.potd_fetch(ctx, int(picked_potd))
         else:
             await ctx.send(f"No POTD found!")
 
-    @commands.command(aliases=['mock'], brief='Create a mock paper using past POTDs.')
+    @commands.command(aliases=['mock'], brief='Create a mock paper using past POTDs.',
+        help='`-mock IMO`: create mock IMO paper\n'
+            '\n'
+            'See below for a list of available templates and respective difficulty ranges\n'
+            '(e.g. [5,7],[7,9],[9,11],[5,7],[7,9],[9,11] means problem 1 is d5-7, problem 2 is d7-9, etc.) \n'
+            '\n'
+            'IMO (International Mathematical Olympiad):\n'
+            '[5,7],[7,9],[9,11],[5,7],[7,9],[9,11]\n'
+            'AMO (Australian Mathematical Olympiad):\n'
+            '[2,3],[3,4],[4,5],[5,6],[2,3],[3,4],[4,5],[5,6]\n'
+            'APMO (Asian Pacific Mathematics Olympiad):\n'
+            '[4,5],[5,6],[6,7],[7,8],[8,10]\n'
+            'BMO1 (British Mathematical Olympiad Round 1):\n'
+            '[1,2],[1,2],[2,3],[2,3],[3,4],[3,4]\n'
+            'BMO2 (British Mathematical Olympiad Round 2):\n'
+            '[3,4],[4,5],[5,6],[6,7]\n'
+            'IGO (Iranian Geometry Olympiad):\n'
+            '[5,6],[5,6],[6,7],[7,8],[8,10]\n'
+            'NZMO2 (New Zealand Mathematical Olympiad Round 2):\n'
+            '[1,2],[2,3],[3,4],[4,5],[5,6]\n'
+            'SMO2 (Singapore Mathematical Olympiad Open Round 2):\n'
+            '[4,5],[5,6],[6,7],[7,8],[8,9]\n'
+            'USAMO (United States of America Mathematical Olympiad):\n'
+            '[5,7],[7,9],[9,11],[5,7],[7,9],[9,11]\n'
+            'USAJMO (United States of America Junior Mathematical Olympiad):\n'
+            '[3,5],[5,7],[7,8],[3,5],[5,7],[7,8]\n'
+            'CHINA (Crushingly Hard Imbalanced Nightmarish Assessment):\n'
+            '[7,8],[8,10],[10,12],[7,8],[8,10],[10,12]')
     @commands.cooldown(1, 30, BucketType.user)
-    async def potd_mock(self, ctx, template:str="IMO"):
+    async def potd_mock(self, ctx, template:str="IMO", search_unsolved:bool=True):
         template = template.upper()
-        template_list = ["IMO", "AMO", "APMO", "BMO1", "BMO2", "IGO", "NZMO2", "SMO2", "CHINA"]
+        template_list = ["IMO", "AMO", "APMO", "BMO1", "BMO2", "IGO", "NZMO2", "SMO2", "USAMO", "USAJMO", "CHINA"]
         if template not in template_list and template != "AFMO":
-            await ctx.send(f"Template not found. Possible templates: {', '.join(template_list)}")
+            await ctx.send(f"Template not found. Possible templates: {', '.join(template_list)}. Use `-help potd_mock` for more details.")
             return
         else:
             if template == "IMO":
@@ -517,6 +524,10 @@ class Potd(Cog):
                 difficulty_bounds = [[1,2],[2,3],[3,4],[4,5],[5,6]]
             elif template == "SMO2":
                 difficulty_bounds = [[4,5],[5,6],[6,7],[7,8],[8,9]]
+            elif template == "USAMO":
+                difficulty_bounds = [[5,7],[7,9],[9,11],[5,7],[7,9],[9,11]]
+            elif template == "USAJMO":
+                difficulty_bounds = [[3,5],[5,7],[7,8],[3,5],[5,7],[7,8]]
             elif template == "CHINA":
                 difficulty_bounds = [[7,8],[8,10],[10,12],[7,8],[8,10],[10,12]]
             elif template == "AFMO": # easter egg
@@ -541,13 +552,13 @@ class Potd(Cog):
 
         # render the mock paper
         for i in range(0,len(difficulty_bounds)):
-            picked_potd = self.pick_potd(difficulty_bounds[i][0], difficulty_bounds[i][1], genres[i], potds, already_picked)
+            picked_potd = self.pick_potd(difficulty_bounds[i][0], difficulty_bounds[i][1], genres[i], potds, already_picked, ctx, search_unsolved)
             already_picked.append(picked_potd)
             potd_statement = self.get_potd_statement(int(picked_potd), potds)
             problems_tex.append(f'\\textbf{{Problem {i+1}. (POTD {str(picked_potd)})}}\\\\ ' + potd_statement)
         
-        if template in ["IMO","AMO","CHINA"] : 
-            if template in ["IMO","CHINA"]:
+        if template in ["IMO","AMO","USAMO","USAJMO","CHINA"] : # 2-day contests
+            if template in ["IMO","CHINA","USAMO","USAJMO"]:
                 index_day1 = [0,1,2]
                 index_day2 = [3,4,5]
             elif template in ["AMO"]:
@@ -561,7 +572,7 @@ class Potd(Cog):
             name_day2 = template + ' (Day 2)'
             problems_tex_day2 = [problems_tex[index] for index in index_day2]
             await self.send_out_mock(ctx, name_day2, problems_tex_day2)
-        else:
+        else: # 1-day contests
             await self.send_out_mock(ctx, template, problems_tex)
 
     async def send_out_mock(self, ctx, name, problems_tex):
@@ -592,6 +603,12 @@ class Potd(Cog):
             # P3 and P6 should be different genre
             if genres[2] == genres[5]: 
                 return False
+            
+            # The three problems on each day should be different genre
+            if len({genres[0],genres[1],genres[2]}) < 3:
+                return False
+            if len({genres[3],genres[4],genres[5]}) < 3:
+                return False
 
             # Geoff Smith Rule
             genres_geoff_smith = [genres[index] for index in [0,1,3,4]]
@@ -600,7 +617,10 @@ class Potd(Cog):
 
         return True
 
-    def pick_potd(self, diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds, already_picked):
+    def pick_potd(self, diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds, already_picked, ctx, search_unsolved:bool):
+        solved_potd = []
+        if search_unsolved == True:
+            solved_potd = self.get_potd_solved(ctx)
 
         # filter and pick a POTD
         if type(diff_upper_bound_filter) == int:
@@ -617,12 +637,16 @@ class Potd(Cog):
                             and len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0]
 
         if len(filtered_potds) > 0:
-            filtered_potds_id = list(map(lambda x: x[cfg.Config.config['potd_sheet_id_col']], filtered_potds))
-            repeated = True
-            while repeated:
-                picked_potd = int(random.choice(filtered_potds_id))
-                if picked_potd not in already_picked:
-                    repeated = False
+            filtered_potds_id = list(map(lambda x: int(x[cfg.Config.config['potd_sheet_id_col']]), filtered_potds))
+            unsolved_potds_id = [x for x in filtered_potds_id if x not in solved_potd if x not in already_picked]
+            if len(unsolved_potds_id) > 0:
+                picked_potd = int(random.choice(unsolved_potds_id))
+            else:
+                not_repeated_potds_id = [x for x in filtered_potds_id if x not in already_picked]
+                if len(not_repeated_potds_id) > 0:
+                    picked_potd = int(random.choice(not_repeated_potds_id))
+                else:
+                    picked_potd = int(random.choice(filtered_potds_id))
             return picked_potd
         else:
             return None
@@ -642,6 +666,99 @@ class Potd(Cog):
             return potd_statement
         except IndexError:
             return None
+
+    @commands.command(aliases=['mark'], brief='Mark the potd you have solved')
+    @commands.cooldown(1, 5, BucketType.user)
+    async def potd_mark(self, ctx, potd_number:int):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'''SELECT discord_user_id, potd_id, create_date FROM potd_solves 
+                            WHERE discord_user_id = {ctx.author.id} 
+                            AND potd_id = {potd_number}''')
+        result = cursor.fetchall()
+        if len(result) > 0:
+            await ctx.send(f'POTD {potd_number} is already in your solved list. ')
+        else:
+            cursor.execute(f'''INSERT INTO potd_solves (discord_user_id, potd_id, create_date) VALUES
+                ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
+            await ctx.send(f'POTD {potd_number} is added to your solved list. ')
+
+            potd_row = self.get_potd_row(potd_number)
+            if potd_row != None and random.random() <  0.25:
+                if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
+                    await ctx.send(f"There is no hint for POTD {potd_number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+
+    @commands.command(aliases=['unmark'], brief='Unmark the potd you have solved')
+    @commands.cooldown(1, 5, BucketType.user)
+    async def potd_unmark(self, ctx, potd_number:int):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'''DELETE FROM potd_solves 
+                            WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
+        await ctx.send(f'POTD {potd_number} is removed from your solved list. ')
+
+    @commands.command(aliases=['solved'], brief='Show the potd you have solved')
+    @commands.cooldown(1, 5, BucketType.user)
+    async def potd_solved(self, ctx):
+        solved = self.get_potd_solved(ctx)
+        await ctx.send(f'Your solved POTD: \n')    
+        for i in range(0, len(solved), 300):            
+            await ctx.send(f'{list(solved[i:i+300])}')
+    
+    def get_potd_solved(self, ctx):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'''SELECT discord_user_id, potd_id, create_date FROM potd_solves 
+                            WHERE discord_user_id = {ctx.author.id} 
+                            ORDER BY potd_id DESC''')
+        return [x[1] for x in cursor.fetchall()]
+
+    @commands.command(aliases=['hint'], brief='Get hint for the POTD.')
+    @commands.cooldown(1, 10, BucketType.user)
+    async def potd_hint(self, ctx, number: int, hint_number: int = 1):
+        potd_row = self.get_potd_row(number)
+        if potd_row == None:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
+        else:  
+            if hint_number == 1:
+                if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
+                    await ctx.send(f"There is no hint for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+                    return
+                else:
+                    await ctx.send(f"Hint for POTD {number}:\n")
+                    await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint1_col']]}||")
+                    if len(potd_row) > cfg.Config.config['potd_sheet_hint2_col'] and potd_row[cfg.Config.config['potd_sheet_hint2_col']] != None:
+                        await ctx.send(f"There is another hint for this POTD. Use `-hint {number} 2` to get the hint.")
+            elif hint_number == 2:
+                if len(potd_row) <= cfg.Config.config['potd_sheet_hint2_col'] or potd_row[cfg.Config.config['potd_sheet_hint2_col']] == None:
+                    await ctx.send(f"There is no hint 2 for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+                    return
+                else:
+                    await ctx.send(f"Hint 2 for POTD {number}:\n")
+                    await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint2_col']]}||")
+                    if len(potd_row) > cfg.Config.config['potd_sheet_hint3_col'] and potd_row[cfg.Config.config['potd_sheet_hint3_col']] != None:
+                        await ctx.send(f"There is another hint for this POTD. Use `-hint {number} 3` to get the hint.")
+            elif hint_number == 3:
+                if len(potd_row) <= cfg.Config.config['potd_sheet_hint3_col'] or potd_row[cfg.Config.config['potd_sheet_hint3_col']] == None:
+                    await ctx.send(f"There is no hint 3 for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+                    return
+                else:
+                    await ctx.send(f"Hint 3 for POTD {number}:\n")
+                    await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint3_col']]}||")
+            else:
+                await ctx.send("Hint number should be from 1 to 3.")
+
+
+    def get_potd_row(self, number):
+        # Read from the spreadsheet
+        reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute()
+        values = reply.get('values', [])
+        current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+
+        if number > current_potd:
+            return None
+
+        potd_row = values[current_potd - number]  # this gets the row requested
+        return potd_row
 
     @commands.command(aliases=['remove_potd'], brief='Deletes the potd with the provided number. ')
     @commands.check(is_pc)
@@ -907,5 +1024,5 @@ class Potd(Cog):
             f'**POTD notifications set to `{self.enable_dm}` by {ctx.author.nick} ({ctx.author.id})**')
 
 
-def setup(bot):
-    bot.add_cog(Potd(bot))
+async def setup(bot):
+    await bot.add_cog(Potd(bot))

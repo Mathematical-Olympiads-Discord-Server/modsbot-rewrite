@@ -92,5 +92,5 @@ class MCQ_Game_Controller(Cog):
             games[message.channel.id].process(message)
 
 
-def setup(bot):
-    bot.add_cog(MCQ_Game_Controller(bot))
+async def setup(bot):
+    await bot.add_cog(MCQ_Game_Controller(bot))

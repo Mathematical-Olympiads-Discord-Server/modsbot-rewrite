@@ -17,7 +17,6 @@ class Invites(Cog):
             temp = pickle.load(open('data/invites.p', 'rb'))
             for invite in temp:
                 invites[invite] = temp[invite]
-            print(invites)
 
     @commands.is_owner()
     @commands.command(aliases=['ui'])
@@ -56,6 +55,6 @@ class Invites(Cog):
             await self.bot.get_channel(cfg.Config.config['warn_channel']).send(embed=embed)
 
 
-def setup(bot: commands.Bot):
+async def setup(bot: commands.Bot):
     i = Invites(bot)
-    bot.add_cog(i)
+    await bot.add_cog(i)
