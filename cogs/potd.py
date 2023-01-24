@@ -489,7 +489,7 @@ class Potd(Cog):
             'BMO2 (British Mathematical Olympiad Round 2):\n'
             '[3,4],[4,5],[5,6],[6,7]\n'
             'IGO (Iranian Geometry Olympiad):\n'
-            '[5,6],[5,6],[6,7],[7,8],[8,10]\n'
+            '[5,6],[6,7],[7,8],[8,9],[9,10]\n'
             'NZMO2 (New Zealand Mathematical Olympiad Round 2):\n'
             '[1,2],[2,3],[3,4],[4,5],[5,6]\n'
             'SMO2 (Singapore Mathematical Olympiad Open Round 2):\n'
@@ -519,7 +519,7 @@ class Potd(Cog):
             elif template == "BMO2":
                 difficulty_bounds = [[3,4],[4,5],[5,6],[6,7]]         
             elif template == "IGO":
-                difficulty_bounds = [[5,6],[5,6],[6,7],[7,8],[8,10]]
+                difficulty_bounds = [[5,6],[6,7],[7,8],[8,9],[9,10]]
             elif template == "NZMO2":
                 difficulty_bounds = [[1,2],[2,3],[3,4],[4,5],[5,6]]
             elif template == "SMO2":
@@ -622,7 +622,7 @@ class Potd(Cog):
         if search_unsolved == True:
             solved_potd = self.get_potd_solved(ctx)
 
-        # filter and pick a POTD
+        # filter by genre and difficulty
         if type(diff_upper_bound_filter) == int:
             filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
                             and x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
@@ -636,6 +636,7 @@ class Potd(Cog):
                                 or not x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric())
                             and len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0]
 
+        # pick a POTD
         if len(filtered_potds) > 0:
             filtered_potds_id = list(map(lambda x: int(x[cfg.Config.config['potd_sheet_id_col']]), filtered_potds))
             unsolved_potds_id = [x for x in filtered_potds_id if x not in solved_potd if x not in already_picked]
