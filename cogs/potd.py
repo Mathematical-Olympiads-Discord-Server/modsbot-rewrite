@@ -439,7 +439,13 @@ class Potd(Cog):
         # Send the problem tex
         await ctx.send(to_tex, delete_after=5)
 
-    @commands.command(aliases=['search'], brief='Search a potd by genre and difficulty.')
+    @commands.command(aliases=['search'], brief='Search for a POTD by genre and difficulty.',
+        help='`-search 4 6`: Search for a POTD with difficulty d4 to d6 (inclusive).\n'
+            '`-search 4 6 C`: Search for a POTD with difficulty d4 to d6 and genres including combinatorics.\n'
+            '`-search 4 6 CG`: Search for a POTD with difficulty d4 to d6 and genres including combinatorics or geometry.\n'
+            '`-search 4 6 \'CG\'`: Search for a POTD with difficulty d4 to d6 and genres including (combinatorics AND geometry).\n'
+            '`-search 4 6 A\'CG\'N`: Search for a POTD with difficulty d4 to d6 and genres including (algebra OR (combinatorics AND geometry) OR number theory).\n'
+            '`-search 4 6 ACGN false`: Search for a POTD with difficulty d4 to d6. Allow getting problems marked in the `-solved` list.')
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_search(self, ctx, diff_lower_bound:int, diff_upper_bound:int, genre:str='ACGN', search_unsolved:bool=True):
         if diff_lower_bound > diff_upper_bound:
@@ -447,17 +453,7 @@ class Potd(Cog):
             return
 
         # Set up the genre filter
-        genre_filter = ""
-        if "A" in genre.upper():
-            genre_filter += "A"
-        if "C" in genre.upper():
-            genre_filter += "C"
-        if "G" in genre.upper():
-            genre_filter += "G"
-        if "N" in genre.upper():
-            genre_filter += "N"
-        if len(genre_filter) == 0: # If not filled, search all genre
-            genre_filter = "ACGN"
+        genre_filter = self.parse_genre_input(genre)
 
         # set up the difficulty filter
         diff_lower_bound_filter = max(0,diff_lower_bound)
@@ -471,6 +467,37 @@ class Potd(Cog):
             await self.potd_fetch(ctx, int(picked_potd))
         else:
             await ctx.send(f"No POTD found!")
+
+    def parse_genre_input(self, genre):
+        complex_genres = genre.split("'")[1::2]
+        simple_genres = "".join(genre.split("'")[0::2])
+
+        genre_filter = []
+        for character in simple_genres:
+            if character.upper() == "A":
+                genre_filter.append("A")
+            if character.upper() == "C":
+                genre_filter.append("C")
+            if character.upper() == "G":
+                genre_filter.append("G")
+            if character.upper() == "N":
+                genre_filter.append("N")
+
+        for item in complex_genres:
+            parsed_complex_genre = set()
+            for character in item:
+                if character.upper() == "A":
+                    parsed_complex_genre.add("A")
+                if character.upper() == "C":
+                    parsed_complex_genre.add("C")
+                if character.upper() == "G":
+                    parsed_complex_genre.add("G")
+                if character.upper() == "N":
+                    parsed_complex_genre.add("N")
+            parsed_complex_genre = "".join(parsed_complex_genre)
+            genre_filter.append(parsed_complex_genre)
+
+        return set(genre_filter)
 
     @commands.command(aliases=['mock'], brief='Create a mock paper using past POTDs.',
         help='`-mock IMO`: create mock IMO paper\n'
@@ -489,7 +516,7 @@ class Potd(Cog):
             'BMO2 (British Mathematical Olympiad Round 2):\n'
             '[3,4],[4,5],[5,6],[6,7]\n'
             'IGO (Iranian Geometry Olympiad):\n'
-            '[5,6],[5,6],[6,7],[7,8],[8,10]\n'
+            '[5,6],[6,7],[7,8],[8,9],[9,10]\n'
             'NZMO2 (New Zealand Mathematical Olympiad Round 2):\n'
             '[1,2],[2,3],[3,4],[4,5],[5,6]\n'
             'SMO2 (Singapore Mathematical Olympiad Open Round 2):\n'
@@ -519,7 +546,7 @@ class Potd(Cog):
             elif template == "BMO2":
                 difficulty_bounds = [[3,4],[4,5],[5,6],[6,7]]         
             elif template == "IGO":
-                difficulty_bounds = [[5,6],[5,6],[6,7],[7,8],[8,10]]
+                difficulty_bounds = [[5,6],[6,7],[7,8],[8,9],[9,10]]
             elif template == "NZMO2":
                 difficulty_bounds = [[1,2],[2,3],[3,4],[4,5],[5,6]]
             elif template == "SMO2":
@@ -622,20 +649,28 @@ class Potd(Cog):
         if search_unsolved == True:
             solved_potd = self.get_potd_solved(ctx)
 
-        # filter and pick a POTD
+        def match_genre(x,genre_filter):
+            for genre in genre_filter:
+                if (len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre)) == len(genre)):
+                    return True
+            return False
+
+        # filter by genre and difficulty
         if type(diff_upper_bound_filter) == int:
             filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
                             and x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
                             and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter
                             and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) <= diff_upper_bound_filter
-                            and len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0]
+                            and match_genre(x,genre_filter)]
         else: # if diff bound is "T"
             filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
                             and ((x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
                                 and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter)
                                 or not x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric())
-                            and len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0]
+                            and match_genre(x,genre_filter)]
 
+
+        # pick a POTD
         if len(filtered_potds) > 0:
             filtered_potds_id = list(map(lambda x: int(x[cfg.Config.config['potd_sheet_id_col']]), filtered_potds))
             unsolved_potds_id = [x for x in filtered_potds_id if x not in solved_potd if x not in already_picked]
@@ -667,7 +702,7 @@ class Potd(Cog):
         except IndexError:
             return None
 
-    @commands.command(aliases=['mark'], brief='Mark the potd you have solved')
+    @commands.command(aliases=['mark'], brief='Mark the POTD you have solved')
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_mark(self, ctx, potd_number:int):
         cursor = cfg.db.cursor()
@@ -682,12 +717,18 @@ class Potd(Cog):
                 ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
             await ctx.send(f'POTD {potd_number} is added to your solved list. ')
 
-            potd_row = self.get_potd_row(potd_number)
-            if potd_row != None and random.random() <  0.25:
-                if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
-                    await ctx.send(f"There is no hint for POTD {potd_number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+            try:
+                potd_row = self.get_potd_row(potd_number)
+            except IndexError:
+                potd_row = None            
+            if potd_row == None:
+                await ctx.send(f"There is no POTD {potd_number}. Are you sure you have inputted the correct number?")
+            else:
+                if potd_row != None and random.random() <  0.25:
+                    if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
+                        await ctx.send(f"There is no hint for POTD {potd_number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
 
-    @commands.command(aliases=['unmark'], brief='Unmark the potd you have solved')
+    @commands.command(aliases=['unmark'], brief='Unmark the POTD you have solved')
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_unmark(self, ctx, potd_number:int):
         cursor = cfg.db.cursor()
@@ -695,13 +736,44 @@ class Potd(Cog):
                             WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
         await ctx.send(f'POTD {potd_number} is removed from your solved list. ')
 
-    @commands.command(aliases=['solved'], brief='Show the potd you have solved')
+    @commands.command(aliases=['solved'], brief='Show the POTDs you have solved',
+        help='`-solved`: Show the POTDs you have solved.\n'
+            '`-solved d`: Show the POTDs you have solved, ordered by difficulties.')
     @commands.cooldown(1, 5, BucketType.user)
-    async def potd_solved(self, ctx):
+    async def potd_solved(self, ctx, flag=None):
         solved = self.get_potd_solved(ctx)
-        await ctx.send(f'Your solved POTD: \n')    
-        for i in range(0, len(solved), 300):            
-            await ctx.send(f'{list(solved[i:i+300])}')
+        
+        if flag == "d":
+            potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute().get('values', [])
+            current_potd = int(potds[0][0])
+
+            solved_by_difficulty = {}
+            for number in solved:
+                if number > current_potd or number <= 0:
+                    difficulty = "(Unknown)"
+                else:
+                    potd_row = potds[current_potd - number]
+                    if len(potd_row) > cfg.Config.config['potd_sheet_difficulty_col']:
+                        difficulty = potd_row[cfg.Config.config['potd_sheet_difficulty_col']]
+                    else:
+                        difficulty = "(Unknown)"
+
+                if difficulty not in solved_by_difficulty:
+                    solved_by_difficulty[difficulty] = []
+                solved_by_difficulty[difficulty].append(number)            
+            
+            sorted_keys = sorted(solved_by_difficulty.keys(), key=lambda x: (x.isnumeric(),int(x) if x.isnumeric() else x), reverse=True)
+            solved_by_difficulty = {key:solved_by_difficulty[key] for key in sorted_keys}
+
+            output_string = f'Your solved POTD: \n'
+            for key in solved_by_difficulty:
+                output_string += "D" + key + ": " + f"{solved_by_difficulty[key]}" + "\n"
+            await self.send_potd_solved(ctx, output_string)
+        else:
+            output_string = f'Your solved POTD: \n{solved}'
+            await self.send_potd_solved(ctx, output_string)
+        
     
     def get_potd_solved(self, ctx):
         cursor = cfg.db.cursor()
@@ -709,6 +781,23 @@ class Potd(Cog):
                             WHERE discord_user_id = {ctx.author.id} 
                             ORDER BY potd_id DESC''')
         return [x[1] for x in cursor.fetchall()]
+
+    # send message in batches of 1900+e characters because of 2k character limit
+    async def send_potd_solved(self, ctx, output_string):
+        i = 0
+        output_batch = ""
+        while i < len(output_string):
+            if output_batch == "":
+                jump = min(1900, len(output_string)-i)
+                output_batch += output_string[i:i+jump]
+                i += jump
+            else:
+                output_batch += output_string[i]
+                i += 1
+            if output_batch[-1] == "," or output_batch[-1] == "]" or len(output_batch) == 2000 or i==len(output_string): # we end a batch at "," or "]"
+                await ctx.send(output_batch)
+                output_batch = ""
+
 
     @commands.command(aliases=['hint'], brief='Get hint for the POTD.')
     @commands.cooldown(1, 10, BucketType.user)
