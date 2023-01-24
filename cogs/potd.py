@@ -682,10 +682,16 @@ class Potd(Cog):
                 ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
             await ctx.send(f'POTD {potd_number} is added to your solved list. ')
 
-            potd_row = self.get_potd_row(potd_number)
-            if potd_row != None and random.random() <  0.25:
-                if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
-                    await ctx.send(f"There is no hint for POTD {potd_number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+            try:
+                potd_row = self.get_potd_row(potd_number)
+            except IndexError:
+                potd_row = None            
+            if potd_row == None:
+                await ctx.send(f"There is no POTD {potd_number}. Are you sure you have inputted the correct number?")
+            else:
+                if potd_row != None and random.random() <  0.25:
+                    if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
+                        await ctx.send(f"There is no hint for POTD {potd_number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
 
     @commands.command(aliases=['unmark'], brief='Unmark the potd you have solved')
     @commands.cooldown(1, 5, BucketType.user)
@@ -700,8 +706,8 @@ class Potd(Cog):
     async def potd_solved(self, ctx):
         solved = self.get_potd_solved(ctx)
         await ctx.send(f'Your solved POTD: \n')    
-        for i in range(0, len(solved), 300):            
-            await ctx.send(f'{list(solved[i:i+300])}')
+        for i in range(0, len(solved), 100): # send in batches of 100 because of 2k character limit
+            await ctx.send(f'{list(solved[i:i+100])}')
     
     def get_potd_solved(self, ctx):
         cursor = cfg.db.cursor()
