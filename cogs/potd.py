@@ -439,7 +439,13 @@ class Potd(Cog):
         # Send the problem tex
         await ctx.send(to_tex, delete_after=5)
 
-    @commands.command(aliases=['search'], brief='Search a potd by genre and difficulty.')
+    @commands.command(aliases=['search'], brief='Search for a POTD by genre and difficulty.',
+        help='`-search 4 6`: Search for a POTD with difficulty d4 to d6 (inclusive).\n'
+            '`-search 4 6 C`: Search for a POTD with difficulty d4 to d6 and genres including combinatorics.\n'
+            '`-search 4 6 CG`: Search for a POTD with difficulty d4 to d6 and genres including combinatorics or geometry.\n'
+            '`-search 4 6 \'CG\'`: Search for a POTD with difficulty d4 to d6 and genres including (combinatorics AND geometry).\n'
+            '`-search 4 6 A\'CG\'N`: Search for a POTD with difficulty d4 to d6 and genres including (algebra OR (combinatorics AND geometry) OR number theory).\n'
+            '`-search 4 6 ACGN false`: Search for a POTD with difficulty d4 to d6. Allow getting problems marked in the `-solved` list.')
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_search(self, ctx, diff_lower_bound:int, diff_upper_bound:int, genre:str='ACGN', search_unsolved:bool=True):
         if diff_lower_bound > diff_upper_bound:
@@ -447,17 +453,7 @@ class Potd(Cog):
             return
 
         # Set up the genre filter
-        genre_filter = ""
-        if "A" in genre.upper():
-            genre_filter += "A"
-        if "C" in genre.upper():
-            genre_filter += "C"
-        if "G" in genre.upper():
-            genre_filter += "G"
-        if "N" in genre.upper():
-            genre_filter += "N"
-        if len(genre_filter) == 0: # If not filled, search all genre
-            genre_filter = "ACGN"
+        genre_filter = self.parse_genre_input(genre)
 
         # set up the difficulty filter
         diff_lower_bound_filter = max(0,diff_lower_bound)
@@ -471,6 +467,37 @@ class Potd(Cog):
             await self.potd_fetch(ctx, int(picked_potd))
         else:
             await ctx.send(f"No POTD found!")
+
+    def parse_genre_input(self, genre):
+        complex_genres = genre.split("'")[1::2]
+        simple_genres = "".join(genre.split("'")[0::2])
+
+        genre_filter = []
+        for character in simple_genres:
+            if character.upper() == "A":
+                genre_filter.append("A")
+            if character.upper() == "C":
+                genre_filter.append("C")
+            if character.upper() == "G":
+                genre_filter.append("G")
+            if character.upper() == "N":
+                genre_filter.append("N")
+
+        for item in complex_genres:
+            parsed_complex_genre = set()
+            for character in item:
+                if character.upper() == "A":
+                    parsed_complex_genre.add("A")
+                if character.upper() == "C":
+                    parsed_complex_genre.add("C")
+                if character.upper() == "G":
+                    parsed_complex_genre.add("G")
+                if character.upper() == "N":
+                    parsed_complex_genre.add("N")
+            parsed_complex_genre = "".join(parsed_complex_genre)
+            genre_filter.append(parsed_complex_genre)
+
+        return set(genre_filter)
 
     @commands.command(aliases=['mock'], brief='Create a mock paper using past POTDs.',
         help='`-mock IMO`: create mock IMO paper\n'
@@ -622,19 +649,26 @@ class Potd(Cog):
         if search_unsolved == True:
             solved_potd = self.get_potd_solved(ctx)
 
+        def match_genre(x,genre_filter):
+            for genre in genre_filter:
+                if (len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre)) == len(genre)):
+                    return True
+            return False
+
         # filter by genre and difficulty
         if type(diff_upper_bound_filter) == int:
             filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
                             and x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
                             and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter
                             and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) <= diff_upper_bound_filter
-                            and len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0]
+                            and match_genre(x,genre_filter)]
         else: # if diff bound is "T"
             filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
                             and ((x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
                                 and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter)
                                 or not x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric())
-                            and len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre_filter)) > 0]
+                            and match_genre(x,genre_filter)]
+
 
         # pick a POTD
         if len(filtered_potds) > 0:
