@@ -702,7 +702,7 @@ class Potd(Cog):
         except IndexError:
             return None
 
-    @commands.command(aliases=['mark'], brief='Mark the potd you have solved')
+    @commands.command(aliases=['mark'], brief='Mark the POTD you have solved')
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_mark(self, ctx, potd_number:int):
         cursor = cfg.db.cursor()
@@ -728,7 +728,7 @@ class Potd(Cog):
                     if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
                         await ctx.send(f"There is no hint for POTD {potd_number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
 
-    @commands.command(aliases=['unmark'], brief='Unmark the potd you have solved')
+    @commands.command(aliases=['unmark'], brief='Unmark the POTD you have solved')
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_unmark(self, ctx, potd_number:int):
         cursor = cfg.db.cursor()
@@ -736,13 +736,44 @@ class Potd(Cog):
                             WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
         await ctx.send(f'POTD {potd_number} is removed from your solved list. ')
 
-    @commands.command(aliases=['solved'], brief='Show the potd you have solved')
+    @commands.command(aliases=['solved'], brief='Show the POTDs you have solved',
+        help='`-solved`: Show the POTDs you have solved.\n'
+            '`-solved d`: Show the POTDs you have solved, ordered by difficulties.')
     @commands.cooldown(1, 5, BucketType.user)
-    async def potd_solved(self, ctx):
+    async def potd_solved(self, ctx, flag=None):
         solved = self.get_potd_solved(ctx)
-        await ctx.send(f'Your solved POTD: \n')    
-        for i in range(0, len(solved), 100): # send in batches of 100 because of 2k character limit
-            await ctx.send(f'{list(solved[i:i+100])}')
+        
+        if flag == "d":
+            potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute().get('values', [])
+            current_potd = int(potds[0][0])
+
+            solved_by_difficulty = {}
+            for number in solved:
+                if number > current_potd or number <= 0:
+                    difficulty = "(Unknown)"
+                else:
+                    potd_row = potds[current_potd - number]
+                    if len(potd_row) > cfg.Config.config['potd_sheet_difficulty_col']:
+                        difficulty = potd_row[cfg.Config.config['potd_sheet_difficulty_col']]
+                    else:
+                        difficulty = "(Unknown)"
+
+                if difficulty not in solved_by_difficulty:
+                    solved_by_difficulty[difficulty] = []
+                solved_by_difficulty[difficulty].append(number)            
+            
+            sorted_keys = sorted(solved_by_difficulty.keys(), key=lambda x: (x.isnumeric(),int(x) if x.isnumeric() else x), reverse=True)
+            solved_by_difficulty = {key:solved_by_difficulty[key] for key in sorted_keys}
+
+            output_string = f'Your solved POTD: \n'
+            for key in solved_by_difficulty:
+                output_string += "D" + key + ": " + f"{solved_by_difficulty[key]}" + "\n"
+            await self.send_potd_solved(ctx, output_string)
+        else:
+            output_string = f'Your solved POTD: \n{solved}'
+            await self.send_potd_solved(ctx, output_string)
+        
     
     def get_potd_solved(self, ctx):
         cursor = cfg.db.cursor()
@@ -750,6 +781,23 @@ class Potd(Cog):
                             WHERE discord_user_id = {ctx.author.id} 
                             ORDER BY potd_id DESC''')
         return [x[1] for x in cursor.fetchall()]
+
+    # send message in batches of 1900+e characters because of 2k character limit
+    async def send_potd_solved(self, ctx, output_string):
+        i = 0
+        output_batch = ""
+        while i < len(output_string):
+            if output_batch == "":
+                jump = min(1900, len(output_string)-i)
+                output_batch += output_string[i:i+jump]
+                i += jump
+            else:
+                output_batch += output_string[i]
+                i += 1
+            if output_batch[-1] == "," or output_batch[-1] == "]" or len(output_batch) == 2000 or i==len(output_string): # we end a batch at "," or "]"
+                await ctx.send(output_batch)
+                output_batch = ""
+
 
     @commands.command(aliases=['hint'], brief='Get hint for the POTD.')
     @commands.cooldown(1, 10, BucketType.user)
