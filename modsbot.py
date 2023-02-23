@@ -1,4 +1,5 @@
 import logging
+import math
 import re
 import threading
 import time
@@ -141,7 +142,7 @@ class MODSBot(commands.Bot):
 
             self.logger.error(log_message)
             try:
-                for i in range(0, len(log_message), 1900): # send log messages in chunks to prevent hitting 2k char limit
+                for i in range(0, min(len(log_message),9500), 1900): # send log messages in chunks to prevent hitting 2k char limit
                     await log_channel.send(f'```{log_message[i:i+1900]}```')
             except Exception:
                 try: await log_channel.send('Failed to send error message.')
