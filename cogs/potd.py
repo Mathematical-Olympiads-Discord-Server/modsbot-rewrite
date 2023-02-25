@@ -417,7 +417,7 @@ class Potd(Cog):
         values = reply.get('values', [])
         current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
 
-        if number > current_potd:
+        if number > current_potd or number < 1:
             await ctx.send(f"There is no potd for day {number}. ")
             return
 
@@ -438,6 +438,28 @@ class Potd(Cog):
         
         # Send the problem tex
         await ctx.send(to_tex, delete_after=5)
+
+    @commands.command(aliases=['source'], brief='Get the source of a potd by id.')
+    @commands.cooldown(1, 10, BucketType.user)
+    async def potd_source(self, ctx, number: int):
+        # Read from the spreadsheet
+        reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute()
+        values = reply.get('values', [])
+        current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+
+        if number > current_potd or number < 1:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
+        
+        try:
+            potd_row = values[current_potd - number]  # this gets the row requested
+        except IndexError:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
+
+        source = self.generate_source(potd_row)
+        await ctx.send(embed=source)
 
     @commands.command(aliases=['search'], brief='Search for a POTD by genre and difficulty.',
         help='`-search 4 6`: Search for a POTD with difficulty d4 to d6 (inclusive).\n'
