@@ -824,7 +824,11 @@ class Potd(Cog):
     @commands.command(aliases=['hint'], brief='Get hint for the POTD.')
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_hint(self, ctx, number: int, hint_number: int = 1):
-        potd_row = self.get_potd_row(number)
+        try:
+            potd_row = self.get_potd_row(number)
+        except IndexError:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
         if potd_row == None:
             await ctx.send(f"There is no potd for day {number}. ")
             return
