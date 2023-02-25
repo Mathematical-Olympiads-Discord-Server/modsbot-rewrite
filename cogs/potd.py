@@ -411,55 +411,39 @@ class Potd(Cog):
     @commands.command(aliases=['fetch'], brief='Fetch a potd by id.')
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_fetch(self, ctx, number: int):
-        # Read from the spreadsheet
-        reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
-                                                               range=POTD_RANGE).execute()
-        values = reply.get('values', [])
-        current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+        potd_row = self.get_potd_row(number)
 
-        if number > current_potd or number < 1:
+        if potd_row == None:
             await ctx.send(f"There is no potd for day {number}. ")
             return
-
-        potd_row = values[current_potd - number]  # this gets the row requested
-
-        # Create the message to send
-        to_tex = ''
-        try:
-            to_tex = '<@' + str(cfg.Config.config['paradox_id']) + '>\n```tex\n\\textbf{Day ' + str(
-                potd_row[cfg.Config.config['potd_sheet_id_col']]) + '} --- ' + str(
-                potd_row[cfg.Config.config['potd_sheet_day_col']]) + ' ' + str(
-                potd_row[cfg.Config.config['potd_sheet_date_col']]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(
-                potd_row[cfg.Config.config['potd_sheet_statement_col']]) + '```'
-        except IndexError:
-            await ctx.send(f"There is no potd for day {number}. ")
-            return
-        print(to_tex)
-        
-        # Send the problem tex
-        await ctx.send(to_tex, delete_after=5)
+        else:
+            # Create the message to send
+            to_tex = ''
+            try:
+                to_tex = '<@' + str(cfg.Config.config['paradox_id']) + '>\n```tex\n\\textbf{Day ' + str(
+                    potd_row[cfg.Config.config['potd_sheet_id_col']]) + '} --- ' + str(
+                    potd_row[cfg.Config.config['potd_sheet_day_col']]) + ' ' + str(
+                    potd_row[cfg.Config.config['potd_sheet_date_col']]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(
+                    potd_row[cfg.Config.config['potd_sheet_statement_col']]) + '```'
+            except IndexError:
+                await ctx.send(f"There is no potd for day {number}. ")
+                return
+            print(to_tex)
+            
+            # Send the problem tex
+            await ctx.send(to_tex, delete_after=5)
 
     @commands.command(aliases=['source'], brief='Get the source of a potd by id.')
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_source(self, ctx, number: int):
-        # Read from the spreadsheet
-        reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
-                                                               range=POTD_RANGE).execute()
-        values = reply.get('values', [])
-        current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+        potd_row = self.get_potd_row(number)
 
-        if number > current_potd or number < 1:
+        if potd_row == None:
             await ctx.send(f"There is no potd for day {number}. ")
             return
-        
-        try:
-            potd_row = values[current_potd - number]  # this gets the row requested
-        except IndexError:
-            await ctx.send(f"There is no potd for day {number}. ")
-            return
-
-        source = self.generate_source(potd_row)
-        await ctx.send(embed=source)
+        else:
+            source = self.generate_source(potd_row)
+            await ctx.send(embed=source)
 
     @commands.command(aliases=['search'], brief='Search for a POTD by genre and difficulty.',
         help='`-search 4 6`: Search for a POTD with difficulty d4 to d6 (inclusive).\n'
@@ -739,10 +723,7 @@ class Potd(Cog):
                 ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
             await ctx.send(f'POTD {potd_number} is added to your solved list. ')
 
-            try:
-                potd_row = self.get_potd_row(potd_number)
-            except IndexError:
-                potd_row = None            
+            potd_row = self.get_potd_row(potd_number)
             if potd_row == None:
                 await ctx.send(f"There is no POTD {potd_number}. Are you sure you have inputted the correct number?")
             else:
@@ -824,11 +805,7 @@ class Potd(Cog):
     @commands.command(aliases=['hint'], brief='Get hint for the POTD.')
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_hint(self, ctx, number: int, hint_number: int = 1):
-        try:
-            potd_row = self.get_potd_row(number)
-        except IndexError:
-            await ctx.send(f"There is no potd for day {number}. ")
-            return
+        potd_row = self.get_potd_row(number)
         if potd_row == None:
             await ctx.send(f"There is no potd for day {number}. ")
             return
@@ -869,11 +846,14 @@ class Potd(Cog):
         values = reply.get('values', [])
         current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
 
-        if number > current_potd:
+        if number > current_potd or number < 1:
             return None
 
-        potd_row = values[current_potd - number]  # this gets the row requested
-        return potd_row
+        try:
+            potd_row = values[current_potd - number]  # this gets the row requested
+            return potd_row
+        except IndexError:
+            return None
 
     @commands.command(aliases=['remove_potd'], brief='Deletes the potd with the provided number. ')
     @commands.check(is_pc)
