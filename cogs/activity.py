@@ -306,6 +306,77 @@ class Activity(Cog):
         plt.clf()
         plt.close('all')
 
+    class ServerActivityFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
+        interval: int = 30
+            
+    @commands.cooldown(1, 10, BucketType.user)
+    @commands.command(help = '`-server_activity`: show my activity graph\n'
+                            '`-server_activity --interval 60`: show my activity graph for past 60 days\n')
+    async def server_activity(self, ctx, *, flags:ServerActivityFlags):
+        matplotlib.use('agg')
+
+        messages = []
+        ticks = []
+        delta = dt.timedelta(days=1)
+        index = 0
+        end = datetime.now().date()
+        interval = flags.interval
+
+        epoch = dt.date(2019, 1, 11)  # This is when the server was created
+        if interval is None:
+            interval = (end - epoch) / delta
+        if interval > (end - epoch) / delta:
+            await ctx.send(f'Too big interval (max size: `{(end - epoch) // delta}`)')
+            return
+
+        cursor = cfg.db.cursor()
+        cursor.execute(f'''
+        SELECT date(message_date) as date, COUNT(*) AS number
+        FROM messages
+        WHERE date(message_date) BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
+        AND "{str(dt.date.today() + dt.timedelta(1))}"
+        GROUP BY DATE(message_date)
+        ORDER BY DATE(message_date);
+        ''')
+        result = cursor.fetchall()
+
+        plt.style.use('ggplot')
+
+        start = end - (interval - 1) * delta
+        while start <= end:
+            if len(result) > index and result[index][0] == str(start):
+                messages.append(result[index][1])
+                index += 1
+            else:
+                messages.append(0)
+            if interval > 70:
+                ticks.append(str(start)[:7] if start.day == 1 else None)
+            else:
+                ticks.append(str(start)[5:] if start.weekday() == 0 else None)
+            start += delta
+        x_pos = [i for i, _ in enumerate(messages)]
+        print(x_pos)
+        print(messages)
+        if interval > 50:   # With a lot of data to display cool formatting is less necessary
+            plt.figure(figsize=(24, 13.5))
+            plt.xkcd(scale=0, randomness=0, length=0)
+        else:
+            plt.xkcd(scale=0.5, randomness=0.5)
+            plt.figure(figsize=(8, 6))
+        plt.bar(x_pos, messages, color='green')
+        plt.xlabel("Date")
+        plt.ylabel("Messages")
+        plt.title(f"MODS's Activity")
+        plt.axhline(y=10, linewidth=1, color='r')
+        plt.subplots_adjust(bottom=0.15)
+
+        plt.xticks(x_pos, ticks)
+        fname = f'data/{datetime.now().isoformat()}.png'
+        plt.savefig(fname)
+        await ctx.send(file=discord.File(open(fname, 'rb')))
+        plt.clf()
+        plt.close('all')
+
     def schedule_ua(self, mode=None):
         self.bot.loop.create_task(self.call_ua())
 
