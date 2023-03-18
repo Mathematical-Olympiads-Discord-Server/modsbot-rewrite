@@ -741,7 +741,8 @@ class Potd(Cog):
 
     @commands.command(aliases=['solved'], brief='Show the POTDs you have solved',
         help='`-solved`: Show the POTDs you have solved.\n'
-            '`-solved d`: Show the POTDs you have solved, ordered by difficulties.')
+            '`-solved d`: Show the POTDs you have solved, ordered by difficulties.\n'
+            '`-solved s`: Show the POTDs you have solved, divided into the four subjects.\n')
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_solved(self, ctx, flag=None):
         solved = self.get_potd_solved(ctx)
@@ -772,6 +773,35 @@ class Potd(Cog):
             output_string = f'Your solved POTD: \n'
             for key in solved_by_difficulty:
                 output_string += "D" + key + ": " + f"{solved_by_difficulty[key]}" + "\n"
+            await self.send_potd_solved(ctx, output_string)
+        elif flag == "s":
+            potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute().get('values', [])
+            current_potd = int(potds[0][0])
+
+            solved_by_genre = {'A':[], 'C':[], 'G':[], 'N':[]}
+            for number in solved:
+                if number > current_potd or number <= 0:
+                    genre = "(Unknown)"
+                else:
+                    potd_row = potds[current_potd - number]
+                    if len(potd_row) > cfg.Config.config['potd_sheet_genre_col']:
+                        genre = potd_row[cfg.Config.config['potd_sheet_genre_col']]
+                    else:
+                        genre = "(Unknown)"
+
+                if 'A' in genre:
+                    solved_by_genre['A'].append(number)
+                if 'C' in genre:
+                    solved_by_genre['C'].append(number)
+                if 'G' in genre:
+                    solved_by_genre['G'].append(number)
+                if 'N' in genre:
+                    solved_by_genre['N'].append(number)
+
+            output_string = f'Your solved POTD: \n'
+            for key in solved_by_genre:
+                output_string += key + ": " + f"{solved_by_genre[key]}" + "\n"
             await self.send_potd_solved(ctx, output_string)
         else:
             output_string = f'Your solved POTD: \n{solved}'
