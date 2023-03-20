@@ -257,7 +257,9 @@ class Activity(Cog):
         if interval is None:
             interval = (end - epoch) / delta
         if interval > (end - epoch) / delta:
-            await ctx.send(f'Too big interval (max size: `{(end - epoch) // delta}`)')
+            interval = (end - epoch) / delta
+        if interval < 1:
+            await ctx.send(f'Interval must be at least 1.')
             return
 
         if user is None:
@@ -334,7 +336,9 @@ class Activity(Cog):
         if interval is None:
             interval = (end - epoch) / delta
         if interval > (end - epoch) / delta:
-            await ctx.send(f'Too big interval (max size: `{(end - epoch) // delta}`)')
+            interval = (end - epoch) / delta
+        if interval < 1:
+            await ctx.send(f'Interval must be at least 1.')
             return
 
         cursor = cfg.db.cursor()
