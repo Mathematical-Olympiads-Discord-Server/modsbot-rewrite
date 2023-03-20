@@ -284,7 +284,9 @@ class Activity(Cog):
                 index += 1
             else:
                 messages.append(0)
-            if interval > 70:
+            if interval > 600: 
+                ticks.append(str(start)[:7] if start.day == and start.month % 3 == 1 else None)
+            elif interval > 70:
                 ticks.append(str(start)[:7] if start.day == 1 else None)
             else:
                 ticks.append(str(start)[5:] if start.weekday() == 0 else None)
@@ -355,7 +357,9 @@ class Activity(Cog):
                 index += 1
             else:
                 messages.append(0)
-            if interval > 70:
+            if interval > 600: 
+                ticks.append(str(start)[:7] if start.day == and start.month % 3 == 1 else None)
+            elif interval > 70:
                 ticks.append(str(start)[:7] if start.day == 1 else None)
             else:
                 ticks.append(str(start)[5:] if start.weekday() == 0 else None)
