@@ -233,6 +233,49 @@ class Activity(Cog):
                         value='\n'.join([f'`{i + 1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(length)]))
         await ctx.send(embed=embed)
 
+
+    class ChtopFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
+        interval: int = 30
+        channels: int = 15
+        
+    @commands.command(aliases=['chtop'], help= '`-chtop`: show channel leaderboard (by activity points)\n'
+                                                '`-chtop --interval 15`: show leaderboard for the last 15 days\n'
+                                                '`-chtop --channels 27`: show leaderboard up to 27 channels\n'
+                                                '`-chtop --interval 15 --channels 27`: combine commands')
+    @commands.cooldown(1, 10, BucketType.user)
+    async def channel_top(self, ctx, *, flags:ChtopFlags):
+        interval = flags.interval if flags.interval < 30 else 30
+        channels = flags.channels if flags.channels < 30 else 30
+        cursor = cfg.db.cursor()
+        cursor.execute(f'''SELECT discord_channel_id, message_date, message_length 
+        FROM messages
+        WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
+        AND "{str(dt.date.today() + dt.timedelta(1))}"
+        LIMIT 1000000;''')
+        messages = cursor.fetchall()
+        tss = [(x[0], datetime.fromisoformat(x[1]).timestamp(), x[2]) for x in messages]
+        last_message = {}
+        score = {}
+
+        now = datetime.utcnow().timestamp()
+        for message in tss:
+            if message[0] in score:
+                score[message[0]] += weight(message[2], message[1], last_message[message[0]], now)
+                last_message[message[0]] = message[1]
+            else:
+                score[message[0]] = weight(message[2], message[1], None, now)
+                last_message[message[0]] = message[1]
+
+        scores = [(x, int(score[x])) for x in score]
+        scores.sort(key=lambda x: -x[1])
+        embed = discord.Embed()
+        s = 's'
+        blank = ''
+        length = min(channels, len([x for x in scores if x[1] > 0]))
+        embed.add_field(name=f'Top {channels} channel{s if channels > 1 else blank} by activity score ({interval} day)',
+                        value='\n'.join([f'`{i + 1}.` <#{scores[i][0]}>: `{scores[i][1]}`' for i in range(length)]))
+        await ctx.send(embed=embed)
+
     class ActivityFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
         interval: int = 30
         user: discord.User = None
@@ -257,7 +300,9 @@ class Activity(Cog):
         if interval is None:
             interval = (end - epoch) / delta
         if interval > (end - epoch) / delta:
-            await ctx.send(f'Too big interval (max size: `{(end - epoch) // delta}`)')
+            interval = (end - epoch) / delta
+        if interval < 1:
+            await ctx.send(f'Interval must be at least 1.')
             return
 
         if user is None:
@@ -334,7 +379,9 @@ class Activity(Cog):
         if interval is None:
             interval = (end - epoch) / delta
         if interval > (end - epoch) / delta:
-            await ctx.send(f'Too big interval (max size: `{(end - epoch) // delta}`)')
+            interval = (end - epoch) / delta
+        if interval < 1:
+            await ctx.send(f'Interval must be at least 1.')
             return
 
         cursor = cfg.db.cursor()
