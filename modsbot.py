@@ -93,6 +93,10 @@ class MODSBot(commands.Bot):
                     search_str += ' ' + i.description
             if re.search('discord', search_str, re.I) and re.search('nitro', search_str, re.I):
                 spam = True
+
+        if message.author.id in self.config['troll'] and message.content[0] == '-':
+            spam = True
+
         if spam:
             try:
                 log_message = f'Muted {message.author.mention} ({message.author.id}) for spam:\n```{message.content}```'
