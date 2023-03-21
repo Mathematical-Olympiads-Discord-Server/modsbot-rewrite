@@ -46,7 +46,7 @@ def moving_avg(data, interval):
     # Initialize the rolling sum
     rolling_sum = sum(data[:interval])
     moving_averages.append(rolling_sum / interval)
-    
+
     # Loop over the remaining elements in the array
     for i in range(interval, len(data)):
         # Add the current element to the rolling sum and subtract the element interval positions earlier
@@ -444,10 +444,10 @@ class Activity(Cog):
 
         # Plot 30 DMA
         if interval > 30: 
-            plt.plot(x_pos[:30], moving_avg(messages, 30))
+            plt.plot(x_pos[29:], moving_avg(messages, 30))
         # Plot 90 DMA
         if interval > 90: 
-            plt.plot(x_pos[:90], moving_avg(messages, 90))
+            plt.plot(x_pos[89:], moving_avg(messages, 90))
 
         plt.xlabel("Date")
         plt.ylabel("Messages")
