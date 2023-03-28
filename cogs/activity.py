@@ -189,8 +189,8 @@ class Activity(Cog):
             f'Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```')
 
     class ActtopFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
-        interval: int = 30
-        users: int = 15
+        interval: int = commands.flag(name="interval",aliases=["i"],default=30)
+        users: int = commands.flag(name="users",aliases=["u"],default=15)
         
     @commands.command(aliases=['acttop'], help= '`-acttop`: show activity leaderboard\n'
                                                 '`-acttop --interval 15`: show leaderboard for the last 15 days\n'
@@ -235,8 +235,8 @@ class Activity(Cog):
 
 
     class ChtopFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
-        interval: int = 30
-        channels: int = 15
+        interval: int = commands.flag(name="interval",aliases=["i"],default=30)
+        channels: int = commands.flag(name="channels",aliases=["c"],default=15)
         
     @commands.command(aliases=['chtop'], help= '`-chtop`: show channel leaderboard (by activity points)\n'
                                                 '`-chtop --interval 15`: show leaderboard for the last 15 days\n'
@@ -277,14 +277,14 @@ class Activity(Cog):
         await ctx.send(embed=embed)
 
     class ActivityFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
-        interval: int = 30
-        user: discord.User = None
+        interval:int = commands.flag(name="interval",aliases=["i"],default=30)
+        user: discord.User = commands.flag(name="user",aliases=["u"],default=None)
 
     @commands.cooldown(1, 10, BucketType.user)
-    @commands.command(help = '`-activity`: show my activity graph\n'
-                            '`-activity --interval 60`: show my activity graph for past 60 days\n'
-                            '`-activity --user @user`: show activity graph for @user\n'
-                            '`-activity --interval 60 --user @user`: combine commands')
+    @commands.command(aliases=['act'], help = '`-activity`: show my activity graph\n'
+                                            '`-activity --interval 60`: show my activity graph for past 60 days\n'
+                                            '`-activity --user @user`: show activity graph for @user\n'
+                                            '`-activity --interval 60 --user @user`: combine commands')
     async def activity(self, ctx, *, flags:ActivityFlags):
         matplotlib.use('agg')
 
@@ -358,13 +358,14 @@ class Activity(Cog):
         await ctx.send(file=discord.File(open(fname, 'rb')))
         plt.clf()
         plt.close('all')
+        
 
     class ServerActivityFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
-        interval: int = 30
+        interval: int = commands.flag(name="interval",aliases=["i"],default=30)
             
     @commands.cooldown(1, 10, BucketType.user)
-    @commands.command(help = '`-server_activity`: show my activity graph\n'
-                            '`-server_activity --interval 60`: show my activity graph for past 60 days\n')
+    @commands.command(aliases=['sa'], help = '`-server_activity`: show my activity graph\n'
+                                            '`-server_activity --interval 60`: show my activity graph for past 60 days\n')
     async def server_activity(self, ctx, *, flags:ServerActivityFlags):
         matplotlib.use('agg')
 
