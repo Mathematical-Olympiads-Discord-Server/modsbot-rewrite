@@ -39,6 +39,26 @@ def weight(chars, m_date, last_m, now_ts):
         print(chars, interval, m_date, last_m, now_ts)
 
 
+
+def moving_avg(data, interval): 
+    moving_averages = []
+
+    # Initialize the rolling sum
+    rolling_sum = sum(data[:interval])
+    moving_averages.append(rolling_sum / interval)
+
+    # Loop over the remaining elements in the array
+    for i in range(interval, len(data)):
+        # Add the current element to the rolling sum and subtract the element interval positions earlier
+        rolling_sum += data[i] - data[i - interval]
+
+        # Calculate the moving average for the current interval and append it to the list of moving averages
+        moving_averages.append(rolling_sum / interval)
+
+    # Return the list of moving averages
+    return moving_averages
+
+
 class Activity(Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -364,8 +384,8 @@ class Activity(Cog):
         interval: int = commands.flag(name="interval",aliases=["i"],default=30)
             
     @commands.cooldown(1, 10, BucketType.user)
-    @commands.command(aliases=['sa'], help = '`-server_activity`: show my activity graph\n'
-                                            '`-server_activity --interval 60`: show my activity graph for past 60 days\n')
+    @commands.command(aliases=['sa'], help = '`-server_activity`: show server\'s activity graph\n'
+                                            '`-server_activity --interval 60`: show server\'s activity graph for past 60 days\n')
     async def server_activity(self, ctx, *, flags:ServerActivityFlags):
         matplotlib.use('agg')
 
@@ -422,6 +442,14 @@ class Activity(Cog):
             plt.xkcd(scale=0.5, randomness=0.5)
             plt.figure(figsize=(8, 6))
         plt.bar(x_pos, messages, color='green')
+
+        # Plot 30 DMA
+        if interval > 30: 
+            plt.plot(x_pos[29:], moving_avg(messages, 30))
+        # Plot 90 DMA
+        if interval > 90: 
+            plt.plot(x_pos[89:], moving_avg(messages, 90))
+
         plt.xlabel("Date")
         plt.ylabel("Messages")
         plt.title(f"MODS's Activity")
