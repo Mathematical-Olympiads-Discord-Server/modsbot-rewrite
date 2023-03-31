@@ -210,16 +210,12 @@ class Activity(Cog):
 
     class ActtopFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
         interval: int = commands.flag(name="interval",aliases=["i"],default=30)
-        users: int = commands.flag(name="users",aliases=["u"],default=15)
         
     @commands.command(aliases=['acttop'], help= '`-acttop`: show activity leaderboard\n'
-                                                '`-acttop --interval 15`: show leaderboard for the last 15 days\n'
-                                                '`-acttop --users 27`: show leaderboard up to 27 users\n'
-                                                '`-acttop --interval 15 --users 27`: combine commands')
+                                                '`-acttop --interval 15`: show leaderboard for the last 15 days')
     @commands.cooldown(1, 10, BucketType.user)
     async def activity_top(self, ctx, *, flags:ActtopFlags):
         interval = flags.interval if flags.interval < 30 else 30
-        users = flags.users if flags.users < 30 else 30
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT discord_user_id, message_date, message_length 
         FROM messages
@@ -245,27 +241,34 @@ class Activity(Cog):
 
         scores = [(x, int(score[x])) for x in score]
         scores.sort(key=lambda x: -x[1])
-        embed = discord.Embed()
-        s = 's'
-        blank = ''
-        length = min(users, len([x for x in scores if x[1] > 0]))
-        embed.add_field(name=f'Top {users} user{s if users > 1 else blank} by activity score ({interval} day)',
-                        value='\n'.join([f'`{i + 1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(length)]))
-        await ctx.send(embed=embed)
+
+        if len(scores) <= 20:
+            embed = discord.Embed()
+            length = len(scores)
+            embed.add_field(name=f'Top users by activity score ({interval} day)',
+                            value='\n'.join([f'`{i + 1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(length)]))
+            await ctx.send(embed=embed)
+        else:
+            pages = []
+            for j in range(math.ceil(len(scores)/20)):
+                print(j)
+                pageMin = 20 * j
+                pageMax = min(20 * j + 20, len(scores))
+                page = discord.Embed(title=f'Top users by activity score ({interval} day) - Page {j + 1}')
+                lines = '\n'.join([f'`{i + 1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(pageMin,pageMax)])
+                page.description = lines
+                pages.append(page)
+            await self.bot.get_cog('MenuManager').new_menu(ctx, pages)
 
 
     class ChtopFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
         interval: int = commands.flag(name="interval",aliases=["i"],default=30)
-        channels: int = commands.flag(name="channels",aliases=["c"],default=15)
         
     @commands.command(aliases=['chtop'], help= '`-chtop`: show channel leaderboard (by activity points)\n'
-                                                '`-chtop --interval 15`: show leaderboard for the last 15 days\n'
-                                                '`-chtop --channels 27`: show leaderboard up to 27 channels\n'
-                                                '`-chtop --interval 15 --channels 27`: combine commands')
+                                                '`-chtop --interval 15`: show leaderboard for the last 15 days')
     @commands.cooldown(1, 10, BucketType.user)
     async def channel_top(self, ctx, *, flags:ChtopFlags):
         interval = flags.interval if flags.interval < 30 else 30
-        channels = flags.channels if flags.channels < 30 else 30
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT discord_channel_id, message_date, message_length 
         FROM messages
@@ -288,13 +291,24 @@ class Activity(Cog):
 
         scores = [(x, int(score[x])) for x in score]
         scores.sort(key=lambda x: -x[1])
-        embed = discord.Embed()
-        s = 's'
-        blank = ''
-        length = min(channels, len([x for x in scores if x[1] > 0]))
-        embed.add_field(name=f'Top {channels} channel{s if channels > 1 else blank} by activity score ({interval} day)',
-                        value='\n'.join([f'`{i + 1}.` <#{scores[i][0]}>: `{scores[i][1]}`' for i in range(length)]))
-        await ctx.send(embed=embed)
+
+        if len(scores) <= 20:
+            embed = discord.Embed()
+            length = len(scores)
+            embed.add_field(name=f'Top channels by activity score ({interval} day)',
+                            value='\n'.join([f'`{i + 1}.` <#{scores[i][0]}>: `{scores[i][1]}`' for i in range(length)]))
+            await ctx.send(embed=embed)
+        else:
+            pages = []
+            for j in range(math.ceil(len(scores)/20)):
+                print(j)
+                pageMin = 20 * j
+                pageMax = min(20 * j + 20, len(scores))
+                page = discord.Embed(title=f'Top channels by activity score ({interval} day) - Page {j + 1}')
+                lines = '\n'.join([f'`{i + 1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(pageMin,pageMax)])
+                page.description = lines
+                pages.append(page)
+            await self.bot.get_cog('MenuManager').new_menu(ctx, pages)
 
     class ActivityFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
         interval:int = commands.flag(name="interval",aliases=["i"],default=30)
