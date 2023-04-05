@@ -1,5 +1,6 @@
 import operator
 from datetime import datetime
+import time
 
 import bidict
 import discord
@@ -82,6 +83,15 @@ class Suggestions(Cog):
         if self.lock:
             await ctx.send("You're going too fast! Wait for the previous command to process!")
             return
+        
+        await self.bot.get_cog('SuggestConfirmManager').suggest_confirm(ctx, suggestion=suggestion)        
+
+    # add suggestion in google sheet
+    async def add_suggestion(self, ctx, suggestion):
+        # check lock status, wait until unlocked
+        while self.lock:
+            print("self.lock is True. add_suggestion pending...")
+            time.sleep(20)
 
         self.lock = True
 
