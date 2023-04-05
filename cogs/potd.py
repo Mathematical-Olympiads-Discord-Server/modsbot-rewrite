@@ -411,7 +411,8 @@ class Potd(Cog):
     @commands.command(aliases=['fetch'], brief='Fetch a potd by id.')
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_fetch(self, ctx, number: int):
-        potd_row = self.get_potd_row(number)
+        sheet = self.get_potd_sheet()
+        potd_row = self.get_potd_row(number, sheet)
 
         if potd_row == None:
             await ctx.send(f"There is no potd for day {number}. ")
@@ -436,7 +437,8 @@ class Potd(Cog):
     @commands.command(aliases=['source'], brief='Get the source of a potd by id.')
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_source(self, ctx, number: int):
-        potd_row = self.get_potd_row(number)
+        sheet = self.get_potd_sheet()
+        potd_row = self.get_potd_row(number, sheet)
 
         if potd_row == None:
             await ctx.send(f"There is no potd for day {number}. ")
@@ -710,34 +712,95 @@ class Potd(Cog):
 
     @commands.command(aliases=['mark'], brief='Mark the POTD you have solved')
     @commands.cooldown(1, 5, BucketType.user)
-    async def potd_mark(self, ctx, potd_number:int):
-        cursor = cfg.db.cursor()
-        cursor.execute(f'''SELECT discord_user_id, potd_id, create_date FROM potd_solves 
-                            WHERE discord_user_id = {ctx.author.id} 
-                            AND potd_id = {potd_number}''')
-        result = cursor.fetchall()
-        if len(result) > 0:
-            await ctx.send(f'POTD {potd_number} is already in your solved list. ')
-        else:
-            cursor.execute(f'''INSERT INTO potd_solves (discord_user_id, potd_id, create_date) VALUES
-                ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
-            await ctx.send(f'POTD {potd_number} is added to your solved list. ')
+    async def potd_mark(self, ctx, *, user_input:str):
+        # parse input
+        try:
+            potd_numbers = [int(i) for i in user_input.split(",")]
+        except ValueError:
+            await ctx.send("Error: The input contains non-integer values.")
+            return
 
-            potd_row = self.get_potd_row(potd_number)
+        if len(potd_numbers) > 30:
+            await ctx.send("Please don't send more than 30 POTDs in each call.")
+            return
+
+        # insert to DB
+        added = []
+        already_solved = []
+        no_potd = []
+        no_hint = []
+        sheet = self.get_potd_sheet()
+        for potd_number in potd_numbers:
+            cursor = cfg.db.cursor()
+            cursor.execute(f'''SELECT discord_user_id, potd_id, create_date FROM potd_solves 
+                                WHERE discord_user_id = {ctx.author.id} 
+                                AND potd_id = {potd_number}''')
+            result = cursor.fetchall()
+            if len(result) > 0:
+                already_solved.append(str(potd_number))
+            else:
+                cursor.execute(f'''INSERT INTO potd_solves (discord_user_id, potd_id, create_date) VALUES
+                    ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
+                added.append(str(potd_number))
+            
+            potd_row = self.get_potd_row(potd_number, sheet)
             if potd_row == None:
-                await ctx.send(f"There is no POTD {potd_number}. Are you sure you have inputted the correct number?")
+                no_potd.append(str(potd_number))
             else:
                 if potd_row != None and random.random() <  0.25:
                     if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
-                        await ctx.send(f"There is no hint for POTD {potd_number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+                        no_hint.append(str(potd_number))
+
+        # send confirm message
+        messages = []
+        if len(added) != 0:
+            if len(added) == 1:
+                messages.append(f'POTD {added[0]} is added to your solved list.')
+            else:
+                messages.append(f'POTD {",".join(added)} are added to your solved list.')
+        if len(already_solved) != 0:
+            if len(already_solved) == 1:
+                messages.append(f'POTD {already_solved[0]} is already in your solved list.')
+            else:
+                messages.append(f'POTD {",".join(already_solved)} are already in your solved list.')
+        if len(no_potd) != 0:
+            if len(no_potd) == 1:
+                messages.append(f'There is no POTD {no_potd[0]}. Are you sure you have inputted the correct number?')
+            else:
+                messages.append(f'There are no POTD  {",".join(no_potd)}. Are you sure you have inputted the correct number?')
+        if len(no_hint) != 0:
+            if len(no_hint) == 1:
+                messages.append(f"There is no hint for POTD {no_hint[0]}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+            else:
+                messages.append(f"There are no hint for POTD {','.join(no_hint)}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+        message = "\n".join(messages)
+        await ctx.send(message)
 
     @commands.command(aliases=['unmark'], brief='Unmark the POTD you have solved')
     @commands.cooldown(1, 5, BucketType.user)
-    async def potd_unmark(self, ctx, potd_number:int):
-        cursor = cfg.db.cursor()
-        cursor.execute(f'''DELETE FROM potd_solves 
-                            WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
-        await ctx.send(f'POTD {potd_number} is removed from your solved list. ')
+    async def potd_unmark(self, ctx, *, user_input:str):
+        # parse input
+        try:
+            potd_numbers = [int(i) for i in user_input.split(",")]
+        except ValueError:
+            await ctx.send("Error: The input contains non-integer values.")
+            return
+
+        if len(potd_numbers) > 30:
+            await ctx.send("Please don't send more than 30 POTDs in each call.")
+            return
+
+        # delete from DB
+        for potd_number in potd_numbers:
+            cursor = cfg.db.cursor()
+            cursor.execute(f'''DELETE FROM potd_solves 
+                                WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
+        
+        # send confirm message
+        if len(potd_numbers) == 1:
+            await ctx.send(f'POTD {potd_numbers[0]} is removed from your solved list. ')
+        else:
+            await ctx.send(f'POTD {",".join(list(map(str,potd_numbers)))} are removed from your solved list. ')
 
     @commands.command(aliases=['solved'], brief='Show the POTDs you have solved',
         help='`-solved`: Show the POTDs you have solved.\n'
@@ -772,7 +835,7 @@ class Potd(Cog):
 
             output_string = f'Your solved POTD: \n'
             for key in solved_by_difficulty:
-                output_string += "D" + key + ": " + f"{solved_by_difficulty[key]}" + "\n"
+                output_string += "D" + key + ": " + f"{solved_by_difficulty[key]} ({len(solved_by_difficulty[key])})" + "\n"
             await self.send_potd_solved(ctx, output_string)
         elif flag == "s":
             potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
@@ -801,10 +864,10 @@ class Potd(Cog):
 
             output_string = f'Your solved POTD: \n'
             for key in solved_by_genre:
-                output_string += key + ": " + f"{solved_by_genre[key]}" + "\n"
+                output_string += key + ": " + f"{solved_by_genre[key]} ({len(solved_by_genre[key])})" + "\n"
             await self.send_potd_solved(ctx, output_string)
         else:
-            output_string = f'Your solved POTD: \n{solved}'
+            output_string = f'Your solved POTD: \n{solved} ({len(solved)})'
             await self.send_potd_solved(ctx, output_string)
         
     
@@ -835,7 +898,8 @@ class Potd(Cog):
     @commands.command(aliases=['hint'], brief='Get hint for the POTD.')
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_hint(self, ctx, number: int, hint_number: int = 1):
-        potd_row = self.get_potd_row(number)
+        sheet = self.get_potd_sheet()
+        potd_row = self.get_potd_row(number, sheet)
         if potd_row == None:
             await ctx.send(f"There is no potd for day {number}. ")
             return
@@ -869,11 +933,13 @@ class Potd(Cog):
                 await ctx.send("Hint number should be from 1 to 3.")
 
 
-    def get_potd_row(self, number):
-        # Read from the spreadsheet
-        reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+    def get_potd_sheet(self):
+        sheet = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute()
-        values = reply.get('values', [])
+        return sheet
+
+    def get_potd_row(self, number, sheet):
+        values = sheet.get('values', [])
         current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
 
         if number > current_potd or number < 1:
