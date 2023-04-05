@@ -396,6 +396,7 @@ class Activity(Cog):
 
     class ServerActivityFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
         interval: int = commands.flag(name="interval",aliases=["i"],default=30)
+        channel: discord.TextChannel = commands.flag(name="channel",aliases=["c"],default=None)
             
     @commands.cooldown(1, 10, BucketType.user)
     @commands.command(aliases=['sa'], help = '`-server_activity`: show server\'s activity graph\n'
@@ -409,6 +410,7 @@ class Activity(Cog):
         index = 0
         end = datetime.now().date()
         interval = flags.interval
+        channel = flags.channel
 
         epoch = dt.date(2019, 1, 11)  # This is when the server was created
         if interval is None:
@@ -419,16 +421,27 @@ class Activity(Cog):
             await ctx.send(f'Interval must be at least 1.')
             return
 
-        cursor = cfg.db.cursor()
-        cursor.execute(f'''
-        SELECT date(message_date) as date, COUNT(*) AS number
-        FROM messages
-        WHERE date(message_date) BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
-        AND "{str(dt.date.today() + dt.timedelta(1))}"
-        GROUP BY DATE(message_date)
-        ORDER BY DATE(message_date);
-        ''')
-        result = cursor.fetchall()
+        if channel == None:
+            cursor = cfg.db.cursor()
+            cursor.execute(f'''
+            SELECT date(message_date) as date, COUNT(*) AS number
+            FROM messages
+            WHERE date(message_date) BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}" AND "{str(dt.date.today() + dt.timedelta(1))}"
+            GROUP BY DATE(message_date)
+            ORDER BY DATE(message_date);
+            ''')
+            result = cursor.fetchall()
+        else:
+            cursor = cfg.db.cursor()
+            cursor.execute(f'''
+            SELECT date(message_date) as date, COUNT(*) AS number
+            FROM messages
+            WHERE date(message_date) BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}" AND "{str(dt.date.today() + dt.timedelta(1))}"
+            AND discord_channel_id = {channel.id}
+            GROUP BY DATE(message_date)
+            ORDER BY DATE(message_date);
+            ''')
+            result = cursor.fetchall()
 
         plt.style.use('ggplot')
 
@@ -466,7 +479,10 @@ class Activity(Cog):
 
         plt.xlabel("Date")
         plt.ylabel("Messages")
-        plt.title(f"MODS's Activity")
+        if channel == None:
+            plt.title(f"MODS's Activity")
+        else:
+            plt.title(f"{channel.name}'s Activity")
         plt.axhline(y=10, linewidth=1, color='r')
         plt.subplots_adjust(bottom=0.15)
 
