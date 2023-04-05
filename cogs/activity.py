@@ -305,7 +305,7 @@ class Activity(Cog):
                 pageMin = 20 * j
                 pageMax = min(20 * j + 20, len(scores))
                 page = discord.Embed(title=f'Top channels by activity score ({interval} day) - Page {j + 1}')
-                lines = '\n'.join([f'`{i + 1}.` <@!{scores[i][0]}>: `{scores[i][1]}`' for i in range(pageMin,pageMax)])
+                lines = '\n'.join([f'`{i + 1}.` <#{scores[i][0]}>: `{scores[i][1]}`' for i in range(pageMin,pageMax)])
                 page.description = lines
                 pages.append(page)
             await self.bot.get_cog('MenuManager').new_menu(ctx, pages)
