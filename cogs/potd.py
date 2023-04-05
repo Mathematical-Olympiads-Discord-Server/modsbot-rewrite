@@ -835,7 +835,7 @@ class Potd(Cog):
 
             output_string = f'Your solved POTD: \n'
             for key in solved_by_difficulty:
-                output_string += "D" + key + ": " + f"{solved_by_difficulty[key]}" + "\n"
+                output_string += "D" + key + ": " + f"{solved_by_difficulty[key]} ({len(solved_by_difficulty[key])})" + "\n"
             await self.send_potd_solved(ctx, output_string)
         elif flag == "s":
             potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
@@ -864,10 +864,10 @@ class Potd(Cog):
 
             output_string = f'Your solved POTD: \n'
             for key in solved_by_genre:
-                output_string += key + ": " + f"{solved_by_genre[key]}" + "\n"
+                output_string += key + ": " + f"{solved_by_genre[key]} ({len(solved_by_genre[key])})" + "\n"
             await self.send_potd_solved(ctx, output_string)
         else:
-            output_string = f'Your solved POTD: \n{solved}'
+            output_string = f'Your solved POTD: \n{solved} ({len(solved)})'
             await self.send_potd_solved(ctx, output_string)
         
     
