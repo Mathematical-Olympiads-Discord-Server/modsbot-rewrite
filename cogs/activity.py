@@ -120,7 +120,7 @@ class Activity(Cog):
             today_messages[i] = x[i]
         await ctx.send("Loaded: ```{}```".format(today_messages))
 
-    @commands.command(aliases=['ad', 'as'])
+    @commands.command(aliases=['ad', 'as'], brief='Show my activity score.')
     async def activity_score(self, ctx, other: discord.User = None):
         interval = 30
         to_check = ctx.author if other is None else other
@@ -211,8 +211,9 @@ class Activity(Cog):
     class ActtopFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
         interval: int = commands.flag(name="interval",aliases=["i"],default=30)
         
-    @commands.command(aliases=['acttop'], help= '`-acttop`: show activity leaderboard\n'
-                                                '`-acttop --interval 15`: show leaderboard for the last 15 days')
+    @commands.command(aliases=['acttop'], brief='Show user activity leaderboard.',
+                      help= '`-acttop`: show user activity leaderboard\n'
+                            '`-acttop --interval 15`: show leaderboard for the last 15 days')
     @commands.cooldown(1, 10, BucketType.user)
     async def activity_top(self, ctx, *, flags:ActtopFlags):
         interval = flags.interval if flags.interval < 30 else 30
@@ -264,8 +265,9 @@ class Activity(Cog):
     class ChtopFlags(commands.FlagConverter, delimiter=' ', prefix='--'):
         interval: int = commands.flag(name="interval",aliases=["i"],default=30)
         
-    @commands.command(aliases=['chtop'], help= '`-chtop`: show channel leaderboard (by activity points)\n'
-                                                '`-chtop --interval 15`: show leaderboard for the last 15 days')
+    @commands.command(aliases=['chtop'], brief = 'Show channel activity leaderboard.',
+                      help= '`-chtop`: show channel activity leaderboard (by activity points)\n'
+                            '`-chtop --interval 15`: show leaderboard for the last 15 days')
     @commands.cooldown(1, 10, BucketType.user)
     async def channel_top(self, ctx, *, flags:ChtopFlags):
         interval = flags.interval if flags.interval < 30 else 30
@@ -315,10 +317,11 @@ class Activity(Cog):
         user: discord.User = commands.flag(name="user",aliases=["u"],default=None)
 
     @commands.cooldown(1, 10, BucketType.user)
-    @commands.command(aliases=['act'], help = '`-activity`: show my activity graph\n'
-                                            '`-activity --interval 60`: show my activity graph for past 60 days\n'
-                                            '`-activity --user @user`: show activity graph for @user\n'
-                                            '`-activity --interval 60 --user @user`: combine commands')
+    @commands.command(aliases=['act'], brief='Show user\'s activity graph.', 
+                      help = '`-activity`: show my activity graph\n'
+                            '`-activity --interval 60`: show my activity graph for past 60 days\n'
+                            '`-activity --user @user`: show activity graph for @user\n'
+                            '`-activity --interval 60 --user @user`: combine commands')
     async def activity(self, ctx, *, flags:ActivityFlags):
         matplotlib.use('agg')
 
@@ -399,8 +402,11 @@ class Activity(Cog):
         channel: discord.TextChannel = commands.flag(name="channel",aliases=["c"],default=None)
             
     @commands.cooldown(1, 10, BucketType.user)
-    @commands.command(aliases=['sa'], help = '`-server_activity`: show server\'s activity graph\n'
-                                            '`-server_activity --interval 60`: show server\'s activity graph for past 60 days\n')
+    @commands.command(aliases=['sa'], brief='Show server/channel\'s activity graph.', 
+                      help = '`-server_activity`: show server\'s activity graph\n'
+                            '`-server_activity --interval 60`: show server\'s activity graph for past 60 days\n'
+                            '`-server_activity --channel #lounge`: show lounge\'s activity graph\n'
+                            '`-server_activity --interval 60 --channel #lounge`: combine commands')
     async def server_activity(self, ctx, *, flags:ServerActivityFlags):
         matplotlib.use('agg')
 
