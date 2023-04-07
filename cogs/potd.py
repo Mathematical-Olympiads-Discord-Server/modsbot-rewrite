@@ -810,11 +810,11 @@ class Potd(Cog):
     async def potd_solved(self, ctx, flag=None):
         solved = self.get_potd_solved(ctx)
         
-        if flag == "d":
-            potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+        potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute().get('values', [])
-            current_potd = int(potds[0][0])
-
+        current_potd = int(potds[0][0])
+        
+        if flag == "d":
             solved_by_difficulty = {}
             for number in solved:
                 if number > current_potd or number <= 0:
@@ -835,13 +835,11 @@ class Potd(Cog):
 
             output_string = f'Your solved POTD: \n'
             for key in solved_by_difficulty:
-                output_string += "D" + key + ": " + f"{solved_by_difficulty[key]} ({len(solved_by_difficulty[key])})" + "\n"
+                total = len([potd for potd in potds if len(potd) > cfg.Config.config['potd_sheet_difficulty_col']
+                              and potd[cfg.Config.config['potd_sheet_difficulty_col']] == key])
+                output_string += "D" + key + ": " + f"{solved_by_difficulty[key]} ({len(solved_by_difficulty[key])}/{total})" + "\n"
             await self.send_potd_solved(ctx, output_string)
         elif flag == "s":
-            potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
-                                                               range=POTD_RANGE).execute().get('values', [])
-            current_potd = int(potds[0][0])
-
             solved_by_genre = {'A':[], 'C':[], 'G':[], 'N':[]}
             for number in solved:
                 if number > current_potd or number <= 0:
@@ -864,10 +862,12 @@ class Potd(Cog):
 
             output_string = f'Your solved POTD: \n'
             for key in solved_by_genre:
-                output_string += key + ": " + f"{solved_by_genre[key]} ({len(solved_by_genre[key])})" + "\n"
+                total = len([potd for potd in potds if len(potd) > cfg.Config.config['potd_sheet_difficulty_col']
+                              and potd[cfg.Config.config['potd_sheet_genre_col']] == key])
+                output_string += key + ": " + f"{solved_by_genre[key]} ({len(solved_by_genre[key])}/{total})" + "\n"
             await self.send_potd_solved(ctx, output_string)
         else:
-            output_string = f'Your solved POTD: \n{solved} ({len(solved)})'
+            output_string = f'Your solved POTD: \n{solved} ({len(solved)}/{len(potds)})'
             await self.send_potd_solved(ctx, output_string)
         
     
