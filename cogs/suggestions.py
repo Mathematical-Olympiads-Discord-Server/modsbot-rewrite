@@ -11,6 +11,7 @@ from cogs import config as cfg
 
 Cog = commands.Cog
 suggestion_list = []
+tech_suggestion_list = []
 statuses = bidict.bidict(
     {0: 'Pending', 1: 'Mod-vote', 2: 'Approved', 3: 'Denied', 4: 'Revised', 5: 'Implemented', 6: 'Removed'})
 status_colours = {0: 0xFCECB4, 1: 0xFF8105, 2: 0x5FE36A, 3: 0xF4C4C4, 4: 0xA4C4F4, 5: 0xDCDCDC, 6: 0x000000}
@@ -27,6 +28,7 @@ def from_list(s):
 
 
 def update_suggestions():
+    # ===Suggestions===
     # Sort the list
     suggestion_list.sort(key=operator.attrgetter('id'))
     suggestion_list.sort(key=lambda x: statuses.inverse[x.status])
@@ -38,6 +40,20 @@ def update_suggestions():
     r_body = {'values': [s.to_list() for s in suggestion_list]}
     cfg.Config.service.spreadsheets().values().append(spreadsheetId=cfg.Config.config['suggestion_sheet'],
                                                       range='Suggestions!A1', valueInputOption='RAW',
+                                                      insertDataOption='INSERT_ROWS', body=r_body).execute()
+
+    # ===Tech Suggestions===
+    # Sort the list
+    tech_suggestion_list.sort(key=operator.attrgetter('id'))
+    tech_suggestion_list.sort(key=lambda x: statuses.inverse[x.status])
+
+    # Clear the sheet
+    cfg.Config.service.spreadsheets().values().clear(spreadsheetId=cfg.Config.config['suggestion_sheet'],
+                                                     range='Tech Suggestions!A2:J').execute()
+    # Write new data
+    r_body = {'values': [s.to_list() for s in tech_suggestion_list]}
+    cfg.Config.service.spreadsheets().values().append(spreadsheetId=cfg.Config.config['suggestion_sheet'],
+                                                      range='Tech Suggestions!A1', valueInputOption='RAW',
                                                       insertDataOption='INSERT_ROWS', body=r_body).execute()
 
 
@@ -75,7 +91,16 @@ class Suggestions(Cog):
             suggestion_list.append(from_list(s))
         suggestion_list.sort(key=operator.attrgetter('id'))
         suggestion_list.sort(key=lambda x: statuses.inverse[x.status])
-        # print([str(x) for x in suggestion_list])
+
+        # Initialise tech suggestion list
+        tech_suggestion_list.clear()
+        tech_suggestions = cfg.Config.service.spreadsheets().values().get(
+            spreadsheetId=cfg.Config.config['suggestion_sheet'],
+            range='Tech Suggestions!A2:J').execute().get('values', [])
+        for s in tech_suggestions:
+            tech_suggestion_list.append(from_list(s))
+        tech_suggestion_list.sort(key=operator.attrgetter('id'))
+        tech_suggestion_list.sort(key=lambda x: statuses.inverse[x.status])
 
     @commands.command(brief='Suggest a change to the server. ')
     @commands.cooldown(1, 600, BucketType.user)
@@ -84,34 +109,57 @@ class Suggestions(Cog):
             await ctx.send("You're going too fast! Wait for the previous command to process!")
             return
         
-        await self.bot.get_cog('SuggestConfirmManager').suggest_confirm(ctx, suggestion=suggestion)        
+        await self.bot.get_cog('SuggestConfirmManager').suggest_confirm(ctx, suggestion=suggestion, mode='server')
+
+    @commands.command(brief='Suggest a tech change to the server. ')
+    @commands.cooldown(1, 600, BucketType.user)
+    async def tech_suggest(self, ctx, *, suggestion):
+        if self.lock:
+            await ctx.send("You're going too fast! Wait for the previous command to process!")
+            return
+        
+        await self.bot.get_cog('SuggestConfirmManager').suggest_confirm(ctx, suggestion=suggestion, mode='tech') 
 
     # add suggestion in google sheet
-    async def add_suggestion(self, ctx, suggestion):
+    async def add_suggestion(self, ctx, suggestion, mode):
         # check lock status, wait until unlocked
         while self.lock:
-            print("self.lock is True. add_suggestion pending...")
-            time.sleep(20)
+            await ctx.send("You're going too fast! Wait for the previous command to process!")
+            return
 
+        # Acquire the lock
         self.lock = True
 
-        # Create message
-        m = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).send(
-            f'**Suggestion `#{len(suggestion_list) + 1}` by <@!{ctx.author.id}>:** `[Pending]`\n<{ctx.message.jump_url}>\n{suggestion}')
-        await m.add_reaction('👍')
-        await m.add_reaction('🤷')
-        await m.add_reaction('👎')
-        await m.add_reaction('🔔')
-        await m.add_reaction('🔕')
+        try:
+            if mode == 'server':
+                target_channel = cfg.Config.config['suggestion_channel']
+            elif mode == 'tech':
+                target_channel = cfg.Config.config['tech_suggestion_channel']
 
-        # Add the new suggestion
-        suggestion_list.append(
-            Suggestion(len(suggestion_list) + 1, str(m.id), datetime.now(), ctx.author.name, ctx.author.id, 'Pending',
-                       suggestion, None, ctx.message.jump_url))
+            # Create message
+            m = await self.bot.get_channel(target_channel).send(
+                f'**Suggestion `#{len(suggestion_list) + 1}` by <@!{ctx.author.id}>:** `[Pending]`\n<{ctx.message.jump_url}>\n{suggestion}')
+            await m.add_reaction('👍')
+            await m.add_reaction('🤷')
+            await m.add_reaction('👎')
+            await m.add_reaction('🔔')
+            await m.add_reaction('🔕')
 
-        # Update the sheet
-        update_suggestions()
-        self.lock = False
+            # Add the new suggestion
+            if mode == 'server':
+                suggestion_list.append(
+                    Suggestion(len(suggestion_list) + 1, str(m.id), datetime.now(), ctx.author.name, ctx.author.id, 'Pending',
+                            suggestion, None, ctx.message.jump_url))
+            elif mode == 'tech':
+                tech_suggestion_list.append(
+                    Suggestion(len(tech_suggestion_list) + 1, str(m.id), datetime.now(), ctx.author.name, ctx.author.id, 'Pending',
+                            suggestion, None, ctx.message.jump_url))
+
+            # Update the sheet
+            update_suggestions()
+        finally:
+            # Release the lock
+            self.lock = False
 
     @commands.command()
     @commands.is_owner()
