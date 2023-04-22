@@ -16,6 +16,12 @@ def is_staff(ctx):
         return False
     return ctx.author.id in Config.config['staff']
 
+def is_mod_or_tech(ctx):
+    if ctx.guild != Config.config['mods_guild']:
+        return False
+    roles = list(map(lambda x:x.id,ctx.author.roles))
+    return Config.config['mod_role'] in roles or Config.config['tech_role'] in roles
+
 def timestamp(dt: datetime):
     if dt.tzinfo is None:
         dt = dt.astimezone()

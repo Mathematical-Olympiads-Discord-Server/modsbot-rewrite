@@ -120,7 +120,7 @@ class Suggestions(Cog):
         
         await self.bot.get_cog('SuggestConfirmManager').suggest_confirm(ctx, suggestion=suggestion, mode='tech') 
 
-    # add suggestion in google sheet
+    # add suggestion after confirmed
     async def add_suggestion(self, ctx, suggestion, mode):
         # check lock status, wait until unlocked
         while self.lock:
@@ -133,12 +133,17 @@ class Suggestions(Cog):
         try:
             if mode == 'server':
                 target_channel = cfg.Config.config['suggestion_channel']
+                list_to_read = suggestion_list
+                suggestion_string = "Suggestion"
+                
             elif mode == 'tech':
                 target_channel = cfg.Config.config['tech_suggestion_channel']
+                list_to_read = tech_suggestion_list
+                suggestion_string = "Tech Suggestion"
 
             # Create message
             m = await self.bot.get_channel(target_channel).send(
-                f'**Suggestion `#{len(suggestion_list) + 1}` by <@!{ctx.author.id}>:** `[Pending]`\n<{ctx.message.jump_url}>\n{suggestion}')
+                f'**{suggestion_string} `#{len(list_to_read) + 1}` by <@!{ctx.author.id}>:** `[Pending]`\n<{ctx.message.jump_url}>\n{suggestion}')
             await m.add_reaction('👍')
             await m.add_reaction('🤷')
             await m.add_reaction('👎')
@@ -184,11 +189,23 @@ class Suggestions(Cog):
             return
         await ctx.send('Finished!')
 
-    async def change_suggestion_status_back(self, ctx, sugg_id: int, new_status, reason,
+    async def change_suggestion_status_back(self, ctx, sugg_id: int, new_status, reason, mode,
                                             notify: bool = True) -> Suggestion:
 
         bot_spam = ctx.guild.get_channel(cfg.Config.config['bot_spam_channel'])
         
+        suggestion_channel = ""
+        list_to_read = []
+        suggestion_string = ""
+        if mode == "server":
+            suggestion_channel = cfg.Config.config['suggestion_channel']
+            list_to_read = suggestion_list
+            suggestion_string = "Suggestion"
+        elif mode == "tech":
+            suggestion_channel = cfg.Config.config['tech_suggestion_channel']
+            list_to_read = tech_suggestion_list
+            suggestion_string = "Tech Suggestion"
+
         # Make sure not locked
         if self.lock:
             await bot_spam.send("You're going too fast! Wait for the previous command to process!")
@@ -207,7 +224,7 @@ class Suggestions(Cog):
 
         # Get the message
         suggestion = None
-        for s in suggestion_list:
+        for s in list_to_read:
             if s.id == sugg_id:
                 suggestion = s
                 break
@@ -217,7 +234,7 @@ class Suggestions(Cog):
             self.lock = False
             return
 
-        suggestion_message = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).fetch_message(
+        suggestion_message = await self.bot.get_channel(suggestion_channel).fetch_message(
             suggestion.msgid)
         voted = set()
         votes_for = {}
@@ -249,10 +266,11 @@ class Suggestions(Cog):
         # print(ids_to_dm)
 
         # Construct the embed
-        embed = discord.Embed(title="Suggestion status change",
-                              description="Suggestion {} changed status from {} to {}".format(suggestion.id,
-                                                                                              suggestion.status,
-                                                                                              new_status),
+        embed = discord.Embed(title="{} status change".format(suggestion_string),
+                              description="{} {} changed status from {} to {}".format(suggestion_string,
+                                                                                      suggestion.id,
+                                                                                      suggestion.status,
+                                                                                      new_status),
                               colour=status_colours[statuses.inverse[new_status]])
         embed.add_field(name='Suggestor', value=suggestion.username, inline=False)
         embed.add_field(name='Content', value=suggestion.body[:1000], inline=False)
@@ -290,46 +308,68 @@ class Suggestions(Cog):
         suggestion.reason = reason
         update_suggestions()
         await suggestion_message.edit(
-            content=f'**Suggestion `#{sugg_id}` by <@!{suggestion.userid}>:** `[{new_status}]`\n{suggestion.jump_url}\n{suggestion.body}')
+            content=f'**{suggestion_string} `#{sugg_id}` by <@!{suggestion.userid}>:** `[{new_status}]`\n{suggestion.jump_url}\n{suggestion.body}')
 
         # Finish up
         await bot_spam.send('Finished.')
         await ctx.guild.get_channel(cfg.Config.config['log_channel']).send(
-            f'**Suggestion `#{sugg_id}` set to `[{new_status}]` by {ctx.author.nick} ({ctx.author.id})\nReason: `{reason}`**\n{suggestion.body}')
+            f'**{suggestion_string} `#{sugg_id}` set to `[{new_status}]` by {ctx.author.nick} ({ctx.author.id})\nReason: `{reason}`**\n{suggestion.body}')
         self.lock = False
         return suggestion
 
     @commands.command(aliases=['sugg_change'], brief='Updates the status of a given suggestion. ')
     @commands.check(cfg.is_staff)
     async def change_suggestion_status(self, ctx, sugg_id: int, new_status, *, reason):
-        await self.change_suggestion_status_back(ctx, sugg_id, new_status, reason)
+        await self.change_suggestion_status_back(ctx, sugg_id, new_status, reason, "server")
 
     @commands.command(aliases=['escl', 'modvote'])
     @commands.check(cfg.is_staff)
     async def escalate(self, ctx, sugg_id: int, *, reason=None):
-        suggestion = await self.change_suggestion_status_back(ctx, sugg_id, 'Mod-vote', reason)
+        suggestion = await self.change_suggestion_status_back(ctx, sugg_id, 'Mod-vote', reason, "server")
         m = await self.bot.get_channel(cfg.Config.config['suggestion_channel']).fetch_message(suggestion.msgid)
         await self.bot.get_channel(cfg.Config.config['mod_vote_chan']).send(m.content)
 
+    # Modify suggestion status
     @commands.command()
     @commands.check(cfg.is_staff)
     async def approve(self, ctx, sugg_id: int, *, reason=None):
-        await self.change_suggestion_status_back(ctx, sugg_id, 'Approved', reason)
+        await self.change_suggestion_status_back(ctx, sugg_id, 'Approved', reason, "server")
 
     @commands.command()
     @commands.check(cfg.is_staff)
     async def deny(self, ctx, sugg_id: int, *, reason=None):
-        await self.change_suggestion_status_back(ctx, sugg_id, 'Denied', reason)
+        await self.change_suggestion_status_back(ctx, sugg_id, 'Denied', reason, "server")
 
     @commands.command()
     @commands.check(cfg.is_staff)
     async def implemented(self, ctx, sugg_id: int, *, reason=None):
-        await self.change_suggestion_status_back(ctx, sugg_id, 'Implemented', reason)
+        await self.change_suggestion_status_back(ctx, sugg_id, 'Implemented', reason, "server")
 
     @commands.command()
     @commands.check(cfg.is_staff)
     async def remove_sg(self, ctx, sugg_id: int, *, reason=None):
-        await self.change_suggestion_status_back(ctx, sugg_id, 'Removed', reason)
+        await self.change_suggestion_status_back(ctx, sugg_id, 'Removed', reason, "server")
+
+    # Modify tech suggestion status
+    @commands.command()
+    @commands.check(cfg.is_mod_or_tech)
+    async def tech_approve(self, ctx, sugg_id: int, *, reason=None):
+        await self.change_suggestion_status_back(ctx, sugg_id, 'Approved', reason, "tech")
+
+    @commands.command()
+    @commands.check(cfg.is_mod_or_tech)
+    async def tech_deny(self, ctx, sugg_id: int, *, reason=None):
+        await self.change_suggestion_status_back(ctx, sugg_id, 'Denied', reason, "tech")
+
+    @commands.command()
+    @commands.check(cfg.is_mod_or_tech)
+    async def tech_implemented(self, ctx, sugg_id: int, *, reason=None):
+        await self.change_suggestion_status_back(ctx, sugg_id, 'Implemented', reason, "tech")
+
+    @commands.command()
+    @commands.check(cfg.is_mod_or_tech)
+    async def tech_remove_sg(self, ctx, sugg_id: int, *, reason=None):
+        await self.change_suggestion_status_back(ctx, sugg_id, 'Removed', reason, "tech")
 
     @commands.command()
     @commands.check(cfg.is_staff)
@@ -342,7 +382,7 @@ class Suggestions(Cog):
         new_statuses = [[j.strip() for j in i.strip().split(' ')] for i in commands.split('\n')]
         for status in new_statuses:
             suggestion = await self.change_suggestion_status_back(ctx, int(status[0]), status[1],
-                                                                  ' '.join(status[2:]) if len(status) > 2 else None)
+                                                                  ' '.join(status[2:]) if len(status) > 2 else None, "server")
             if status[1] == 'Mod-vote':
                 m = await self.bot.get_channel(cfg.Config.config['suggestion_channel']). \
                     fetch_message(suggestion.msgid)
@@ -386,7 +426,7 @@ class Suggestions(Cog):
                 return
 
             # Change suggestion status
-            await self.change_suggestion_status_back(ctx, int(s.id), new_status, reason)
+            await self.change_suggestion_status_back(ctx, int(s.id), new_status, reason, "server")
 
             # Delete message
             await message.delete(delay=15)
