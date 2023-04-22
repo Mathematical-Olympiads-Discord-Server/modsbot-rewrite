@@ -16,8 +16,8 @@ class SuggestConfirmManager(commands.Cog):
             await self.active_suggest_confirms[suggest_confirm_id].remove()
             del self.active_suggest_confirms[suggest_confirm_id]
 
-    async def suggest_confirm(self, ctx: commands.Context, suggestion: str, timeout: int = 600):
-        suggest_confirm = SuggestConfirm(self.bot, ctx, suggestion, timeout)
+    async def suggest_confirm(self, ctx: commands.Context, suggestion: str, mode: str):
+        suggest_confirm = SuggestConfirm(self.bot, ctx, suggestion, mode)
         await suggest_confirm.open()
         self.active_suggest_confirms[suggest_confirm.message.id] = suggest_confirm
         await self.delete_after(600, suggest_confirm.message.id)
@@ -36,13 +36,14 @@ class SuggestConfirmManager(commands.Cog):
 
 class SuggestConfirm:
 
-    def __init__(self, bot, ctx: commands.Context, suggestion: str, timeout: int = 600):
+    def __init__(self, bot, ctx: commands.Context, suggestion: str, mode: str):
         self.bot = bot
         self.ctx = ctx
         self.authorId = ctx.author.id
         self.message = None
         self.suggestion = suggestion
         self.suggestion_url = ctx.message.jump_url
+        self.mode = mode
 
     async def open(self):
         #TODO: edit the message
@@ -52,7 +53,7 @@ class SuggestConfirm:
         await self.message.add_reaction('❌')
 
     async def confirm(self):
-        await self.bot.get_cog('Suggestions').add_suggestion(ctx=self.ctx, suggestion=self.suggestion)
+        await self.bot.get_cog('Suggestions').add_suggestion(ctx=self.ctx, suggestion=self.suggestion, mode=self.mode)
         await self.remove()
         
     async def remove(self):
