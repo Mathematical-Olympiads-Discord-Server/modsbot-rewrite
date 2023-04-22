@@ -863,7 +863,7 @@ class Potd(Cog):
             output_string = f'Your solved POTD: \n'
             for key in solved_by_genre:
                 total = len([potd for potd in potds if len(potd) > cfg.Config.config['potd_sheet_difficulty_col']
-                              and potd[cfg.Config.config['potd_sheet_genre_col']] == key])
+                              and key in potd[cfg.Config.config['potd_sheet_genre_col']]])
                 output_string += key + ": " + f"{solved_by_genre[key]} ({len(solved_by_genre[key])}/{total})" + "\n"
             await self.send_potd_solved(ctx, output_string)
         else:
