@@ -61,6 +61,8 @@ class Potd(Cog):
         schedule.every().day.at("04:00").do(lambda: self.schedule_potd(6)).tag('cogs.potd')
         schedule.every().day.at("22:00").do(lambda: self.schedule_potd(12)).tag('cogs.potd')
 
+        schedule.every().hour.at("10:00").do(self.post_proposed_potd).tag('cogs.potd.proposal')
+
 
     @commands.command()
     @commands.check(is_pc)
@@ -1213,6 +1215,120 @@ class Potd(Cog):
         cfg.db.commit()
         await self.bot.get_channel(cfg.Config.config['log_channel']).send(
             f'**POTD notifications set to `{self.enable_dm}` by {ctx.author.nick} ({ctx.author.id})**')
+
+    def post_proposed_potd(self):
+        self.bot.loop.create_task(self.post_proposed_potd_task())
+    
+    async def post_proposed_potd_task(self):
+        # Read from spreadsheet
+        proposed_problems = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_proposal_sheet'],
+                                                                           range='A:M').execute().get('values', [])
+
+        for i, problem in enumerate(proposed_problems):
+            # Find unposted problems
+            if len(problem) < 12 or problem[11] == "":
+                number = i
+                user = problem[1]
+                user_id = problem[2]
+                problem_statement = problem[3]
+                source = problem[4]
+                genre = problem[5]
+                difficulty = problem[6]
+                hint1 = problem[7]
+                try:
+                    hint2 = problem[8]
+                except:
+                    hint2 = ""
+                try:
+                    hint3 = problem[9]
+                except:
+                    hint3 = ""
+                try:
+                    proposer_msg = problem[10]
+                except:
+                    proposer_msg = ""
+
+                # Post in forum
+                forum = self.bot.get_channel(cfg.Config.config['potd_proposal_forum'])
+                post_result = await forum.create_thread(name=f"POTD Proposal #{number} from {user}", 
+                                          content=f"POTD Proposal #{number} from {user} ({user_id})\nProblem Statement: ```latex\n{problem_statement}\n```",
+                                          applied_tags=[forum.get_tag(cfg.Config.config['potd_proposal_forum_tag_pending'])]) 
+                thread = post_result[0]
+                
+                problem_info = f"Source: ||{source}|| \n" + f"Genre: ||{genre}  || \n" + f"Difficulty: ||{difficulty}  ||"
+                if proposer_msg != "" and proposer_msg != None:
+                    problem_info += f"\nProposer's message: {proposer_msg}\n"
+                await thread.send(problem_info)
+
+                await thread.send(f"Hint 1: \n<@{cfg.Config.config['paradox_id']}> texsp ||{hint1}||")
+                if hint2 != "" and hint2 != None:
+                    await thread.send(f"Hint 2: \n<@{cfg.Config.config['paradox_id']}> texsp ||{hint2}||")
+                if hint3 != "" and hint3 != None:
+                    await thread.send(f"Hint 3: \n<@{cfg.Config.config['paradox_id']}> texsp ||{hint3}||")
+
+                # Mark problem as posted
+                request = cfg.Config.service.spreadsheets().values().update(spreadsheetId=cfg.Config.config['potd_proposal_sheet'], 
+                                                                            range=f'L{i+1}', valueInputOption='RAW',body={"range": f'L{i+1}', "values": [["Y"]] })
+                response = request.execute()
+                print(response)
+
+                # Mark thread ID
+                request = cfg.Config.service.spreadsheets().values().update(spreadsheetId=cfg.Config.config['potd_proposal_sheet'], 
+                                                                            range=f'M{i+1}', valueInputOption='RAW',body={"range": f'M{i+1}', "values": [[str(thread.id)]] })
+                response = request.execute()
+                print(response)
+
+                # Send notification to proposer
+                try:
+                    guild = self.bot.get_guild(cfg.Config.config['mods_guild'])
+                    member = guild.get_member(int(user_id))
+                    if member is not None and not member.bot:
+                        await member.send(f"Hi! We have received your POTD Proposal `{source}`. Thanks for your submission!")
+                except Exception as e:
+                    print(e)
+
+    @commands.command()
+    @commands.check(is_pc)
+    async def potd_pending(self, ctx, number: int):
+        await self.potd_proposal_status_change(ctx, number, "Pending")
+        await ctx.send(f"POTD Proposal #{number} status modified to Pending")
+
+    @commands.command()
+    @commands.check(is_pc)
+    async def potd_accept(self, ctx, number: int):
+        await self.potd_proposal_status_change(ctx, number, "Accepted")
+        await ctx.send(f"POTD Proposal #{number} status modified to Accepted")
+    
+    @commands.command()
+    @commands.check(is_pc)
+    async def potd_reject(self, ctx, number: int):
+        await self.potd_proposal_status_change(ctx, number, "Rejected")
+        await ctx.send(f"POTD Proposal #{number} status modified to Rejected")
+
+    async def potd_proposal_status_change(self, ctx, number: int, status):
+        tag_id = 0
+        if status == "Pending":
+            tag_id = cfg.Config.config['potd_proposal_forum_tag_pending']
+        elif status == "Accepted":
+            tag_id = cfg.Config.config['potd_proposal_forum_tag_accepted']
+        elif status == "Rejected":
+            tag_id = cfg.Config.config['potd_proposal_forum_tag_rejected']
+
+        # Load the proposal sheet
+        proposed_problems = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_proposal_sheet'],
+                                                                           range='A:M').execute().get('values', [])
+
+        # Edit the thread tag
+        forum = self.bot.get_channel(cfg.Config.config['potd_proposal_forum'])
+        row = number
+        thread_id = proposed_problems[row][12]
+        thread = ctx.guild.get_thread(int(thread_id))
+        await thread.edit(applied_tags=[forum.get_tag(tag_id)])        
+
+    # manually invoke the proposal check
+    @commands.command()
+    async def potd_proposal(self, ctx):
+        self.bot.loop.create_task(self.post_proposed_potd_task())
 
 
 async def setup(bot):

@@ -78,6 +78,12 @@ class Misc(Cog):
         else:
             await ctx.send('I don\'t recognise that tag!')
 
+    @commands.command(brief='Return my User ID')
+    async def myid(self, ctx):
+        name = ctx.author.name
+        id = ctx.author.id
+        await ctx.send(f'{name}\'s User ID: {id}')
+        
     @commands.command()
     async def verify_speedrun_mode(self, ctx):
         in_verif_speedrun_mode.add(ctx.author.id)

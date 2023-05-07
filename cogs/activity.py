@@ -466,8 +466,6 @@ class Activity(Cog):
                 ticks.append(str(start)[5:] if start.weekday() == 0 else None)
             start += delta
         x_pos = [i for i, _ in enumerate(messages)]
-        print(x_pos)
-        print(messages)
         if interval > 50:   # With a lot of data to display cool formatting is less necessary
             plt.figure(figsize=(24, 13.5))
             plt.xkcd(scale=0, randomness=0, length=0)
