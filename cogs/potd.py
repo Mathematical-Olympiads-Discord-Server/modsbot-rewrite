@@ -1251,7 +1251,7 @@ class Potd(Cog):
                 # Post in forum
                 forum = self.bot.get_channel(cfg.Config.config['potd_proposal_forum'])
                 post_result = await forum.create_thread(name=f"POTD Proposal #{number} from {user}", 
-                                          content=f"POTD Proposal #{number} from {user} ({user_id})\nProblem Statement: ```latex\n{problem_statement}\n```",
+                                          content=f"POTD Proposal #{number} from {user} <@!{user_id}> ({user_id})\nProblem Statement: ```latex\n{problem_statement}\n```",
                                           applied_tags=[forum.get_tag(cfg.Config.config['potd_proposal_forum_tag_pending'])]) 
                 thread = post_result[0]
                 
