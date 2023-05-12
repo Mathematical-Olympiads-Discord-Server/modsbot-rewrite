@@ -1272,10 +1272,10 @@ class Potd(Cog):
                 await thread.send(f"<@{cfg.Config.config['paradox_id']}> texsp\n||```latex\n{hint1}```||")
                 if hint2 != "" and hint2 != None:
                     await thread.send(f"Hint 2:")
-                    await thread.send(f"<@{cfg.Config.config['paradox_id']}> texsp\n||```\n{hint2}```||")
+                    await thread.send(f"<@{cfg.Config.config['paradox_id']}> texsp\n||```latex\n{hint2}```||")
                 if hint3 != "" and hint3 != None:
                     await thread.send(f"Hint 3:")
-                    await thread.send(f"<@{cfg.Config.config['paradox_id']}> texsp\n||```\n{hint3}```||")
+                    await thread.send(f"<@{cfg.Config.config['paradox_id']}> texsp\n||```latex\n{hint3}```||")
 
                 # Mark problem as posted
                 request = cfg.Config.service.spreadsheets().values().update(spreadsheetId=cfg.Config.config['potd_proposal_sheet'], 
