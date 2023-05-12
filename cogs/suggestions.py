@@ -308,7 +308,7 @@ class Suggestions(Cog):
         suggestion.reason = reason
         update_suggestions()
         await suggestion_message.edit(
-            content=f'**{suggestion_string} `#{sugg_id}` by <@!{suggestion.userid}>:** `[{new_status}]`\n{suggestion.jump_url}\n{suggestion.body}')
+            content=f'**{suggestion_string} `#{sugg_id}` by <@!{suggestion.userid}>:** `[{new_status}: {reason}]`\n{suggestion.jump_url}\n{suggestion.body}')
 
         # Finish up
         await bot_spam.send('Finished.')
