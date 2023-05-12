@@ -410,9 +410,11 @@ class Potd(Cog):
         self.timer = threading.Timer(20, self.reset_if_necessary)
         self.timer.start()
 
-    @commands.command(aliases=['fetch'], brief='Fetch a potd by id.')
+    @commands.command(aliases=['fetch'], brief='Fetch a potd by id.',
+                      help='`-fetch 1`: Fetch POTD Day 1.\n'
+                            '`-fetch 1 s`: Fetch POTD Day 1, masked by spoiler.\n')
     @commands.cooldown(1, 10, BucketType.user)
-    async def potd_fetch(self, ctx, number: int):
+    async def potd_fetch(self, ctx, number: int, spoiler: str=''):
         sheet = self.get_potd_sheet()
         potd_row = self.get_potd_row(number, sheet)
 
@@ -421,13 +423,19 @@ class Potd(Cog):
             return
         else:
             # Create the message to send
-            to_tex = ''
             try:
-                to_tex = '<@' + str(cfg.Config.config['paradox_id']) + '>\n```tex\n\\textbf{Day ' + str(
-                    potd_row[cfg.Config.config['potd_sheet_id_col']]) + '} --- ' + str(
-                    potd_row[cfg.Config.config['potd_sheet_day_col']]) + ' ' + str(
-                    potd_row[cfg.Config.config['potd_sheet_date_col']]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(
-                    potd_row[cfg.Config.config['potd_sheet_statement_col']]) + '```'
+                if spoiler != 's':
+                    to_tex = '<@' + str(cfg.Config.config['paradox_id']) + '>\n```tex\n\\textbf{Day ' + str(
+                        potd_row[cfg.Config.config['potd_sheet_id_col']]) + '} --- ' + str(
+                        potd_row[cfg.Config.config['potd_sheet_day_col']]) + ' ' + str(
+                        potd_row[cfg.Config.config['potd_sheet_date_col']]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(
+                        potd_row[cfg.Config.config['potd_sheet_statement_col']]) + '```'
+                else:
+                    to_tex = '<@' + str(cfg.Config.config['paradox_id']) + '>texsp\n||```tex\n\\textbf{Day ' + str(
+                        potd_row[cfg.Config.config['potd_sheet_id_col']]) + '} --- ' + str(
+                        potd_row[cfg.Config.config['potd_sheet_day_col']]) + ' ' + str(
+                        potd_row[cfg.Config.config['potd_sheet_date_col']]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(
+                        potd_row[cfg.Config.config['potd_sheet_statement_col']]) + '```||'
             except IndexError:
                 await ctx.send(f"There is no potd for day {number}. ")
                 return
@@ -912,7 +920,7 @@ class Potd(Cog):
                     return
                 else:
                     await ctx.send(f"Hint for POTD {number}:\n")
-                    await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint1_col']]}||")
+                    await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_hint1_col']]}```||")
                     if len(potd_row) > cfg.Config.config['potd_sheet_hint2_col'] and potd_row[cfg.Config.config['potd_sheet_hint2_col']] != None:
                         await ctx.send(f"There is another hint for this POTD. Use `-hint {number} 2` to get the hint.")
             elif hint_number == 2:
@@ -921,7 +929,7 @@ class Potd(Cog):
                     return
                 else:
                     await ctx.send(f"Hint 2 for POTD {number}:\n")
-                    await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint2_col']]}||")
+                    await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_hint2_col']]}```||")
                     if len(potd_row) > cfg.Config.config['potd_sheet_hint3_col'] and potd_row[cfg.Config.config['potd_sheet_hint3_col']] != None:
                         await ctx.send(f"There is another hint for this POTD. Use `-hint {number} 3` to get the hint.")
             elif hint_number == 3:
@@ -930,7 +938,7 @@ class Potd(Cog):
                     return
                 else:
                     await ctx.send(f"Hint 3 for POTD {number}:\n")
-                    await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp ||{potd_row[cfg.Config.config['potd_sheet_hint3_col']]}||")
+                    await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_hint3_col']]}```||")
             else:
                 await ctx.send("Hint number should be from 1 to 3.")
 
@@ -1251,7 +1259,7 @@ class Potd(Cog):
                 # Post in forum
                 forum = self.bot.get_channel(cfg.Config.config['potd_proposal_forum'])
                 post_result = await forum.create_thread(name=f"POTD Proposal #{number} from {user}", 
-                                          content=f"POTD Proposal #{number} from {user} ({user_id})\nProblem Statement: ```latex\n{problem_statement}\n```",
+                                          content=f"POTD Proposal #{number} from {user} <@!{user_id}> ({user_id})\nProblem Statement: ```latex\n{problem_statement}\n```",
                                           applied_tags=[forum.get_tag(cfg.Config.config['potd_proposal_forum_tag_pending'])]) 
                 thread = post_result[0]
                 
@@ -1260,11 +1268,14 @@ class Potd(Cog):
                     problem_info += f"\nProposer's message: {proposer_msg}\n"
                 await thread.send(problem_info)
 
-                await thread.send(f"Hint 1: \n<@{cfg.Config.config['paradox_id']}> texsp ||{hint1}||")
+                await thread.send(f"Hint 1:")
+                await thread.send(f"<@{cfg.Config.config['paradox_id']}> texsp\n||```latex\n{hint1}```||")
                 if hint2 != "" and hint2 != None:
-                    await thread.send(f"Hint 2: \n<@{cfg.Config.config['paradox_id']}> texsp ||{hint2}||")
+                    await thread.send(f"Hint 2:")
+                    await thread.send(f"<@{cfg.Config.config['paradox_id']}> texsp\n||```latex\n{hint2}```||")
                 if hint3 != "" and hint3 != None:
-                    await thread.send(f"Hint 3: \n<@{cfg.Config.config['paradox_id']}> texsp ||{hint3}||")
+                    await thread.send(f"Hint 3:")
+                    await thread.send(f"<@{cfg.Config.config['paradox_id']}> texsp\n||```latex\n{hint3}```||")
 
                 # Mark problem as posted
                 request = cfg.Config.service.spreadsheets().values().update(spreadsheetId=cfg.Config.config['potd_proposal_sheet'], 
