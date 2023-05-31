@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 import discord
 import schedule
 import threading
+import asyncio
+
 from discord.ext import commands
 from discord.ext.commands import BucketType
 
@@ -1295,27 +1297,29 @@ class Potd(Cog):
                 if proposer_msg != "" and proposer_msg != None:
                     problem_info += f"\nProposer's message: {proposer_msg}\n"
                 await thread.send(problem_info)
+                await asyncio.sleep(10)
 
                 await thread.send(f"Hint 1:")
                 await thread.send(f"<@{cfg.Config.config['paradox_id']}> texsp\n||```latex\n{hint1}```||")
+                await asyncio.sleep(10)
                 if hint2 != "" and hint2 != None:
                     await thread.send(f"Hint 2:")
                     await thread.send(f"<@{cfg.Config.config['paradox_id']}> texsp\n||```latex\n{hint2}```||")
+                    await asyncio.sleep(10)
                 if hint3 != "" and hint3 != None:
                     await thread.send(f"Hint 3:")
                     await thread.send(f"<@{cfg.Config.config['paradox_id']}> texsp\n||```latex\n{hint3}```||")
+                    await asyncio.sleep(10)
 
                 # Mark problem as posted
                 request = cfg.Config.service.spreadsheets().values().update(spreadsheetId=cfg.Config.config['potd_proposal_sheet'], 
                                                                             range=f'L{i+1}', valueInputOption='RAW',body={"range": f'L{i+1}', "values": [["Y"]] })
                 response = request.execute()
-                print(response)
 
                 # Mark thread ID
                 request = cfg.Config.service.spreadsheets().values().update(spreadsheetId=cfg.Config.config['potd_proposal_sheet'], 
                                                                             range=f'M{i+1}', valueInputOption='RAW',body={"range": f'M{i+1}', "values": [[str(thread.id)]] })
                 response = request.execute()
-                print(response)
 
                 # Send notification to proposer
                 try:
