@@ -46,6 +46,11 @@ class Potd(Cog):
         self.requested_number = -1
         self.dm_list = []
         self.timer = None
+
+        reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute()
+        values = reply.get('values', [])
+        self.latest_potd = int(values[0][0])  
         
         cursor = cfg.db.cursor()
         cursor.execute('''INSERT OR IGNORE INTO settings (setting, value) VALUES
@@ -129,7 +134,28 @@ class Potd(Cog):
         source.add_field(name='Difficulty', value=f'||`{str(potd_row[6]).ljust(5)}`||')
         source.add_field(name='Genre', value=f'||`{str(potd_row[5]).ljust(5)}`||')
         source.add_field(name='Subscribed', value=f'`{str(len(self.dm_list)).ljust(5)}`')
-        source.set_footer(text=f'Use -rating {potd_row[0]} to check the community difficulty rating of this problem '
+
+        # Community Rating footer
+        cursor = cfg.db.cursor()
+        cursor.execute(f'SELECT * FROM ratings WHERE prob = {potd_row[0]}')
+        result = cursor.fetchall()
+
+        community_rating = ''
+        if len(result) > 0:
+            community_rating += f"{len(result)} people have rated this problem. "
+            try:
+                underrate_count = sum(row[3] < int(potd_row[6]) for row in result)
+                if underrate_count > 0:
+                    community_rating += f"{underrate_count} rated lower than current rating. "
+                overrate_count = sum(row[3] > int(potd_row[6]) for row in result)
+                if overrate_count > 0:
+                    community_rating += f"{overrate_count} rated higher than current rating. "            
+            except:
+                pass
+            community_rating += "\n"
+        
+        # Final footer
+        source.set_footer(text=f'{community_rating}Use -rating {potd_row[0]} to check the community difficulty rating of this problem '
                             f'or -rate {potd_row[0]} rating to rate it yourself. React with a 👍 if you liked '
                             f'the problem. ')
 
@@ -1017,30 +1043,32 @@ class Potd(Cog):
             sql = 'INSERT INTO ratings (prob, userid, rating) VALUES (?, ?, ?)'
             cursor.execute(sql, (potd, ctx.author.id, rating))
             cfg.db.commit()
-            await ctx.author.send(f'You just rated potd {potd} {rating}. Thank you! ')
+            await ctx.send(f'<@{ctx.author.id}> just rated potd {potd} ||{rating}  ||. Use `-rate {potd} <rating>` if you want to rate this problem too.')
         else:
             if not overwrite:
-                await ctx.author.send(
-                    f'You already rated this potd {result[3]}. '
-                    f'If you wish to overwrite append `True` to your previous message, like `-rate {potd} {rating} True` ')
+                await ctx.send(
+                    f'You already rated this potd ||{result[3]}  ||. '
+                    f'If you wish to overwrite append `True` to your previous message, like `-rate {potd} <rating> True` ')
             else:
                 cursor.execute(f'UPDATE ratings SET rating = {rating} WHERE idratings = {result[0]}')
                 cfg.db.commit()
-                await ctx.author.send(f'Changed your rating for potd {potd} from {result[3]} to {rating}')
+                await ctx.send(f'<@{ctx.author.id}> just rated potd {potd} ||{rating}  ||. Use `-rate {potd} <rating>` if you want to rate this problem too.')
 
     @commands.command(aliases=['rating'], brief='Finds the median of a potd\'s ratings')
-    async def potd_rating(self, ctx, potd: int, full: bool = False):
+    async def potd_rating(self, ctx, potd: int, full: bool = True):
         cursor = cfg.db.cursor()
-        cursor.execute(f'SELECT * FROM ratings WHERE prob = {potd}')
+        cursor.execute(f'SELECT * FROM ratings WHERE prob = {potd} ORDER BY rating')
         result = cursor.fetchall()
         if len(result) == 0:
-            await ctx.author.send(f'No ratings for potd {potd} yet. ')
+            await ctx.send(f'No ratings for potd {potd} yet. ')
         else:
             median = statistics.median([row[3] for row in result])
-            await ctx.author.send(f'Rating for potd {potd} is `{median}`. ')
+            await ctx.send(f'Median community rating for potd {potd} is D||{median}  ||. ')
             if full:
-                await ctx.author.send(f'Full list: {[row[3] for row in result]}')
-        await ctx.message.delete()
+                full_list = ''
+                for row in result:
+                    full_list += f'\n<@!{row[2]}>: D||{row[3]}  ||'
+                await ctx.send(f'Full list of community rating: {full_list}')
 
     @commands.command(aliases=['myrating'], brief='Checks your rating of a potd. ')
     async def potd_rating_self(self, ctx, potd: int):
