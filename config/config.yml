@@ -27,6 +27,7 @@ potd_sheet_statement_col: 8
 potd_sheet_hint1_col: 9
 potd_sheet_hint2_col: 10
 potd_sheet_hint3_col: 11
+potd_message_id_col: 13
 potd_proposal_sheet: '1Nt3dGyAN5L8TRAcJFkOyoC7kDfaZ7fpawhUGgWzl56A'
 potd_forum: 1020855322006540428
 potd_proposal_forum: 1104681491964891156

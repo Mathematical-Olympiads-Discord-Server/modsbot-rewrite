@@ -1,6 +1,7 @@
 import ast
 from functools import reduce
 import math
+import openpyxl.utils
 import random
 import statistics
 from datetime import datetime, timedelta
@@ -17,7 +18,7 @@ from cogs import config as cfg
 
 Cog = commands.Cog
 
-POTD_RANGE = 'POTD!A2:M'
+POTD_RANGE = 'POTD!A2:N'
 CURATOR_RANGE = 'Curators!A3:E'
 
 days = [None, 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -144,7 +145,7 @@ class Potd(Cog):
 
         community_rating = ''
         if len(result) > 0:
-            community_rating += f"{len(result)} people have rated this problem. "
+            community_rating += f"There are {len(result)} community difficulty ratings. "
             try:
                 underrate_count = sum(row[3] < int(potd_row[6]) for row in result)
                 if underrate_count > 0:
@@ -162,6 +163,17 @@ class Potd(Cog):
                             f'the problem. ')
 
         return source
+    
+    async def edit_source(self, potd):
+        sheet = self.get_potd_sheet()
+        potd_row = self.get_potd_row(potd, sheet)
+        try:
+            potd_source = self.generate_source(potd_row)
+            potd_source_msg_id = potd_row[cfg.Config.config['potd_message_id_col']]
+            potd_source_msg = await self.bot.get_channel(cfg.Config.config['potd_channel']).fetch_message(potd_source_msg_id)
+            await potd_source_msg.edit(embed=potd_source)
+        except:
+            pass
 
     def schedule_potd(self, mode=None):
         self.bot.loop.create_task(self.check_potd(mode))
@@ -340,10 +352,25 @@ class Potd(Cog):
             #     '{} \nRate this problem with `-rate {} <rating>` and check its user difficulty rating with `-rating {}`'.format(
             #         self.to_send, self.requested_number, self.requested_number))
             self.listening_in_channel = -1 # Prevent reset
-            source_msg = await message.channel.send(embed=self.to_send)
+            source_msg = await message.channel.send(embed=self.to_send) 
             await source_msg.add_reaction("👍")
             if self.late:
                 await source_msg.add_reaction('⏰')
+
+            # record the ID of the source_msg if it is in POTD channel
+            if message.channel.id == cfg.Config.config['potd_channel']:
+                # get the row and column to update
+                column = openpyxl.utils.get_column_letter(cfg.Config.config['potd_message_id_col']+1)
+                reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute()
+                values = reply.get('values', [])
+                current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+                row = current_potd - self.requested_number + 2  # this gets the row requested
+                # update the source_msg in the sheet
+                request = cfg.Config.service.spreadsheets().values().update(spreadsheetId=cfg.Config.config['potd_sheet'], 
+                                                            range=f'{column}{row}', valueInputOption='RAW',body={"range": f'{column}{row}', "values": [[str(source_msg.id)]] })
+                response = request.execute()
+
             bot_log = self.bot.get_channel(cfg.Config.config['log_channel'])
 
             ping_msg = None
@@ -793,7 +820,7 @@ class Potd(Cog):
         messages = []
         if len(added) != 0:
             if len(added) == 1:
-                messages.append(f'POTD {added[0]} is added to your solved list.')
+                messages.append(f'POTD {added[0]} is added to your solved list. Use `-rate {added[0]} <rating>` if you want to rate the difficulty of this problem.')
             else:
                 messages.append(f'POTD {",".join(added)} are added to your solved list.')
         if len(already_solved) != 0:
@@ -1045,32 +1072,33 @@ class Potd(Cog):
             sql = 'INSERT INTO ratings (prob, userid, rating) VALUES (?, ?, ?)'
             cursor.execute(sql, (potd, ctx.author.id, rating))
             cfg.db.commit()
-            await ctx.send(f'<@{ctx.author.id}> just rated potd {potd} ||{rating}  ||. Use `-rate {potd} <rating>` if you want to rate this problem too.')
+            await ctx.send(f'<@{ctx.author.id}> You have rated POTD {potd} d||{rating}  ||.')
         else:
             if not overwrite:
                 await ctx.send(
-                    f'You already rated this potd ||{result[3]}  ||. '
+                    f'<@{ctx.author.id}> You already rated this POTD d||{result[3]}  ||. '
                     f'If you wish to overwrite append `True` to your previous message, like `-rate {potd} <rating> True` ')
             else:
                 cursor.execute(f'UPDATE ratings SET rating = {rating} WHERE idratings = {result[0]}')
                 cfg.db.commit()
-                await ctx.send(f'<@{ctx.author.id}> just rated potd {potd} ||{rating}  ||. Use `-rate {potd} <rating>` if you want to rate this problem too.')
+                await ctx.send(f'<@{ctx.author.id}> You have rated POTD {potd} d||{rating}  ||.')
+        await self.edit_source(potd)
 
-    @commands.command(aliases=['rating'], brief='Finds the median of a potd\'s ratings')
+    @commands.command(aliases=['rating'], brief='Finds the median of a POTD\'s ratings')
     async def potd_rating(self, ctx, potd: int, full: bool = True):
         cursor = cfg.db.cursor()
         cursor.execute(f'SELECT * FROM ratings WHERE prob = {potd} ORDER BY rating')
         result = cursor.fetchall()
         if len(result) == 0:
-            await ctx.send(f'No ratings for potd {potd} yet. ')
+            await ctx.send(f'No ratings for POTD {potd} yet. ')
         else:
             median = statistics.median([row[3] for row in result])
-            await ctx.send(f'Median community rating for potd {potd} is D||{median}  ||. ')
+            await ctx.send(f'Median community rating for POTD {potd} is d||{median}  ||. ')
             if full:
-                full_list = ''
-                for row in result:
-                    full_list += f'\n<@!{row[2]}>: D||{row[3]}  ||'
-                await ctx.send(f'Full list of community rating: {full_list}')
+                embed = discord.Embed()
+                embed.add_field(name=f'Full list of community rating for POTD {potd}',
+                    value='\n'.join([f'<@!{row[2]}>: d||{row[3]}  ||' for row in result]))
+                await ctx.send(embed=embed)
 
     @commands.command(aliases=['myrating'], brief='Checks your rating of a potd. ')
     async def potd_rating_self(self, ctx, potd: int):
@@ -1103,6 +1131,7 @@ class Potd(Cog):
         else:
             cursor.execute(f'DELETE FROM ratings WHERE prob = {potd} AND userid = {ctx.author.id}')
             await ctx.author.send(f'Removed your rating of difficulty level {result[3]} for potd {potd}. ')
+            await self.edit_source(potd)
 
     def potd_notif_embed(self, ctx, colour):
 
