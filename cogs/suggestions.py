@@ -342,6 +342,11 @@ class Suggestions(Cog):
 
     @commands.command()
     @commands.check(cfg.is_staff)
+    async def revised(self, ctx, sugg_id: int, *, reason=None):
+        await self.change_suggestion_status_back(ctx, sugg_id, 'Revised', reason, "server")
+
+    @commands.command()
+    @commands.check(cfg.is_staff)
     async def implemented(self, ctx, sugg_id: int, *, reason=None):
         await self.change_suggestion_status_back(ctx, sugg_id, 'Implemented', reason, "server")
 
@@ -360,6 +365,11 @@ class Suggestions(Cog):
     @commands.check(cfg.is_mod_or_tech)
     async def tech_deny(self, ctx, sugg_id: int, *, reason=None):
         await self.change_suggestion_status_back(ctx, sugg_id, 'Denied', reason, "tech")
+
+    @commands.command()
+    @commands.check(cfg.is_mod_or_tech)
+    async def tech_revised(self, ctx, sugg_id: int, *, reason=None):
+        await self.change_suggestion_status_back(ctx, sugg_id, 'Revised', reason, "tech")
 
     @commands.command()
     @commands.check(cfg.is_mod_or_tech)
