@@ -809,7 +809,7 @@ class Potd(Cog):
                 added.append(str(potd_number))
             
             potd_row = self.get_potd_row(potd_number, sheet)
-            if potd_row == None:
+            if potd_row == None or len(potd_row) <= cfg.Config.config['potd_sheet_statement_col']:
                 no_potd.append(str(potd_number))
             else:
                 if potd_row != None and random.random() <  0.25:
