@@ -819,7 +819,7 @@ class Potd(Cog):
                     if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
                         no_hint.append(str(potd_number))
                 if potd_row != None:
-                    if len(potd_row) <= cfg.Config.config['potd_sheet_discussion_col'] or potd_row[cfg.Config.config['potd_sheet_discussion_col']] != None:
+                    if len(potd_row) >= cfg.Config.config['potd_sheet_discussion_col'] and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != None:
                         has_discussion.append(str(potd_number))
 
         # send confirm message
@@ -921,7 +921,7 @@ class Potd(Cog):
                     if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
                         no_hint.append(str(potd_number))                
                 if potd_row != None:
-                    if len(potd_row) <= cfg.Config.config['potd_sheet_discussion_col'] or potd_row[cfg.Config.config['potd_sheet_discussion_col']] != None:
+                    if len(potd_row) >= cfg.Config.config['potd_sheet_discussion_col'] and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != None:
                         has_discussion.append(str(potd_number))
 
         # send confirm message
@@ -1097,7 +1097,7 @@ class Potd(Cog):
             return
         else:  
             if hint_number == 1:
-                if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
+                if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == '':
                     await ctx.send(f"There is no hint for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
                     return
                 else:
@@ -1106,7 +1106,7 @@ class Potd(Cog):
                     if len(potd_row) > cfg.Config.config['potd_sheet_hint2_col'] and potd_row[cfg.Config.config['potd_sheet_hint2_col']] != None:
                         await ctx.send(f"There is another hint for this POTD. Use `-hint {number} 2` to get the hint.")
             elif hint_number == 2:
-                if len(potd_row) <= cfg.Config.config['potd_sheet_hint2_col'] or potd_row[cfg.Config.config['potd_sheet_hint2_col']] == None:
+                if len(potd_row) <= cfg.Config.config['potd_sheet_hint2_col'] or potd_row[cfg.Config.config['potd_sheet_hint2_col']] == None or potd_row[cfg.Config.config['potd_sheet_hint2_col']] == '':
                     await ctx.send(f"There is no hint 2 for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
                     return
                 else:
@@ -1115,7 +1115,7 @@ class Potd(Cog):
                     if len(potd_row) > cfg.Config.config['potd_sheet_hint3_col'] and potd_row[cfg.Config.config['potd_sheet_hint3_col']] != None:
                         await ctx.send(f"There is another hint for this POTD. Use `-hint {number} 3` to get the hint.")
             elif hint_number == 3:
-                if len(potd_row) <= cfg.Config.config['potd_sheet_hint3_col'] or potd_row[cfg.Config.config['potd_sheet_hint3_col']] == None:
+                if len(potd_row) <= cfg.Config.config['potd_sheet_hint3_col'] or potd_row[cfg.Config.config['potd_sheet_hint3_col']] == None or potd_row[cfg.Config.config['potd_sheet_hint3_col']] == '':
                     await ctx.send(f"There is no hint 3 for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
                     return
                 else:
@@ -1133,7 +1133,7 @@ class Potd(Cog):
             await ctx.send(f"There is no potd for day {number}. ")
             return
         else:
-            if len(potd_row) <= cfg.Config.config['potd_sheet_answer_col'] or potd_row[cfg.Config.config['potd_sheet_answer_col']] == None:
+            if len(potd_row) <= cfg.Config.config['potd_sheet_answer_col'] or potd_row[cfg.Config.config['potd_sheet_answer_col']] == None or potd_row[cfg.Config.config['potd_sheet_answer_col']] == '':
                 await ctx.send(f"There is no answer provided for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit your answer!")
                 return
             else:
