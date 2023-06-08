@@ -168,7 +168,7 @@ class Potd(Cog):
         potd_row = self.get_potd_row(potd, sheet)
         try:
             potd_source = self.generate_source(potd_row)
-            potd_source_msg_id = potd_row[cfg.Config.config['potd_message_id_col']]
+            potd_source_msg_id = potd_row[cfg.Config.config['potd_sheet_message_id_col']]
             potd_source_msg = await self.bot.get_channel(cfg.Config.config['potd_channel']).fetch_message(potd_source_msg_id)
             await potd_source_msg.edit(embed=potd_source)
         except:
@@ -359,7 +359,7 @@ class Potd(Cog):
             # record the ID of the source_msg if it is in POTD channel
             if message.channel.id == cfg.Config.config['potd_channel']:
                 # get the row and column to update
-                column = openpyxl.utils.get_column_letter(cfg.Config.config['potd_message_id_col']+1)
+                column = openpyxl.utils.get_column_letter(cfg.Config.config['potd_sheet_message_id_col']+1)
                 reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute()
                 values = reply.get('values', [])
@@ -793,6 +793,7 @@ class Potd(Cog):
         already_solved = []
         no_potd = []
         no_hint = []
+        has_discussion = []
         sheet = self.get_potd_sheet()
         for potd_number in potd_numbers:
             cursor = cfg.db.cursor()
@@ -815,6 +816,9 @@ class Potd(Cog):
                 if potd_row != None and random.random() <  0.25:
                     if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
                         no_hint.append(str(potd_number))
+                if potd_row != None:
+                    if len(potd_row) <= cfg.Config.config['potd_sheet_discussion_col'] or potd_row[cfg.Config.config['potd_sheet_discussion_col']] != None:
+                        has_discussion.append(str(potd_number))
 
         # send confirm message
         messages = []
@@ -838,6 +842,11 @@ class Potd(Cog):
                 messages.append(f"There is no hint for POTD {no_hint[0]}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
             else:
                 messages.append(f"There are no hint for POTD {','.join(no_hint)}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+        if len(has_discussion) != 0:
+            if len(has_discussion) == 1:
+                messages.append(f'There is discussion for POTD {has_discussion[0]}. Use `-discussion {has_discussion[0]}` to see the discussion.')
+            else:
+                messages.append(f"Ther are discussions for POTD {','.join(has_discussion)}. Use `-discussion <number>` to see the discussions.")
         message = "\n".join(messages)
         await ctx.send(message)
 
@@ -886,6 +895,7 @@ class Potd(Cog):
         already_read = []
         no_potd = []
         no_hint = []
+        has_discussion = []
         sheet = self.get_potd_sheet()
         for potd_number in potd_numbers:
             cursor = cfg.db.cursor()
@@ -907,7 +917,10 @@ class Potd(Cog):
             else:
                 if potd_row != None and random.random() <  0.25:
                     if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
-                        no_hint.append(str(potd_number))
+                        no_hint.append(str(potd_number))                
+                if potd_row != None:
+                    if len(potd_row) <= cfg.Config.config['potd_sheet_discussion_col'] or potd_row[cfg.Config.config['potd_sheet_discussion_col']] != None:
+                        has_discussion.append(str(potd_number))
 
         # send confirm message
         messages = []
@@ -931,6 +944,11 @@ class Potd(Cog):
                 messages.append(f"There is no hint for POTD {no_hint[0]}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
             else:
                 messages.append(f"There are no hint for POTD {','.join(no_hint)}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!")
+        if len(has_discussion) != 0:
+            if len(has_discussion) == 1:
+                messages.append(f'There is discussion for POTD {has_discussion[0]}. Use `-discussion {has_discussion[0]}` to see the discussion.')
+            else:
+                messages.append(f"Ther are discussions for POTD {','.join(has_discussion)}. Use `-discussion <number>` to see the discussions.")
         message = "\n".join(messages)
         await ctx.send(message)
 
@@ -1104,6 +1122,37 @@ class Potd(Cog):
             else:
                 await ctx.send("Hint number should be from 1 to 3.")
 
+    @commands.command(aliases=['answer'], brief='Get answer for the POTD.')
+    @commands.cooldown(1, 10, BucketType.user)
+    async def potd_answer(self, ctx, number: int):
+        sheet = self.get_potd_sheet()
+        potd_row = self.get_potd_row(number, sheet)
+        if potd_row == None:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
+        else:
+            if len(potd_row) <= cfg.Config.config['potd_sheet_answer_col'] or potd_row[cfg.Config.config['potd_sheet_answer_col']] == None:
+                await ctx.send(f"There is no answer provided for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit your answer!")
+                return
+            else:
+                await ctx.send(f"Answer for POTD {number}:\n")
+                await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_answer_col']]}```||")
+
+    @commands.command(aliases=['discussion'], brief='Get discussion for the POTD.')
+    @commands.cooldown(1, 10, BucketType.user)
+    async def potd_discussion(self, ctx, number: int):
+        sheet = self.get_potd_sheet()
+        potd_row = self.get_potd_row(number, sheet)
+        if potd_row == None:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
+        else:
+            if len(potd_row) <= cfg.Config.config['potd_sheet_discussion_col'] or potd_row[cfg.Config.config['potd_sheet_discussion_col']] == None:
+                await ctx.send(f"There is no discussion provided for POTD {number}.")
+                return
+            else:
+                await ctx.send(f"Discussion for POTD {number}:\n")
+                await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_discussion_col']]}```||")
 
     def get_potd_sheet(self):
         sheet = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
