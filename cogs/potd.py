@@ -1163,6 +1163,10 @@ class Potd(Cog):
 
     @commands.command(aliases=['rate'], brief='Rates a potd based on difficulty. ')
     async def potd_rate(self, ctx, potd: int, rating: int, overwrite: bool = False):
+        if rating < 0 or rating > 14:
+            await ctx.send(f'<@{ctx.author.id}> POTD rating is only allowed from 0 to 14.')
+            return
+
         # Delete messages if it's in a guild
         if ctx.guild is not None:
             await ctx.message.delete()
