@@ -719,7 +719,9 @@ class Potd(Cog):
     def pick_potd(self, diff_lower_bound_filter, diff_upper_bound_filter, genre_filter, potds, already_picked, ctx, search_unsolved:bool):
         solved_potd = []
         if search_unsolved == True:
-            solved_potd = self.get_potd_solved(ctx)
+            get_solved_potd = self.get_potd_solved(ctx)
+            get_read_potd = self.get_potd_read(ctx)
+            solved_potd = get_solved_potd + get_read_potd
 
         def match_genre(x,genre_filter):
             for genre in genre_filter:
