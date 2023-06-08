@@ -1163,10 +1163,6 @@ class Potd(Cog):
 
     @commands.command(aliases=['rate'], brief='Rates a potd based on difficulty. ')
     async def potd_rate(self, ctx, potd: int, rating: int, overwrite: bool = False):
-        if potd > self.latest_potd:  # Sanitise potd number
-            await ctx.author.send('You cannot rate an un-released potd!')
-            return
-
         # Delete messages if it's in a guild
         if ctx.guild is not None:
             await ctx.message.delete()
