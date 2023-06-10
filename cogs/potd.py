@@ -819,7 +819,7 @@ class Potd(Cog):
                     if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
                         no_hint.append(str(potd_number))
                 if potd_row != None:
-                    if len(potd_row) >= cfg.Config.config['potd_sheet_discussion_col'] and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != None:
+                    if len(potd_row) >= cfg.Config.config['potd_sheet_discussion_col'] and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != None and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != '':
                         has_discussion.append(str(potd_number))
 
         # send confirm message
@@ -921,7 +921,7 @@ class Potd(Cog):
                     if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
                         no_hint.append(str(potd_number))                
                 if potd_row != None:
-                    if len(potd_row) >= cfg.Config.config['potd_sheet_discussion_col'] and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != None:
+                    if len(potd_row) >= cfg.Config.config['potd_sheet_discussion_col'] and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != None and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != '':
                         has_discussion.append(str(potd_number))
 
         # send confirm message
@@ -1149,7 +1149,7 @@ class Potd(Cog):
             await ctx.send(f"There is no potd for day {number}. ")
             return
         else:
-            if len(potd_row) <= cfg.Config.config['potd_sheet_discussion_col'] or potd_row[cfg.Config.config['potd_sheet_discussion_col']] == None:
+            if len(potd_row) <= cfg.Config.config['potd_sheet_discussion_col'] or potd_row[cfg.Config.config['potd_sheet_discussion_col']] == None or potd_row[cfg.Config.config['potd_sheet_discussion_col']] == '':
                 await ctx.send(f"There is no discussion provided for POTD {number}.")
                 return
             else:
