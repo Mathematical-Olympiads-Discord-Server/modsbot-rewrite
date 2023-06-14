@@ -819,7 +819,7 @@ class Potd(Cog):
                     if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
                         no_hint.append(str(potd_number))
                 if potd_row != None:
-                    if len(potd_row) >= cfg.Config.config['potd_sheet_discussion_col'] and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != None and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != '':
+                    if len(potd_row) > cfg.Config.config['potd_sheet_discussion_col'] and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != None and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != '':
                         has_discussion.append(str(potd_number))
 
         # send confirm message
@@ -921,7 +921,7 @@ class Potd(Cog):
                     if len(potd_row) <= cfg.Config.config['potd_sheet_hint1_col'] or potd_row[cfg.Config.config['potd_sheet_hint1_col']] == None:
                         no_hint.append(str(potd_number))                
                 if potd_row != None:
-                    if len(potd_row) >= cfg.Config.config['potd_sheet_discussion_col'] and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != None and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != '':
+                    if len(potd_row) > cfg.Config.config['potd_sheet_discussion_col'] and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != None and potd_row[cfg.Config.config['potd_sheet_discussion_col']] != '':
                         has_discussion.append(str(potd_number))
 
         # send confirm message
