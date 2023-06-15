@@ -18,7 +18,7 @@ from cogs import config as cfg
 
 Cog = commands.Cog
 
-POTD_RANGE = 'POTD!A2:P'
+POTD_RANGE = 'POTD!A2:Q'
 CURATOR_RANGE = 'Curators!A3:E'
 
 days = [None, 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -1155,6 +1155,22 @@ class Potd(Cog):
             else:
                 await ctx.send(f"Discussion for POTD {number}:\n")
                 await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_discussion_col']]}```||")
+
+    @commands.command(aliases=['solution'], brief='Get solution for the POTD.')
+    @commands.cooldown(1, 10, BucketType.user)
+    async def potd_solution(self, ctx, number: int):
+        sheet = self.get_potd_sheet()
+        potd_row = self.get_potd_row(number, sheet)
+        if potd_row == None:
+            await ctx.send(f"There is no potd for day {number}. ")
+            return
+        else:
+            if len(potd_row) <= cfg.Config.config['potd_sheet_solution_col'] or potd_row[cfg.Config.config['potd_sheet_solution_col']] == None or potd_row[cfg.Config.config['potd_sheet_solution_col']] == '':
+                await ctx.send(f"There is no solution provided for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit your solution!")
+                return
+            else:
+                await ctx.send(f"Solution for POTD {number}:\n")
+                await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_solution_col']]}```||")
 
     def get_potd_sheet(self):
         sheet = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
