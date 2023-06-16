@@ -1184,7 +1184,9 @@ class Potd(Cog):
             await ctx.send(f'POTD {",".join(list(map(str,potd_numbers)))} are removed from your TODO list. ')
 
     @commands.command(aliases=['mytodo'], brief='Show the POTDs in your TODO list',
-                    help='`-mytodo`: Show the POTDs  in your TODO list.\n')
+                    help='`-mytodo`: Show the POTDs in your TODO list.\n'
+                        '`-mytodo d`: Show the POTDs in your TODO list, ordered by difficulties.\n'
+                        '`-mytodo s`: Show the POTDs in your TODO list, divided into the four subjects.\n')
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_mytodo(self, ctx, flag=None):
         todo = self.get_potd_todo(ctx)
@@ -1195,6 +1197,33 @@ class Potd(Cog):
         
         if len(todo) > 0:
             await self.generate_potd_list_output_string(todo, potd_rows, current_potd, flag, 'TODO', ctx, False)
+
+    @commands.command(aliases=['unrated'], brief='Fetch a random POTD that you have solved/read but not yet rated',
+                    help='`-unrated`: Fetch a random POTD that you have solved/read but not yet rated.\n')
+    @commands.cooldown(1, 5, BucketType.user)
+    async def potd_unrated(self, ctx, flag=None):
+        solved = self.get_potd_solved(ctx)
+        read = self.get_potd_read(ctx)
+        rated = self.get_potd_rated(ctx)
+
+        unrated = [x for x in (solved + read) if x not in rated]
+
+        picked_potd = random.choice(unrated)
+        await self.potd_fetch(ctx, int(picked_potd))
+
+    @commands.command(aliases=['unrated_list'], brief='Get the list of POTD that you have solved/read but not yet rated',
+                    help='`-unrated_list`: Get the list of POTD that you have solved/read but not yet rated.\n')
+    @commands.cooldown(1, 5, BucketType.user)
+    async def potd_unrated_list(self, ctx, flag=None):
+        solved = self.get_potd_solved(ctx)
+        read = self.get_potd_read(ctx)
+        rated = self.get_potd_rated(ctx)
+
+        solved_unrated = [x for x in solved if x not in rated]
+        read_unrated = [x for x in read if x not in rated]
+        
+        output_string = f'Your unrated POTD: \nSolved: {solved_unrated}\nRead: {read_unrated}'
+        await ctx.send(output_string)
 
     async def generate_potd_list_output_string(self, potd_list, potd_rows, current_potd, flag, adjective, ctx, show_total=True):
         if flag == "d":
@@ -1222,6 +1251,8 @@ class Potd(Cog):
                     total = len([potd for potd in potd_rows if len(potd) > cfg.Config.config['potd_sheet_difficulty_col']
                                 and potd[cfg.Config.config['potd_sheet_difficulty_col']] == key])
                     output_string += "D" + key + ": " + f"{solved_by_difficulty[key]} ({len(solved_by_difficulty[key])}/{total})" + "\n"
+                else:
+                    output_string += "D" + key + ": " + f"{solved_by_difficulty[key]} " + "\n"
             await self.send_potd_solved(ctx, output_string)
         elif flag == "s":
             solved_by_genre = {'A':[], 'C':[], 'G':[], 'N':[]}
@@ -1246,9 +1277,12 @@ class Potd(Cog):
 
             output_string = f'Your {adjective} POTD: \n'
             for key in solved_by_genre:
-                total = len([potd for potd in potd_rows if len(potd) > cfg.Config.config['potd_sheet_difficulty_col']
-                              and key in potd[cfg.Config.config['potd_sheet_genre_col']]])
-                output_string += key + ": " + f"{solved_by_genre[key]} ({len(solved_by_genre[key])}/{total})" + "\n"
+                if show_total == True:
+                    total = len([potd for potd in potd_rows if len(potd) > cfg.Config.config['potd_sheet_difficulty_col']
+                                and key in potd[cfg.Config.config['potd_sheet_genre_col']]])
+                    output_string += key + ": " + f"{solved_by_genre[key]} ({len(solved_by_genre[key])}/{total})" + "\n"
+                else:
+                    output_string += key + ": " + f"{solved_by_genre[key]} " + "\n"
             await self.send_potd_solved(ctx, output_string)
         else:
             if show_total == True:
@@ -1277,6 +1311,11 @@ class Potd(Cog):
         cursor.execute(f'''SELECT discord_user_id, potd_id, create_date FROM potd_todo
                             WHERE discord_user_id = {ctx.author.id} 
                             ORDER BY potd_id DESC''')
+        return [x[1] for x in cursor.fetchall()]
+    
+    def get_potd_rated(self, ctx):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'SELECT * FROM ratings WHERE userid = {ctx.author.id}')
         return [x[1] for x in cursor.fetchall()]
 
     # send message in batches of 1900+e characters because of 2k character limit
