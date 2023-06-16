@@ -1108,7 +1108,95 @@ class Potd(Cog):
         if len(read) > 0:
             await self.generate_potd_list_output_string(read, potd_rows, current_potd, flag, 'read', ctx)
     
-    async def generate_potd_list_output_string(self, potd_list, potd_rows, current_potd, flag, adjective, ctx):
+    @commands.command(aliases=['todo'], brief='Mark the POTD into your TODO list')
+    @commands.cooldown(1, 5, BucketType.user)
+    async def potd_todo(self, ctx, *, user_input:str):
+        # parse input
+        try:
+            potd_numbers = [int(i) for i in user_input.split(",")]
+        except ValueError:
+            await ctx.send("Error: The input contains non-integer values.")
+            return
+
+        if len(potd_numbers) > 30:
+            await ctx.send("Please don't send more than 30 POTDs in each call.")
+            return
+
+        # insert to DB
+        added = []
+        already_todo = []
+        no_potd = []
+        no_hint = []
+        has_discussion = []
+        sheet = self.get_potd_sheet()
+        for potd_number in potd_numbers:
+            cursor = cfg.db.cursor()
+            cursor.execute(f'''SELECT discord_user_id, potd_id, create_date FROM potd_todo 
+                                WHERE discord_user_id = {ctx.author.id} 
+                                AND potd_id = {potd_number}''')
+            result = cursor.fetchall()
+            if len(result) > 0:
+                already_todo.append(str(potd_number))
+            else:
+                cursor.execute(f'''INSERT INTO potd_todo (discord_user_id, potd_id, create_date) VALUES
+                    ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
+                added.append(str(potd_number))           
+
+        # send confirm message
+        messages = []
+        if len(added) != 0:
+            if len(added) == 1:
+                messages.append(f'POTD {added[0]} is added to your TODO list.')
+            else:
+                messages.append(f'POTD {",".join(added)} are added to your TODO list.')
+        if len(already_todo) != 0:
+            if len(already_todo) == 1:
+                messages.append(f'POTD {already_todo[0]} is already in your TODO list.')
+            else:
+                messages.append(f'POTD {",".join(already_todo)} are already in your TODO list.')
+        message = "\n".join(messages)
+        await ctx.send(message)
+
+    @commands.command(aliases=['untodo'], brief='Unmark the POTD from your TODO list')
+    @commands.cooldown(1, 5, BucketType.user)
+    async def potd_untodo(self, ctx, *, user_input:str):
+        # parse input
+        try:
+            potd_numbers = [int(i) for i in user_input.split(",")]
+        except ValueError:
+            await ctx.send("Error: The input contains non-integer values.")
+            return
+
+        if len(potd_numbers) > 30:
+            await ctx.send("Please don't send more than 30 POTDs in each call.")
+            return
+
+        # delete from DB
+        for potd_number in potd_numbers:
+            cursor = cfg.db.cursor()
+            cursor.execute(f'''DELETE FROM potd_todo 
+                                WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
+        
+        # send confirm message
+        if len(potd_numbers) == 1:
+            await ctx.send(f'POTD {potd_numbers[0]} is removed from your TODO list. ')
+        else:
+            await ctx.send(f'POTD {",".join(list(map(str,potd_numbers)))} are removed from your TODO list. ')
+
+    @commands.command(aliases=['mytodo'], brief='Show the POTDs in your TODO list',
+                    help='`-mytodo`: Show the POTDs  in your TODO list.\n')
+    @commands.cooldown(1, 5, BucketType.user)
+    async def potd_mytodo(self, ctx, flag=None):
+        todo = self.get_potd_todo(ctx)
+        
+        potd_rows = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute().get('values', [])
+        current_potd = int(potd_rows[0][0])
+        
+        if len(todo) > 0:
+            await self.generate_potd_list_output_string(todo, potd_rows, current_potd, flag, 'TODO', ctx, False)
+
+    async def generate_potd_list_output_string(self, potd_list, potd_rows, current_potd, flag, adjective, ctx, show_total=True):
         if flag == "d":
             solved_by_difficulty = {}
             for number in potd_list:
@@ -1130,9 +1218,10 @@ class Potd(Cog):
 
             output_string = f'Your {adjective} POTD: \n'
             for key in solved_by_difficulty:
-                total = len([potd for potd in potd_rows if len(potd) > cfg.Config.config['potd_sheet_difficulty_col']
-                              and potd[cfg.Config.config['potd_sheet_difficulty_col']] == key])
-                output_string += "D" + key + ": " + f"{solved_by_difficulty[key]} ({len(solved_by_difficulty[key])}/{total})" + "\n"
+                if show_total == True:
+                    total = len([potd for potd in potd_rows if len(potd) > cfg.Config.config['potd_sheet_difficulty_col']
+                                and potd[cfg.Config.config['potd_sheet_difficulty_col']] == key])
+                    output_string += "D" + key + ": " + f"{solved_by_difficulty[key]} ({len(solved_by_difficulty[key])}/{total})" + "\n"
             await self.send_potd_solved(ctx, output_string)
         elif flag == "s":
             solved_by_genre = {'A':[], 'C':[], 'G':[], 'N':[]}
@@ -1162,7 +1251,10 @@ class Potd(Cog):
                 output_string += key + ": " + f"{solved_by_genre[key]} ({len(solved_by_genre[key])}/{total})" + "\n"
             await self.send_potd_solved(ctx, output_string)
         else:
-            output_string = f'Your {adjective} POTD: \n{potd_list} ({len(potd_list)}/{len(potd_rows)})'
+            if show_total == True:
+                output_string = f'Your {adjective} POTD: \n{potd_list} ({len(potd_list)}/{len(potd_rows)})'
+            else:
+                output_string = f'Your {adjective} POTD: \n{potd_list}'
             await self.send_potd_solved(ctx, output_string)
         
     
@@ -1176,6 +1268,13 @@ class Potd(Cog):
     def get_potd_read(self, ctx):
         cursor = cfg.db.cursor()
         cursor.execute(f'''SELECT discord_user_id, potd_id, create_date FROM potd_read 
+                            WHERE discord_user_id = {ctx.author.id} 
+                            ORDER BY potd_id DESC''')
+        return [x[1] for x in cursor.fetchall()]
+    
+    def get_potd_todo(self, ctx):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'''SELECT discord_user_id, potd_id, create_date FROM potd_todo
                             WHERE discord_user_id = {ctx.author.id} 
                             ORDER BY potd_id DESC''')
         return [x[1] for x in cursor.fetchall()]
