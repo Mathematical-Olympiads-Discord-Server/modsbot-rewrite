@@ -71,6 +71,11 @@ class MODSBot(commands.Bot):
             potd_id INT NOT NULL,
             create_date DATE
             )''' )
+        cursor.execute('''CREATE TABLE IF NOT EXISTS potd_todo (
+            discord_user_id TEXT,
+            potd_id INT NOT NULL,
+            create_date DATE
+            )''' )
         db.commit()
 
         # Load cogs
