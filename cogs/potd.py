@@ -310,7 +310,7 @@ class Potd(Cog):
         if remind != []:
             mentions = ''
             for i in remind:
-                mentions += self.responsible(i, mode == 1)
+                mentions += self.responsible(i, (mode == 1) or (mode == 3))
             await curator_role.edit(mentionable = True)
             await self.bot.get_channel(cfg.Config.config['helper_lounge']).send(
                 f"Remember to fill in your POTDs! {mentions}")
