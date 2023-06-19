@@ -1107,6 +1107,8 @@ class Potd(Cog):
             await self.generate_potd_list_output_string(solved, potd_rows, current_potd, flag, 'solved', ctx)
         if len(read) > 0:
             await self.generate_potd_list_output_string(read, potd_rows, current_potd, flag, 'read', ctx)
+        if len(solved) == 0 and len(read) == 0:   
+            await ctx.send('Your solved list and read list are empty.')
     
     @commands.command(aliases=['todo'], brief='Mark the POTD into your TODO list')
     @commands.cooldown(1, 5, BucketType.user)
@@ -1197,6 +1199,8 @@ class Potd(Cog):
         
         if len(todo) > 0:
             await self.generate_potd_list_output_string(todo, potd_rows, current_potd, flag, 'TODO', ctx, False)
+        else:
+            await ctx.send('Your TODO list is empty.')
 
     @commands.command(aliases=['unrated'], brief='Fetch a random POTD that you have solved/read but not yet rated',
                     help='`-unrated`: Fetch a random POTD that you have solved/read but not yet rated.\n')
@@ -1221,9 +1225,17 @@ class Potd(Cog):
 
         solved_unrated = [x for x in solved if x not in rated]
         read_unrated = [x for x in read if x not in rated]
+
+        potd_rows = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute().get('values', [])
+        current_potd = int(potd_rows[0][0])
         
-        output_string = f'Your unrated POTD: \nSolved: {solved_unrated}\nRead: {read_unrated}'
-        await ctx.send(output_string)
+        if len(solved_unrated) > 0:
+            await self.generate_potd_list_output_string(solved_unrated, potd_rows, current_potd, flag, 'unrated (solved)', ctx, False)
+        if len(read_unrated) > 0:
+            await self.generate_potd_list_output_string(read_unrated, potd_rows, current_potd, flag, 'unrated (read)', ctx, False)
+        if len(solved_unrated) == 0 and len(read_unrated) == 0:
+            await ctx.send('You have no unrated POTD.')
 
     async def generate_potd_list_output_string(self, potd_list, potd_rows, current_potd, flag, adjective, ctx, show_total=True):
         if flag == "d":
