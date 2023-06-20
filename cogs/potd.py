@@ -791,13 +791,13 @@ class Potd(Cog):
 
         # filter by genre and difficulty
         if type(diff_upper_bound_filter) == int:
-            filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
+            filtered_potds = [x for x in potds if len(x) > max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
                             and x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
                             and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter
                             and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) <= diff_upper_bound_filter
                             and match_genre(x,genre_filter)]
         else: # if diff bound is "T"
-            filtered_potds = [x for x in potds if len(x) >= max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
+            filtered_potds = [x for x in potds if len(x) > max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
                             and ((x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
                                 and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter)
                                 or not x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric())
