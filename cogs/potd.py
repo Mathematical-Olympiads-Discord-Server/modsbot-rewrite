@@ -919,6 +919,7 @@ class Potd(Cog):
                 cursor.execute(f'''INSERT INTO potd_solves (discord_user_id, potd_id, create_date) VALUES
                     ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
                 cursor.execute(f'''DELETE FROM potd_read WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
+                cursor.execute(f'''DELETE FROM potd_todo WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
                 added.append(str(potd_number))
             
             potd_row = self.get_potd_row(potd_number, sheet)
@@ -1021,6 +1022,7 @@ class Potd(Cog):
                 cursor.execute(f'''INSERT INTO potd_read (discord_user_id, potd_id, create_date) VALUES
                     ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
                 cursor.execute(f'''DELETE FROM potd_solves WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
+                cursor.execute(f'''DELETE FROM potd_todo WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
                 added.append(str(potd_number))
             
             potd_row = self.get_potd_row(potd_number, sheet)
