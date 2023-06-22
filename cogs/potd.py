@@ -19,7 +19,7 @@ from cogs import config as cfg
 
 Cog = commands.Cog
 
-POTD_RANGE = 'POTD!A2:Q'
+POTD_RANGE = 'POTD!A2:R'
 CURATOR_RANGE = 'Curators!A3:E'
 
 days = [None, 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -1426,11 +1426,23 @@ class Potd(Cog):
             return
         else:
             if len(potd_row) <= cfg.Config.config['potd_sheet_solution_col'] or potd_row[cfg.Config.config['potd_sheet_solution_col']] == None or potd_row[cfg.Config.config['potd_sheet_solution_col']] == '':
+                solution = None
+            else:
+                solution = potd_row[cfg.Config.config['potd_sheet_solution_col']]
+            if len(potd_row) <= cfg.Config.config['potd_sheet_solution_link_col'] or potd_row[cfg.Config.config['potd_sheet_solution_link_col']] == None or potd_row[cfg.Config.config['potd_sheet_solution_link_col']] == '':
+                solution_link = None
+            else:
+                solution_link = potd_row[cfg.Config.config['potd_sheet_solution_link_col']]
+
+            if solution == None and solution_link == None:
                 await ctx.send(f"There is no solution provided for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit your solution!")
                 return
             else:
-                await ctx.send(f"Solution for POTD {number}:\n")
-                await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_solution_col']]}```||")
+                if solution != None:
+                    await ctx.send(f"Solution for POTD {number}:\n")
+                    await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_solution_col']]}```||")
+                if solution_link != None:
+                    await ctx.send(f"Solution Link for POTD {number}:\n{potd_row[cfg.Config.config['potd_sheet_solution_link_col']]}")
 
     def get_potd_sheet(self):
         sheet = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],

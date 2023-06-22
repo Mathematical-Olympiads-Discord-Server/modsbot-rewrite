@@ -17,7 +17,7 @@ def is_staff(ctx):
     return ctx.author.id in Config.config['staff']
 
 def is_mod_or_tech(ctx):
-    if ctx.guild.id != Config.config['mods_guild']:
+    if ctx.guild is None or ctx.guild.id != Config.config['mods_guild']:
         return False
     roles = list(map(lambda x:x.id,ctx.author.roles))
     return Config.config['mod_role'] in roles or Config.config['tech_role'] in roles
@@ -38,7 +38,7 @@ class Config(Cog):
     service = discovery.build('sheets', 'v4', credentials=credentials)
 
     def __init__(self, bot):
-        with open('config/config.yml') as cfgfile:
+        with open('config/config_test.yml') as cfgfile:
             Config.config = yaml.safe_load(cfgfile)
         self.bot = bot
 
