@@ -19,7 +19,7 @@ from cogs import config as cfg
 
 Cog = commands.Cog
 
-POTD_RANGE = 'POTD!A2:Q'
+POTD_RANGE = 'POTD!A2:R'
 CURATOR_RANGE = 'Curators!A3:E'
 
 days = [None, 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -919,6 +919,7 @@ class Potd(Cog):
                 cursor.execute(f'''INSERT INTO potd_solves (discord_user_id, potd_id, create_date) VALUES
                     ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
                 cursor.execute(f'''DELETE FROM potd_read WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
+                cursor.execute(f'''DELETE FROM potd_todo WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
                 added.append(str(potd_number))
             
             potd_row = self.get_potd_row(potd_number, sheet)
@@ -1021,6 +1022,7 @@ class Potd(Cog):
                 cursor.execute(f'''INSERT INTO potd_read (discord_user_id, potd_id, create_date) VALUES
                     ('{ctx.author.id}', '{potd_number}', '{datetime.now()}')''')
                 cursor.execute(f'''DELETE FROM potd_solves WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
+                cursor.execute(f'''DELETE FROM potd_todo WHERE discord_user_id = {ctx.author.id} AND potd_id = {potd_number}''')
                 added.append(str(potd_number))
             
             potd_row = self.get_potd_row(potd_number, sheet)
@@ -1216,7 +1218,9 @@ class Potd(Cog):
         await self.potd_fetch(ctx, int(picked_potd))
 
     @commands.command(aliases=['unrated_list'], brief='Get the list of POTD that you have solved/read but not yet rated',
-                    help='`-unrated_list`: Get the list of POTD that you have solved/read but not yet rated.\n')
+                    help='`-unrated_list`: Get the list of POTD that you have solved/read but not yet rated.\n'
+                        '`-unrated_list d`: Get the list of POTD that you have solved/read but not yet rated, ordered by difficulties.\n'
+                        '`-unrated_list s`: Get the list of POTD that you have solved/read but not yet rated, divided into the four subjects.\n')
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_unrated_list(self, ctx, flag=None):
         solved = self.get_potd_solved(ctx)
@@ -1257,14 +1261,14 @@ class Potd(Cog):
             sorted_keys = sorted(solved_by_difficulty.keys(), key=lambda x: (x.isnumeric(),int(x) if x.isnumeric() else x), reverse=True)
             solved_by_difficulty = {key:solved_by_difficulty[key] for key in sorted_keys}
 
-            output_string = f'Your {adjective} POTD: \n'
+            output_string = f'__**Your {adjective} POTD**__ \n'
             for key in solved_by_difficulty:
                 if show_total == True:
                     total = len([potd for potd in potd_rows if len(potd) > cfg.Config.config['potd_sheet_difficulty_col']
                                 and potd[cfg.Config.config['potd_sheet_difficulty_col']] == key])
-                    output_string += "D" + key + ": " + f"{solved_by_difficulty[key]} ({len(solved_by_difficulty[key])}/{total})" + "\n"
+                    output_string += "**D" + key + ":** " + f"{solved_by_difficulty[key]} ({len(solved_by_difficulty[key])}/{total})" + "\n"
                 else:
-                    output_string += "D" + key + ": " + f"{solved_by_difficulty[key]} " + "\n"
+                    output_string += "**D" + key + ":** " + f"{solved_by_difficulty[key]} " + "\n"
             await self.send_potd_solved(ctx, output_string)
         elif flag == "s":
             solved_by_genre = {'A':[], 'C':[], 'G':[], 'N':[]}
@@ -1287,20 +1291,20 @@ class Potd(Cog):
                 if 'N' in genre:
                     solved_by_genre['N'].append(number)
 
-            output_string = f'Your {adjective} POTD: \n'
+            output_string = f'__**Your {adjective} POTD**__ \n'
             for key in solved_by_genre:
                 if show_total == True:
                     total = len([potd for potd in potd_rows if len(potd) > cfg.Config.config['potd_sheet_difficulty_col']
                                 and key in potd[cfg.Config.config['potd_sheet_genre_col']]])
-                    output_string += key + ": " + f"{solved_by_genre[key]} ({len(solved_by_genre[key])}/{total})" + "\n"
+                    output_string += "**" + key + ":** " + f"{solved_by_genre[key]} ({len(solved_by_genre[key])}/{total})" + "\n"
                 else:
-                    output_string += key + ": " + f"{solved_by_genre[key]} " + "\n"
+                    output_string += "**" + key + ":** " + f"{solved_by_genre[key]} " + "\n"
             await self.send_potd_solved(ctx, output_string)
         else:
             if show_total == True:
-                output_string = f'Your {adjective} POTD: \n{potd_list} ({len(potd_list)}/{len(potd_rows)})'
+                output_string = f'__**Your {adjective} POTD**__ \n{potd_list} ({len(potd_list)}/{len(potd_rows)})'
             else:
-                output_string = f'Your {adjective} POTD: \n{potd_list}'
+                output_string = f'__**Your {adjective} POTD**__ \n{potd_list}'
             await self.send_potd_solved(ctx, output_string)
         
     
@@ -1426,11 +1430,23 @@ class Potd(Cog):
             return
         else:
             if len(potd_row) <= cfg.Config.config['potd_sheet_solution_col'] or potd_row[cfg.Config.config['potd_sheet_solution_col']] == None or potd_row[cfg.Config.config['potd_sheet_solution_col']] == '':
+                solution = None
+            else:
+                solution = potd_row[cfg.Config.config['potd_sheet_solution_col']]
+            if len(potd_row) <= cfg.Config.config['potd_sheet_solution_link_col'] or potd_row[cfg.Config.config['potd_sheet_solution_link_col']] == None or potd_row[cfg.Config.config['potd_sheet_solution_link_col']] == '':
+                solution_link = None
+            else:
+                solution_link = potd_row[cfg.Config.config['potd_sheet_solution_link_col']]
+
+            if solution == None and solution_link == None:
                 await ctx.send(f"There is no solution provided for POTD {number}. Would you like to contribute one? Contact <@{cfg.Config.config['staffmail_id']}> to submit your solution!")
                 return
             else:
-                await ctx.send(f"Solution for POTD {number}:\n")
-                await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_solution_col']]}```||")
+                if solution != None:
+                    await ctx.send(f"Solution for POTD {number}:\n")
+                    await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_solution_col']]}```||")
+                if solution_link != None:
+                    await ctx.send(f"Solution Link for POTD {number}:\n{potd_row[cfg.Config.config['potd_sheet_solution_link_col']]}")
 
     def get_potd_sheet(self):
         sheet = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],

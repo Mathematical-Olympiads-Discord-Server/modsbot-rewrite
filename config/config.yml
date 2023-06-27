@@ -30,7 +30,8 @@ potd_sheet_hint3_col: 11
 potd_sheet_answer_col: 12
 potd_sheet_discussion_col: 13
 potd_sheet_solution_col: 14
-potd_sheet_message_id_col: 16
+potd_sheet_solution_link_col: 15
+potd_sheet_message_id_col: 17
 potd_proposal_sheet: '1Nt3dGyAN5L8TRAcJFkOyoC7kDfaZ7fpawhUGgWzl56A'
 potd_forum: 1020855322006540428
 potd_proposal_forum: 1104681491964891156
