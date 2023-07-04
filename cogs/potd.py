@@ -1367,7 +1367,7 @@ class Potd(Cog):
                 else:
                     await ctx.send(f"Hint for POTD {number}:\n")
                     await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_hint1_col']]}```||")
-                    if len(potd_row) > cfg.Config.config['potd_sheet_hint2_col'] and potd_row[cfg.Config.config['potd_sheet_hint2_col']] != None:
+                    if len(potd_row) > cfg.Config.config['potd_sheet_hint2_col'] and potd_row[cfg.Config.config['potd_sheet_hint2_col']] != None and potd_row[cfg.Config.config['potd_sheet_hint2_col']] != '':
                         await ctx.send(f"There is another hint for this POTD. Use `-hint {number} 2` to get the hint.")
             elif hint_number == 2:
                 if len(potd_row) <= cfg.Config.config['potd_sheet_hint2_col'] or potd_row[cfg.Config.config['potd_sheet_hint2_col']] == None or potd_row[cfg.Config.config['potd_sheet_hint2_col']] == '':
@@ -1376,7 +1376,7 @@ class Potd(Cog):
                 else:
                     await ctx.send(f"Hint 2 for POTD {number}:\n")
                     await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_hint2_col']]}```||")
-                    if len(potd_row) > cfg.Config.config['potd_sheet_hint3_col'] and potd_row[cfg.Config.config['potd_sheet_hint3_col']] != None:
+                    if len(potd_row) > cfg.Config.config['potd_sheet_hint3_col'] and potd_row[cfg.Config.config['potd_sheet_hint3_col']] != None and potd_row[cfg.Config.config['potd_sheet_hint3_col']] != '':
                         await ctx.send(f"There is another hint for this POTD. Use `-hint {number} 3` to get the hint.")
             elif hint_number == 3:
                 if len(potd_row) <= cfg.Config.config['potd_sheet_hint3_col'] or potd_row[cfg.Config.config['potd_sheet_hint3_col']] == None or potd_row[cfg.Config.config['potd_sheet_hint3_col']] == '':
