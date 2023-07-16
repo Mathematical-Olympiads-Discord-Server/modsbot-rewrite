@@ -607,7 +607,7 @@ class Potd(Cog):
             'APMO (Asian Pacific Mathematics Olympiad):\n'
             '[4,5],[5,6],[6,7],[7,8],[8,10]\n'
             'BMO1 (British Mathematical Olympiad Round 1):\n'
-            '[1,2],[1,2],[2,3],[2,3],[3,4],[3,4]\n'
+            '[1,2],[1,2],[2,3],[2,3],[3,5],[3,6]\n'
             'BMO2 (British Mathematical Olympiad Round 2):\n'
             '[3,4],[4,5],[5,6],[6,7]\n'
             'IGO (Iranian Geometry Olympiad):\n'
@@ -637,7 +637,7 @@ class Potd(Cog):
             elif template == "APMO":
                 difficulty_bounds = [[4,5],[5,6],[6,7],[7,8],[8,10]]
             elif template == "BMO1":
-                difficulty_bounds = [[1,2],[1,2],[2,3],[2,3],[3,4],[3,4]]
+                difficulty_bounds = [[1,2],[1,2],[2,3],[2,3],[3,5],[3,6]]
             elif template == "BMO2":
                 difficulty_bounds = [[3,4],[4,5],[5,6],[6,7]]         
             elif template == "IGO":
