@@ -810,20 +810,24 @@ class Potd(Cog):
                 if (len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre)) == len(genre)):
                     return True
             return False
-
+        
+        today = datetime.strptime(datetime.now().strftime("%d %b %Y"), '%d %b %Y')
+        
         # filter by genre and difficulty
         if type(diff_upper_bound_filter) == int:
             filtered_potds = [x for x in potds if len(x) > max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
                             and x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
                             and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter
-                            and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) <= diff_upper_bound_filter
-                            and match_genre(x,genre_filter)]
+                            and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) <= diff_upper_bound_filter                            
+                            and match_genre(x,genre_filter)
+                            and datetime.strptime(x[cfg.Config.config['potd_sheet_date_col']], '%d %b %Y') < today]
         else: # if diff bound is "T"
             filtered_potds = [x for x in potds if len(x) > max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
                             and ((x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
                                 and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter)
                                 or not x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric())
-                            and match_genre(x,genre_filter)]
+                            and match_genre(x,genre_filter)
+                            and datetime.strptime(x[cfg.Config.config['potd_sheet_date_col']], '%d %b %Y') < today]
 
 
         # pick a POTD
