@@ -1226,7 +1226,7 @@ class Potd(Cog):
         current_potd = int(potd_rows[0][0])
         
         if len(todo) > 0:
-            await self.generate_potd_list_output_string(todo, potd_rows, current_potd, flag, 'TODO', ctx, False)
+            await self.generate_potd_list_output_string(todo, potd_rows, current_potd, flag, 'TODO', ctx, True)
         else:
             await ctx.send('Your TODO list is empty.')
 
@@ -1261,9 +1261,9 @@ class Potd(Cog):
         current_potd = int(potd_rows[0][0])
         
         if len(solved_unrated) > 0:
-            await self.generate_potd_list_output_string(solved_unrated, potd_rows, current_potd, flag, 'unrated (solved)', ctx, False)
+            await self.generate_potd_list_output_string(solved_unrated, potd_rows, current_potd, flag, 'unrated (solved)', ctx, True)
         if len(read_unrated) > 0:
-            await self.generate_potd_list_output_string(read_unrated, potd_rows, current_potd, flag, 'unrated (read)', ctx, False)
+            await self.generate_potd_list_output_string(read_unrated, potd_rows, current_potd, flag, 'unrated (read)', ctx, True)
         if len(solved_unrated) == 0 and len(read_unrated) == 0:
             await ctx.send('You have no unrated POTD.')
 
@@ -1295,6 +1295,8 @@ class Potd(Cog):
                     output_string += "**D" + key + ":** " + f"{solved_by_difficulty[key]} ({len(solved_by_difficulty[key])}/{total})" + "\n"
                 else:
                     output_string += "**D" + key + ":** " + f"{solved_by_difficulty[key]} " + "\n"
+            if show_total == True:
+                output_string += f"(Total: {len(potd_list)}/{len(potd_rows)})"
             await self.send_potd_solved(ctx, output_string)
         elif flag == "s":
             solved_by_genre = {'A':[], 'C':[], 'G':[], 'N':[]}
@@ -1325,12 +1327,16 @@ class Potd(Cog):
                     output_string += "**" + key + ":** " + f"{solved_by_genre[key]} ({len(solved_by_genre[key])}/{total})" + "\n"
                 else:
                     output_string += "**" + key + ":** " + f"{solved_by_genre[key]} " + "\n"
+            if show_total == True:
+                output_string += f"(Total: {len(potd_list)}/{len(potd_rows)})"
             await self.send_potd_solved(ctx, output_string)
         else:
             if show_total == True:
-                output_string = f'__**Your {adjective} POTD**__ \n{potd_list} ({len(potd_list)}/{len(potd_rows)})'
+                output_string = f'__**Your {adjective} POTD**__ \n{potd_list}' + "\n"
             else:
-                output_string = f'__**Your {adjective} POTD**__ \n{potd_list}'
+                output_string = f'__**Your {adjective} POTD**__ \n{potd_list}' + "\n"
+            if show_total == True:
+                output_string += f"(Total: {len(potd_list)}/{len(potd_rows)})"
             await self.send_potd_solved(ctx, output_string)
         
     
