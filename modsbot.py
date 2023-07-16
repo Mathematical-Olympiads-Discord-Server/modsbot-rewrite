@@ -7,6 +7,7 @@ import traceback
 
 import discord
 import schedule
+from discord import app_commands
 from discord.ext import commands
 from ruamel import yaml
 
@@ -29,6 +30,7 @@ class MODSBot(commands.Bot):
         self.config = config
         logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
         self.logger = logging.getLogger('bot')
+        self.tree = app_commands.CommandTree(self)
         try:
             with open(f'config/{config["blacklist"]}', 'r') as blacklist:
                 self.blacklist = list(map(
@@ -43,6 +45,7 @@ class MODSBot(commands.Bot):
         self.logger.info('Users   : {}'.format(len(set(self.get_all_members()))))
         self.logger.info('Channels: {}'.format(len(list(self.get_all_channels()))))
         await self.set_presence("MODSBot: use -help")
+        await self.tree.sync()
 
         # Set up some stuff in data/modsdb.db
         db = sqlite3.connect('data/modsdb.db')
