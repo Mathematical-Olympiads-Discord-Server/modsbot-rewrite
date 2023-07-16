@@ -1881,8 +1881,57 @@ class Potd(Cog):
 
     # manually invoke the proposal check
     @commands.command()
+    @commands.check(cfg.is_mod_or_tech)
     async def potd_proposal(self, ctx):
         self.bot.loop.create_task(self.post_proposed_potd_task())
+
+
+    # scan potd channel for image link
+    @commands.command()
+    @commands.check(cfg.is_mod_or_tech)
+    async def potd_image_scan(self, ctx, begin: int, end: int, write: bool = False):
+        sheet = self.get_potd_sheet()
+        potd_channel = self.bot.get_channel(cfg.Config.config['potd_channel'])
+        image_link_msgs = []
+        for number in range(begin, end+1):
+            try:
+                potd_row = self.get_potd_row(number, sheet)
+                date_start = datetime.strptime(potd_row[cfg.Config.config['potd_sheet_date_col']], '%d %b %Y')
+                date_end = date_start + timedelta(hours=23)
+                messages = [message async for message in potd_channel.history(limit=10, after=date_start, before=date_end, oldest_first=True)]
+                paradox_messages = [x for x in messages if x.author.id==cfg.Config.config['paradox_id']]
+                potd_message = paradox_messages[0]
+                
+                image_link = str(potd_message.attachments[0].proxy_url)
+                image_link_msgs.append(image_link)
+
+                if write:
+                    # record the link to rendered image if it is in POTD channel 
+                    # get the row and column to update
+                    column = openpyxl.utils.get_column_letter(cfg.Config.config['potd_sheet_image_link_col']+1)
+                    values = sheet.get('values', [])
+                    current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+                    row = current_potd - number + 2  # this gets the row requested
+                    # update the source_msg in the sheet
+                    request = cfg.Config.service.spreadsheets().values().update(spreadsheetId=cfg.Config.config['potd_sheet'], 
+                                                                range=f'{column}{row}', valueInputOption='RAW',body={"range": f'{column}{row}', "values": [[image_link]] })
+                    response = request.execute()
+            except:
+                pass
+
+        output_messages = []
+        i = 0
+
+        while i < len(image_link_msgs):
+            output_message = image_link_msgs[i:i+10]
+            output_messages.append("\n".join(image_link_msgs))
+            i += 10
+        
+        if write:
+            await ctx.send("Image link written to spreadsheet.")
+        
+        for output_message in output_messages:
+            await ctx.send(output_message)
 
 
 async def setup(bot):
