@@ -45,7 +45,6 @@ class MODSBot(commands.Bot):
         self.logger.info('Users   : {}'.format(len(set(self.get_all_members()))))
         self.logger.info('Channels: {}'.format(len(list(self.get_all_channels()))))
         await self.set_presence("MODSBot: use -help")
-        await self.tree.sync()
 
         # Set up some stuff in data/modsdb.db
         db = sqlite3.connect('data/modsdb.db')
@@ -89,6 +88,8 @@ class MODSBot(commands.Bot):
                 self.logger.exception('Failed to load cog {}.'.format(cog))
             else:
                 self.logger.info('Loaded cog {}.'.format(cog))
+
+        await self.tree.sync()
 
         await self.get_channel(self.config['tech_garage']).send('MODSbot loaded')
 
