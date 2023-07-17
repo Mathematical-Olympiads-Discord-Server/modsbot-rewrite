@@ -572,7 +572,7 @@ class Potd(Cog):
         return filtered_potds
 
     async def potd_search_keywords_autocomplete(self, interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
-        filtered_potds = potds_filtered_by_keywords(current.split())
+        filtered_potds = self.potds_filtered_by_keywords(current.split())
         return [app_commands.Choice(name=text, value=text) for potd in filtered_potds][:25]  # Only 25 responses are supported in autocomplete
     
     @app_commands.command()
