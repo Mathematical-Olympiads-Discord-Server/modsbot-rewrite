@@ -15,7 +15,6 @@ The instructions are made for linux (but should nevertheless be useful for other
    ```zsh
    python setup_modsbot.py
    ```
-<!-- 6. Copy `config/modsbot_config.yml` to `config/config.yml` and change the values as appropriate. The most important values to change are probably changing the value of `tech_garage` to the ID of one of the channels in the new server, and changing the value of `mods_guild` to the ID of your server. -->
 5. Setup a google API service account
     1. Create a gmail account if you don't already have one.
     2. Go to https://console.cloud.google.com/ and agree to terms of service.
