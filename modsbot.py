@@ -87,6 +87,8 @@ class MODSBot(commands.Bot):
             else:
                 self.logger.info('Loaded cog {}.'.format(cog))
 
+        await self.tree.sync()
+
         await self.get_channel(self.config['tech_garage']).send('MODSbot loaded')
 
     async def on_message(self, message):
