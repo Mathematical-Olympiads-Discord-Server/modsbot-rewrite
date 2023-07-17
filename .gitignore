@@ -3,5 +3,6 @@
 /.idea/
 /config/credentials.json
 /config/token.txt
+/config/config.yml
 */__pycache__
 /data/
