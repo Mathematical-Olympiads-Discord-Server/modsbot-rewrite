@@ -19,7 +19,7 @@ from cogs import config as cfg
 
 Cog = commands.Cog
 
-POTD_RANGE = 'POTD!A2:R'
+POTD_RANGE = 'POTD!A2:S'
 CURATOR_RANGE = 'Curators!A3:E'
 
 days = [None, 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -348,6 +348,7 @@ class Potd(Cog):
     async def on_message(self, message: discord.Message):
         if message.channel.id == self.listening_in_channel and int(message.author.id) == cfg.Config.config[
             'paradox_id']:
+            
             # m = await message.channel.send(
             #     '{} \nRate this problem with `-rate {} <rating>` and check its user difficulty rating with `-rating {}`'.format(
             #         self.to_send, self.requested_number, self.requested_number))
@@ -357,8 +358,8 @@ class Potd(Cog):
             if self.late:
                 await source_msg.add_reaction('⏰')
 
-            # record the ID of the source_msg if it is in POTD channel
             if message.channel.id == cfg.Config.config['potd_channel']:
+                # record the ID of the source_msg if it is in POTD channel 
                 # get the row and column to update
                 column = openpyxl.utils.get_column_letter(cfg.Config.config['potd_sheet_message_id_col']+1)
                 reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
@@ -369,6 +370,19 @@ class Potd(Cog):
                 # update the source_msg in the sheet
                 request = cfg.Config.service.spreadsheets().values().update(spreadsheetId=cfg.Config.config['potd_sheet'], 
                                                             range=f'{column}{row}', valueInputOption='RAW',body={"range": f'{column}{row}', "values": [[str(source_msg.id)]] })
+                response = request.execute()
+
+                # record the link to rendered image if it is in POTD channel 
+                # get the row and column to update
+                column = openpyxl.utils.get_column_letter(cfg.Config.config['potd_sheet_image_link_col']+1)
+                reply = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
+                                                               range=POTD_RANGE).execute()
+                values = reply.get('values', [])
+                current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+                row = current_potd - self.requested_number + 2  # this gets the row requested
+                # update the source_msg in the sheet
+                request = cfg.Config.service.spreadsheets().values().update(spreadsheetId=cfg.Config.config['potd_sheet'], 
+                                                            range=f'{column}{row}', valueInputOption='RAW',body={"range": f'{column}{row}', "values": [[str(message.attachments[0].proxy_url)]] })
                 response = request.execute()
 
             bot_log = self.bot.get_channel(cfg.Config.config['log_channel'])
@@ -467,9 +481,10 @@ class Potd(Cog):
 
     @commands.command(aliases=['fetch'], brief='Fetch a potd by id.',
                       help='`-fetch 1`: Fetch POTD Day 1.\n'
-                            '`-fetch 1 s`: Fetch POTD Day 1, masked by spoiler.\n')
-    @commands.cooldown(1, 10, BucketType.user)
-    async def potd_fetch(self, ctx, number: int, spoiler: str=''):
+                            '`-fetch 1 s`: Fetch POTD Day 1, masked by spoiler.\n'
+                            '`-fetch 1 t`: Fetch POTD Day 1, in tex form.\n')
+    @commands.cooldown(1, 5, BucketType.user)
+    async def potd_fetch(self, ctx, number: int, flag: str=''):
         sheet = self.get_potd_sheet()
         potd_row = self.get_potd_row(number, sheet)
 
@@ -479,28 +494,35 @@ class Potd(Cog):
         else:
             # Create the message to send
             try:
-                if spoiler != 's':
-                    to_tex = '<@' + str(cfg.Config.config['paradox_id']) + '>\n```tex\n\\textbf{Day ' + str(
-                        potd_row[cfg.Config.config['potd_sheet_id_col']]) + '} --- ' + str(
-                        potd_row[cfg.Config.config['potd_sheet_day_col']]) + ' ' + str(
-                        potd_row[cfg.Config.config['potd_sheet_date_col']]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(
-                        potd_row[cfg.Config.config['potd_sheet_statement_col']]) + '```'
+                # if there is image link, just send it out
+                if len(potd_row) >= 19 and potd_row[cfg.Config.config['potd_sheet_image_link_col']] not in [None, ''] and 't' not in flag:
+                    if 's' not in flag:
+                        output = potd_row[cfg.Config.config['potd_sheet_image_link_col']]
+                    else:
+                        output = f"|| {potd_row[cfg.Config.config['potd_sheet_image_link_col']]} ||"
+                    await ctx.send(output)
+                # if no image link, send tex
                 else:
-                    to_tex = '<@' + str(cfg.Config.config['paradox_id']) + '>texsp\n||```tex\n\\textbf{Day ' + str(
-                        potd_row[cfg.Config.config['potd_sheet_id_col']]) + '} --- ' + str(
-                        potd_row[cfg.Config.config['potd_sheet_day_col']]) + ' ' + str(
-                        potd_row[cfg.Config.config['potd_sheet_date_col']]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(
-                        potd_row[cfg.Config.config['potd_sheet_statement_col']]) + '```||'
+                    if 's' not in flag:
+                        output = '<@' + str(cfg.Config.config['paradox_id']) + '>\n```tex\n\\textbf{Day ' + str(
+                            potd_row[cfg.Config.config['potd_sheet_id_col']]) + '} --- ' + str(
+                            potd_row[cfg.Config.config['potd_sheet_day_col']]) + ' ' + str(
+                            potd_row[cfg.Config.config['potd_sheet_date_col']]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(
+                            potd_row[cfg.Config.config['potd_sheet_statement_col']]) + '```'
+                    else:
+                        output = '<@' + str(cfg.Config.config['paradox_id']) + '>texsp\n||```tex\n\\textbf{Day ' + str(
+                            potd_row[cfg.Config.config['potd_sheet_id_col']]) + '} --- ' + str(
+                            potd_row[cfg.Config.config['potd_sheet_day_col']]) + ' ' + str(
+                            potd_row[cfg.Config.config['potd_sheet_date_col']]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(
+                            potd_row[cfg.Config.config['potd_sheet_statement_col']]) + '```||'                    
+                    await ctx.send(output, delete_after=5)
             except IndexError:
                 await ctx.send(f"There is no potd for day {number}. ")
                 return
-            print(to_tex)
             
-            # Send the problem tex
-            await ctx.send(to_tex, delete_after=5)
 
     @commands.command(aliases=['source'], brief='Get the source of a potd by id.')
-    @commands.cooldown(1, 10, BucketType.user)
+    @commands.cooldown(1, 5, BucketType.user)
     async def potd_source(self, ctx, number: int):
         sheet = self.get_potd_sheet()
         potd_row = self.get_potd_row(number, sheet)
@@ -519,7 +541,7 @@ class Potd(Cog):
             '`-search 4 6 \'CG\'`: Search for a POTD with difficulty d4 to d6 and genres including (combinatorics AND geometry).\n'
             '`-search 4 6 A\'CG\'N`: Search for a POTD with difficulty d4 to d6 and genres including (algebra OR (combinatorics AND geometry) OR number theory).\n'
             '`-search 4 6 ACGN false`: Search for a POTD with difficulty d4 to d6. Allow getting problems marked in the `-solved` list.')
-    @commands.cooldown(1, 10, BucketType.user)
+    @commands.cooldown(1, 5, BucketType.user)
     async def potd_search(self, ctx, diff_lower_bound:int, diff_upper_bound:int, genre:str='ACGN', search_unsolved:bool=True):
         if diff_lower_bound > diff_upper_bound:
             await ctx.send(f"Difficulty lower bound cannot be higher than upper bound.")
@@ -585,7 +607,7 @@ class Potd(Cog):
             'APMO (Asian Pacific Mathematics Olympiad):\n'
             '[4,5],[5,6],[6,7],[7,8],[8,10]\n'
             'BMO1 (British Mathematical Olympiad Round 1):\n'
-            '[1,2],[1,2],[2,3],[2,3],[3,4],[3,4]\n'
+            '[1,2],[1,2],[2,3],[2,3],[3,5],[3,6]\n'
             'BMO2 (British Mathematical Olympiad Round 2):\n'
             '[3,4],[4,5],[5,6],[6,7]\n'
             'IGO (Iranian Geometry Olympiad):\n'
@@ -615,7 +637,7 @@ class Potd(Cog):
             elif template == "APMO":
                 difficulty_bounds = [[4,5],[5,6],[6,7],[7,8],[8,10]]
             elif template == "BMO1":
-                difficulty_bounds = [[1,2],[1,2],[2,3],[2,3],[3,4],[3,4]]
+                difficulty_bounds = [[1,2],[1,2],[2,3],[2,3],[3,5],[3,6]]
             elif template == "BMO2":
                 difficulty_bounds = [[3,4],[4,5],[5,6],[6,7]]         
             elif template == "IGO":
@@ -788,20 +810,24 @@ class Potd(Cog):
                 if (len(set(x[cfg.Config.config['potd_sheet_genre_col']]).intersection(genre)) == len(genre)):
                     return True
             return False
-
+        
+        today = datetime.strptime(datetime.now().strftime("%d %b %Y"), '%d %b %Y')
+        
         # filter by genre and difficulty
         if type(diff_upper_bound_filter) == int:
             filtered_potds = [x for x in potds if len(x) > max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
                             and x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
                             and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter
-                            and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) <= diff_upper_bound_filter
-                            and match_genre(x,genre_filter)]
+                            and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) <= diff_upper_bound_filter                            
+                            and match_genre(x,genre_filter)
+                            and datetime.strptime(x[cfg.Config.config['potd_sheet_date_col']], '%d %b %Y') < today]
         else: # if diff bound is "T"
             filtered_potds = [x for x in potds if len(x) > max(cfg.Config.config['potd_sheet_difficulty_col'], cfg.Config.config['potd_sheet_genre_col'])
                             and ((x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric()
                                 and int(x[cfg.Config.config['potd_sheet_difficulty_col']]) >= diff_lower_bound_filter)
                                 or not x[cfg.Config.config['potd_sheet_difficulty_col']].isnumeric())
-                            and match_genre(x,genre_filter)]
+                            and match_genre(x,genre_filter)
+                            and datetime.strptime(x[cfg.Config.config['potd_sheet_date_col']], '%d %b %Y') < today]
 
 
         # pick a POTD
@@ -1200,7 +1226,7 @@ class Potd(Cog):
         current_potd = int(potd_rows[0][0])
         
         if len(todo) > 0:
-            await self.generate_potd_list_output_string(todo, potd_rows, current_potd, flag, 'TODO', ctx, False)
+            await self.generate_potd_list_output_string(todo, potd_rows, current_potd, flag, 'TODO', ctx, True)
         else:
             await ctx.send('Your TODO list is empty.')
 
@@ -1235,9 +1261,9 @@ class Potd(Cog):
         current_potd = int(potd_rows[0][0])
         
         if len(solved_unrated) > 0:
-            await self.generate_potd_list_output_string(solved_unrated, potd_rows, current_potd, flag, 'unrated (solved)', ctx, False)
+            await self.generate_potd_list_output_string(solved_unrated, potd_rows, current_potd, flag, 'unrated (solved)', ctx, True)
         if len(read_unrated) > 0:
-            await self.generate_potd_list_output_string(read_unrated, potd_rows, current_potd, flag, 'unrated (read)', ctx, False)
+            await self.generate_potd_list_output_string(read_unrated, potd_rows, current_potd, flag, 'unrated (read)', ctx, True)
         if len(solved_unrated) == 0 and len(read_unrated) == 0:
             await ctx.send('You have no unrated POTD.')
 
@@ -1269,6 +1295,8 @@ class Potd(Cog):
                     output_string += "**D" + key + ":** " + f"{solved_by_difficulty[key]} ({len(solved_by_difficulty[key])}/{total})" + "\n"
                 else:
                     output_string += "**D" + key + ":** " + f"{solved_by_difficulty[key]} " + "\n"
+            if show_total == True:
+                output_string += f"(Total: {len(potd_list)}/{len(potd_rows)})"
             await self.send_potd_solved(ctx, output_string)
         elif flag == "s":
             solved_by_genre = {'A':[], 'C':[], 'G':[], 'N':[]}
@@ -1299,12 +1327,16 @@ class Potd(Cog):
                     output_string += "**" + key + ":** " + f"{solved_by_genre[key]} ({len(solved_by_genre[key])}/{total})" + "\n"
                 else:
                     output_string += "**" + key + ":** " + f"{solved_by_genre[key]} " + "\n"
+            if show_total == True:
+                output_string += f"(Total: {len(potd_list)}/{len(potd_rows)})"
             await self.send_potd_solved(ctx, output_string)
         else:
             if show_total == True:
-                output_string = f'__**Your {adjective} POTD**__ \n{potd_list} ({len(potd_list)}/{len(potd_rows)})'
+                output_string = f'__**Your {adjective} POTD**__ \n{potd_list}' + "\n"
             else:
-                output_string = f'__**Your {adjective} POTD**__ \n{potd_list}'
+                output_string = f'__**Your {adjective} POTD**__ \n{potd_list}' + "\n"
+            if show_total == True:
+                output_string += f"(Total: {len(potd_list)}/{len(potd_rows)})"
             await self.send_potd_solved(ctx, output_string)
         
     
@@ -1367,7 +1399,7 @@ class Potd(Cog):
                 else:
                     await ctx.send(f"Hint for POTD {number}:\n")
                     await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_hint1_col']]}```||")
-                    if len(potd_row) > cfg.Config.config['potd_sheet_hint2_col'] and potd_row[cfg.Config.config['potd_sheet_hint2_col']] != None:
+                    if len(potd_row) > cfg.Config.config['potd_sheet_hint2_col'] and potd_row[cfg.Config.config['potd_sheet_hint2_col']] != None and potd_row[cfg.Config.config['potd_sheet_hint2_col']] != '':
                         await ctx.send(f"There is another hint for this POTD. Use `-hint {number} 2` to get the hint.")
             elif hint_number == 2:
                 if len(potd_row) <= cfg.Config.config['potd_sheet_hint2_col'] or potd_row[cfg.Config.config['potd_sheet_hint2_col']] == None or potd_row[cfg.Config.config['potd_sheet_hint2_col']] == '':
@@ -1376,7 +1408,7 @@ class Potd(Cog):
                 else:
                     await ctx.send(f"Hint 2 for POTD {number}:\n")
                     await ctx.send(f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n{potd_row[cfg.Config.config['potd_sheet_hint2_col']]}```||")
-                    if len(potd_row) > cfg.Config.config['potd_sheet_hint3_col'] and potd_row[cfg.Config.config['potd_sheet_hint3_col']] != None:
+                    if len(potd_row) > cfg.Config.config['potd_sheet_hint3_col'] and potd_row[cfg.Config.config['potd_sheet_hint3_col']] != None and potd_row[cfg.Config.config['potd_sheet_hint3_col']] != '':
                         await ctx.send(f"There is another hint for this POTD. Use `-hint {number} 3` to get the hint.")
             elif hint_number == 3:
                 if len(potd_row) <= cfg.Config.config['potd_sheet_hint3_col'] or potd_row[cfg.Config.config['potd_sheet_hint3_col']] == None or potd_row[cfg.Config.config['potd_sheet_hint3_col']] == '':
@@ -1849,8 +1881,57 @@ class Potd(Cog):
 
     # manually invoke the proposal check
     @commands.command()
+    @commands.check(cfg.is_mod_or_tech)
     async def potd_proposal(self, ctx):
         self.bot.loop.create_task(self.post_proposed_potd_task())
+
+
+    # scan potd channel for image link
+    @commands.command()
+    @commands.check(cfg.is_mod_or_tech)
+    async def potd_image_scan(self, ctx, begin: int, end: int, write: bool = False):
+        sheet = self.get_potd_sheet()
+        potd_channel = self.bot.get_channel(cfg.Config.config['potd_channel'])
+        image_link_msgs = []
+        for number in range(begin, end+1):
+            try:
+                potd_row = self.get_potd_row(number, sheet)
+                date_start = datetime.strptime(potd_row[cfg.Config.config['potd_sheet_date_col']], '%d %b %Y')
+                date_end = date_start + timedelta(hours=23)
+                messages = [message async for message in potd_channel.history(limit=10, after=date_start, before=date_end, oldest_first=True)]
+                paradox_messages = [x for x in messages if x.author.id==cfg.Config.config['paradox_id']]
+                potd_message = paradox_messages[0]
+                
+                image_link = str(potd_message.attachments[0].proxy_url)
+                image_link_msgs.append(image_link)
+
+                if write:
+                    # record the link to rendered image if it is in POTD channel 
+                    # get the row and column to update
+                    column = openpyxl.utils.get_column_letter(cfg.Config.config['potd_sheet_image_link_col']+1)
+                    values = sheet.get('values', [])
+                    current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
+                    row = current_potd - number + 2  # this gets the row requested
+                    # update the source_msg in the sheet
+                    request = cfg.Config.service.spreadsheets().values().update(spreadsheetId=cfg.Config.config['potd_sheet'], 
+                                                                range=f'{column}{row}', valueInputOption='RAW',body={"range": f'{column}{row}', "values": [[image_link]] })
+                    response = request.execute()
+            except:
+                pass
+
+        output_messages = []
+        i = 0
+
+        while i < len(image_link_msgs):
+            output_message = image_link_msgs[i:i+10]
+            output_messages.append("\n".join(image_link_msgs))
+            i += 10
+        
+        if write:
+            await ctx.send("Image link written to spreadsheet.")
+        
+        for output_message in output_messages:
+            await ctx.send(output_message)
 
 
 async def setup(bot):
