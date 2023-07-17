@@ -498,11 +498,6 @@ class Potd(Cog):
             try:
                 # if there is image link, just send it out
                 if len(potd_row) >= 19 and potd_row[cfg.Config.config['potd_sheet_image_link_col']] not in [None, ''] and 't' not in flag:
-                    # if 's' not in flag:
-                    #     output = potd_row[cfg.Config.config['potd_sheet_image_link_col']]
-                    # else:
-                    #     output = f"|| {potd_row[cfg.Config.config['potd_sheet_image_link_col']]} ||"
-                    # await ctx.send(output)
                     image_link = potd_row[cfg.Config.config['potd_sheet_image_link_col']]
                     async with aiohttp.ClientSession() as session:
                         async with session.get(image_link) as resp:
