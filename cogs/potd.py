@@ -11,6 +11,8 @@ import discord
 import schedule
 import threading
 import asyncio
+import io
+import aiohttp
 
 from discord import app_commands
 from discord.ext import commands
@@ -497,11 +499,16 @@ class Potd(Cog):
             try:
                 # if there is image link, just send it out
                 if len(potd_row) >= 19 and potd_row[cfg.Config.config['potd_sheet_image_link_col']] not in [None, ''] and 't' not in flag:
-                    if 's' not in flag:
-                        output = potd_row[cfg.Config.config['potd_sheet_image_link_col']]
-                    else:
-                        output = f"|| {potd_row[cfg.Config.config['potd_sheet_image_link_col']]} ||"
-                    await ctx.send(output)
+                    image_link = potd_row[cfg.Config.config['potd_sheet_image_link_col']]
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(image_link) as resp:
+                            if resp.status != 200:
+                                return await ctx.send('Could not download file...')
+                            data = io.BytesIO(await resp.read())
+                            if 's' not in flag:
+                                await ctx.send(file=discord.File(data, f'potd{number}.png'))
+                            else:
+                                await ctx.send(file=discord.File(data, f'SPOILER_potd{number}.png'))
                 # if no image link, send tex
                 else:
                     if 's' not in flag:
@@ -1919,7 +1926,7 @@ class Potd(Cog):
     async def potd_image_scan(self, ctx, begin: int, end: int, write: bool = False):
         sheet = self.get_potd_sheet()
         potd_channel = self.bot.get_channel(cfg.Config.config['potd_channel'])
-        image_link_msgs = []
+        image_links = []
         for number in range(begin, end+1):
             try:
                 potd_row = self.get_potd_row(number, sheet)
@@ -1930,7 +1937,7 @@ class Potd(Cog):
                 potd_message = paradox_messages[0]
                 
                 image_link = str(potd_message.attachments[0].proxy_url)
-                image_link_msgs.append(image_link)
+                image_links.append(image_link)
 
                 if write:
                     # record the link to rendered image if it is in POTD channel 
@@ -1946,19 +1953,13 @@ class Potd(Cog):
             except:
                 pass
 
-        output_messages = []
-        i = 0
-
-        while i < len(image_link_msgs):
-            output_message = image_link_msgs[i:i+10]
-            output_messages.append("\n".join(image_link_msgs))
-            i += 10
-        
-        if write:
-            await ctx.send("Image link written to spreadsheet.")
-        
-        for output_message in output_messages:
-            await ctx.send(output_message)
+        for image_link in image_links:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(image_link) as resp:
+                    if resp.status != 200:
+                        return await ctx.send('Could not download file...')
+                    data = io.BytesIO(await resp.read())
+                    await ctx.send(file=discord.File(data, f'potd.png'))
 
 
 async def setup(bot):
