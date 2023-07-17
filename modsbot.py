@@ -7,6 +7,7 @@ import traceback
 
 import discord
 import schedule
+from discord import app_commands
 from discord.ext import commands
 from ruamel import yaml
 
@@ -29,6 +30,7 @@ class MODSBot(commands.Bot):
         self.config = config
         logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
         self.logger = logging.getLogger('bot')
+        self.tree = app_commands.CommandTree(self)
         try:
             with open(f'config/{config["blacklist"]}', 'r') as blacklist:
                 self.blacklist = list(map(
@@ -86,6 +88,8 @@ class MODSBot(commands.Bot):
                 self.logger.exception('Failed to load cog {}.'.format(cog))
             else:
                 self.logger.info('Loaded cog {}.'.format(cog))
+
+        await self.tree.sync()
 
         await self.get_channel(self.config['tech_garage']).send('MODSbot loaded')
 
