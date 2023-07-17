@@ -575,11 +575,11 @@ class Potd(Cog):
         filtered_potds = potds_filtered_by_keywords(current.split())
         return [app_commands.Choice(name=text, value=text) for potd in filtered_potds][:25]  # Only 25 responses are supported in autocomplete
     
-    @self.tree.command()
+    @app_commands.command()
     @app_commands.tree(keywords='Search past potds using these keywords')
     @app_commands.autocomplete(keywords=potd_search_keywords_autocomplete)
     @commands.cooldown(1, 10, BucketType.user)
-    async def potd_search(self, interaction: discord.Interaction, keywords: str):
+    async def potd_keywords(self, interaction: discord.Interaction, keywords: str):
         """Search potds using keywords"""
 
         filtered_potds = potds_filtered_by_keywords(keywords.split())
