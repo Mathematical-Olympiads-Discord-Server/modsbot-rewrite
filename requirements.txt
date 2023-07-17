@@ -24,3 +24,5 @@ setuptools~=47.1.1
 uritemplate~=3.0.1
 schedule~=0.6.0
 matplotlib
+openpyxl
+aiohttp
