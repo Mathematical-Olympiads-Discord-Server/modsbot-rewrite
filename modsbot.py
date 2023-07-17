@@ -87,6 +87,9 @@ class MODSBot(commands.Bot):
             else:
                 self.logger.info('Loaded cog {}.'.format(cog))
 
+        MODS_SERVER = discord.Object(id=self.config["mods_guild"])
+        self.tree.copy_global_to(guild=MODS_SERVER)
+        await self.tree.sync(guild=MODS_SERVER)
         await self.tree.sync()
 
         await self.get_channel(self.config['tech_garage']).send('MODSbot loaded')
