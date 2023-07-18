@@ -1,6 +1,5 @@
 import random
 
-import mysql.connector
 from discord.ext import commands
 from cogs import config as cfg
 
