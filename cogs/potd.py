@@ -571,22 +571,22 @@ class Potd(Cog):
         else:
             await ctx.send(f"No POTD found!")
 
-    def potds_filtered_by_keywords(keyword_list: list[str]):
+    def potds_filtered_by_keywords(self, keyword_list: list[str]):
         potds = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=POTD_RANGE).execute().get('values', [])
         filtered_potds = [x for x in potds if len(x) > cfg.Config.config['potd_sheet_statement_col']
                         and all(keyword.lower() in x[cfg.Config.config['potd_sheet_statement_col']].lower() for keyword in keyword_list)]
         return filtered_potds
 
-    async def potd_search_keywords_autocomplete(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
-        filtered_potds = potds_filtered_by_keywords(current.split())
+    async def potd_search_keywords_autocomplete(self, interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
+        filtered_potds = self.potds_filtered_by_keywords(current.split())
         return [app_commands.Choice(name=text, value=text) for potd in filtered_potds][:25]  # Only 25 responses are supported in autocomplete
     
-    @self.tree.command()
-    @app_commands.tree(keywords='Search past potds using these keywords')
+    @app_commands.command()
+    @app_commands.describe(keywords='Search past potds using these keywords')
     @app_commands.autocomplete(keywords=potd_search_keywords_autocomplete)
     @commands.cooldown(1, 10, BucketType.user)
-    async def potd_search(self, interaction: discord.Interaction, keywords: str):
+    async def potd_keywords(self, interaction: discord.Interaction, keywords: str):
         """Search potds using keywords"""
 
         filtered_potds = potds_filtered_by_keywords(keywords.split())
