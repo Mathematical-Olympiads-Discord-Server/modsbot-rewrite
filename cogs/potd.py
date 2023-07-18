@@ -6,6 +6,7 @@ import random
 import statistics
 from datetime import datetime, timedelta
 import re
+from typing import Optional
 
 import discord
 import schedule
@@ -498,8 +499,8 @@ class Potd(Cog):
             # Create the message to send
             try:
                 # if there is image link, just send it out
-                if len(potd_row) >= 19 and potd_row[cfg.Config.config['potd_sheet_image_link_col']] not in [None, ''] and 't' not in flag:
-                    image_link = potd_row[cfg.Config.config['potd_sheet_image_link_col']]
+                image_link = self.check_for_image_link(potd_row)
+                if image_link and 't' not in flag:
                     async with aiohttp.ClientSession() as session:
                         async with session.get(image_link) as resp:
                             if resp.status != 200:
@@ -512,22 +513,26 @@ class Potd(Cog):
                 # if no image link, send tex
                 else:
                     if 's' not in flag:
-                        output = '<@' + str(cfg.Config.config['paradox_id']) + '>\n```tex\n\\textbf{Day ' + str(
-                            potd_row[cfg.Config.config['potd_sheet_id_col']]) + '} --- ' + str(
-                            potd_row[cfg.Config.config['potd_sheet_day_col']]) + ' ' + str(
-                            potd_row[cfg.Config.config['potd_sheet_date_col']]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(
-                            potd_row[cfg.Config.config['potd_sheet_statement_col']]) + '```'
+                        output = '<@' + str(cfg.Config.config['paradox_id']) + '>\n' + self.texify_potd(potd_row)
                     else:
-                        output = '<@' + str(cfg.Config.config['paradox_id']) + '>texsp\n||```tex\n\\textbf{Day ' + str(
-                            potd_row[cfg.Config.config['potd_sheet_id_col']]) + '} --- ' + str(
-                            potd_row[cfg.Config.config['potd_sheet_day_col']]) + ' ' + str(
-                            potd_row[cfg.Config.config['potd_sheet_date_col']]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(
-                            potd_row[cfg.Config.config['potd_sheet_statement_col']]) + '```||'                    
+                        output = '<@' + str(cfg.Config.config['paradox_id']) + '>texsp\n||' + self.texify_potd(potd_row) + '||'
                     await ctx.send(output, delete_after=5)
             except IndexError:
                 await ctx.send(f"There is no potd for day {number}. ")
                 return
-            
+
+    def check_for_image_link(self, potd_row) -> Optional[str]:
+        if len(potd_row) >= 19 and potd_row[cfg.Config.config['potd_sheet_image_link_col']] not in [None, '']:
+            return potd_row[cfg.Config.config['potd_sheet_image_link_col']]
+        else:
+            return None
+
+    def texify_potd(self, potd_row) -> str:
+        return '```tex\n\\textbf{Day ' + str(
+            potd_row[cfg.Config.config['potd_sheet_id_col']]) + '} --- ' + str(
+            potd_row[cfg.Config.config['potd_sheet_day_col']]) + ' ' + str(
+            potd_row[cfg.Config.config['potd_sheet_date_col']]) + '\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}' + str(
+            potd_row[cfg.Config.config['potd_sheet_statement_col']]) + '```'
 
     @commands.command(aliases=['source'], brief='Get the source of a potd by id.')
     @commands.cooldown(1, 5, BucketType.user)
@@ -580,7 +585,9 @@ class Potd(Cog):
 
     async def potd_search_keywords_autocomplete(self, interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
         filtered_potds = self.potds_filtered_by_keywords(current.split())
-        return [app_commands.Choice(name=text, value=text) for potd in filtered_potds][:25]  # Only 25 responses are supported in autocomplete
+        filtered_potd_statements = [potd[cfg.Config.config['potd_sheet_statement_col']] for potd in  filtered_potds]
+        # Only 25 responses are supported in autocomplete, and they must be at most 100 characters
+        return [app_commands.Choice(name=statement[:100], value=statement[:100]) for statement in filtered_potd_statements][:25]
     
     @app_commands.command()
     @app_commands.describe(keywords='Search past potds using these keywords')
@@ -589,13 +596,18 @@ class Potd(Cog):
     async def potd_keywords(self, interaction: discord.Interaction, keywords: str):
         """Search potds using keywords"""
 
-        filtered_potds = potds_filtered_by_keywords(keywords.split())
+        filtered_potds = self.potds_filtered_by_keywords(keywords.split())
             
         if filtered_potds:
-            picked_potd = int(random.choice(list(map(lambda x: int(x[cfg.Config.config['potd_sheet_id_col']]), filtered_potds))))
-            await self.potd_fetch(ctx, picked_potd)
+            picked_potd_row = random.choice(filtered_potds)
+            image_link = self.check_for_image_link(picked_potd_row)
+            if image_link:
+                await interaction.response.send_message(f"[image]({image_link})")
+            else:
+                output = '<@' + str(cfg.Config.config['paradox_id']) + '>\n' + self.texify_potd(picked_potd_row)
+                await interaction.response.send_message(output, delete_after=5)
         else:
-            await ctx.send(f"No POTD found!")
+            await interaction.response.send_message(f"No POTD found!", ephemeral=True)
 
     def parse_genre_input(self, genre):
         complex_genres = genre.split("'")[1::2]
