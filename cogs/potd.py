@@ -1945,9 +1945,8 @@ class Potd(Cog):
                 date_start = datetime.strptime(potd_row[cfg.Config.config['potd_sheet_date_col']], '%d %b %Y')
                 date_end = date_start + timedelta(hours=23)
                 messages = [message async for message in potd_channel.history(limit=10, after=date_start, before=date_end, oldest_first=True)]
-                paradox_messages = [x for x in messages if x.author.id==cfg.Config.config['paradox_id']]
-                potd_message = paradox_messages[0]
-                
+                potd_message = [x for x in messages if x.attachments][0]
+
                 image_link = str(potd_message.attachments[0].proxy_url)
                 image_links.append(image_link)
 
@@ -1972,7 +1971,6 @@ class Potd(Cog):
                         return await ctx.send('Could not download file...')
                     data = io.BytesIO(await resp.read())
                     await ctx.send(file=discord.File(data, f'potd.png'))
-
 
 async def setup(bot):
     await bot.add_cog(Potd(bot))
