@@ -1920,47 +1920,5 @@ class Potd(Cog):
         self.bot.loop.create_task(self.post_proposed_potd_task())
 
 
-    # scan potd channel for image link
-    @commands.command()
-    @commands.check(cfg.is_mod_or_tech)
-    async def potd_image_scan(self, ctx, begin: int, end: int, write: bool = False):
-        sheet = self.get_potd_sheet()
-        potd_channel = self.bot.get_channel(cfg.Config.config['potd_channel'])
-        image_links = []
-        for number in range(begin, end+1):
-            try:
-                potd_row = self.get_potd_row(number, sheet)
-                date_start = datetime.strptime(potd_row[cfg.Config.config['potd_sheet_date_col']], '%d %b %Y')
-                date_end = date_start + timedelta(hours=23)
-                messages = [message async for message in potd_channel.history(limit=10, after=date_start, before=date_end, oldest_first=True)]
-                paradox_messages = [x for x in messages if x.author.id==cfg.Config.config['paradox_id']]
-                potd_message = paradox_messages[0]
-                
-                image_link = str(potd_message.attachments[0].proxy_url)
-                image_links.append(image_link)
-
-                if write:
-                    # record the link to rendered image if it is in POTD channel 
-                    # get the row and column to update
-                    column = openpyxl.utils.get_column_letter(cfg.Config.config['potd_sheet_image_link_col']+1)
-                    values = sheet.get('values', [])
-                    current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
-                    row = current_potd - number + 2  # this gets the row requested
-                    # update the source_msg in the sheet
-                    request = cfg.Config.service.spreadsheets().values().update(spreadsheetId=cfg.Config.config['potd_sheet'], 
-                                                                range=f'{column}{row}', valueInputOption='RAW',body={"range": f'{column}{row}', "values": [[image_link]] })
-                    response = request.execute()
-            except:
-                pass
-
-        for image_link in image_links:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(image_link) as resp:
-                    if resp.status != 200:
-                        return await ctx.send('Could not download file...')
-                    data = io.BytesIO(await resp.read())
-                    await ctx.send(file=discord.File(data, f'potd.png'))
-
-
 async def setup(bot):
     await bot.add_cog(Potd(bot))
