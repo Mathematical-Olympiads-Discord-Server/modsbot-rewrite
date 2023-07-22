@@ -76,7 +76,6 @@ class Potd(Cog):
 
         schedule.every().hour.at("10:00").do(self.post_proposed_potd).tag('cogs.potd.proposal')
 
-
     @commands.command()
     @commands.check(is_pc)
     async def reset_potd(self, ctx=None):
@@ -124,7 +123,7 @@ class Potd(Cog):
                     return i[0]
         return None
 
-    def generate_source(self, potd_row):
+    def generate_source(self, potd_row, display=True):
         # Figure out whose potd it is
         curators = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=CURATOR_RANGE).execute().get('values', [])
@@ -138,9 +137,15 @@ class Potd(Cog):
 
         source = discord.Embed()
         source.add_field(name='Curator', value=curator)
-        source.add_field(name='Source', value=f'||`{potd_row[4]}{padding}`||')
-        source.add_field(name='Difficulty', value=f'||`{str(potd_row[6]).ljust(5)}`||')
-        source.add_field(name='Genre', value=f'||`{str(potd_row[5]).ljust(5)}`||')
+
+        if display:
+            source.add_field(name='Source', value=f'||`{potd_row[4]}{padding}`||')
+            source.add_field(name='Difficulty', value=f'||`{str(potd_row[6]).ljust(5)}`||')
+            source.add_field(name='Genre', value=f'||`{str(potd_row[5]).ljust(5)}`||')
+        else:
+            source.add_field(name='Source', value=f'(To be revealed)')
+            source.add_field(name='Difficulty', value=f'(To be revealed)')
+            source.add_field(name='Genre', value=f'(To be revealed)')
 
         # Community Rating footer
         cursor = cfg.db.cursor()
@@ -150,15 +155,16 @@ class Potd(Cog):
         community_rating = ''
         if len(result) > 0:
             community_rating += f"There are {len(result)} community difficulty ratings. "
-            try:
-                underrate_count = sum(row[3] < int(potd_row[6]) for row in result)
-                if underrate_count > 0:
-                    community_rating += f"{underrate_count} rated lower than current rating. "
-                overrate_count = sum(row[3] > int(potd_row[6]) for row in result)
-                if overrate_count > 0:
-                    community_rating += f"{overrate_count} rated higher than current rating. "            
-            except:
-                pass
+            if display:
+                try:
+                    underrate_count = sum(row[3] < int(potd_row[6]) for row in result)
+                    if underrate_count > 0:
+                        community_rating += f"{underrate_count} rated lower than current rating. "
+                    overrate_count = sum(row[3] > int(potd_row[6]) for row in result)
+                    if overrate_count > 0:
+                        community_rating += f"{overrate_count} rated higher than current rating. "            
+                except:
+                    pass
             community_rating += "\n"
         
         # Final footer
@@ -172,7 +178,10 @@ class Potd(Cog):
         sheet = self.get_potd_sheet()
         potd_row = self.get_potd_row(potd, sheet)
         try:
-            potd_source = self.generate_source(potd_row)
+            if datetime.now() - timedelta(hours=10) - timedelta(days=1)> datetime.strptime(potd_row[cfg.Config.config['potd_sheet_date_col']], '%d %b %Y'):
+                potd_source = self.generate_source(potd_row, True)
+            else:
+                potd_source = self.generate_source(potd_row, False)
             potd_source_msg_id = potd_row[cfg.Config.config['potd_sheet_message_id_col']]
             potd_source_msg = await self.bot.get_channel(cfg.Config.config['potd_channel']).fetch_message(potd_source_msg_id)
             await potd_source_msg.edit(embed=potd_source)
@@ -333,12 +342,13 @@ class Potd(Cog):
         self.requested_number = int(potd_row[0])
         self.latest_potd = int(potd_row[0])
         self.prepare_dms(potd_row)
-        self.to_send = self.generate_source(potd_row)
+        self.to_send = self.generate_source(potd_row, False)
         self.listening_in_channel = cfg.Config.config['potd_channel']
         self.ping_daily = True
         self.late = False
         await self.bot.get_channel(cfg.Config.config['potd_channel']).send(to_tex, delete_after=20)
         await self.create_potd_forum_post(self.requested_number)
+        await self.edit_source(self.requested_number - 1)
         print('l149')
         # In case Paradox unresponsive
         self.timer = threading.Timer(20, self.reset_if_necessary)
@@ -544,7 +554,10 @@ class Potd(Cog):
             await ctx.send(f"There is no potd for day {number}. ")
             return
         else:
-            source = self.generate_source(potd_row)
+            if datetime.now() - timedelta(hours=10)  - timedelta(days=1) > datetime.strptime(potd_row[cfg.Config.config['potd_sheet_date_col']], '%d %b %Y'):
+                source = self.generate_source(potd_row, True)
+            else:
+                source = self.generate_source(potd_row, False)
             await ctx.send(embed=source)
 
     @commands.command(aliases=['search'], brief='Search for a POTD by genre and difficulty.',
@@ -1931,46 +1944,6 @@ class Potd(Cog):
     async def potd_proposal(self, ctx):
         self.bot.loop.create_task(self.post_proposed_potd_task())
 
-
-    # scan potd channel for image link
-    @commands.command()
-    @commands.check(cfg.is_mod_or_tech)
-    async def potd_image_scan(self, ctx, begin: int, end: int, write: bool = False):
-        sheet = self.get_potd_sheet()
-        potd_channel = self.bot.get_channel(cfg.Config.config['potd_channel'])
-        image_links = []
-        for number in range(begin, end+1):
-            try:
-                potd_row = self.get_potd_row(number, sheet)
-                date_start = datetime.strptime(potd_row[cfg.Config.config['potd_sheet_date_col']], '%d %b %Y')
-                date_end = date_start + timedelta(hours=23)
-                messages = [message async for message in potd_channel.history(limit=10, after=date_start, before=date_end, oldest_first=True)]
-                potd_message = [x for x in messages if x.attachments][0]
-
-                image_link = str(potd_message.attachments[0].proxy_url)
-                image_links.append(image_link)
-
-                if write:
-                    # record the link to rendered image if it is in POTD channel 
-                    # get the row and column to update
-                    column = openpyxl.utils.get_column_letter(cfg.Config.config['potd_sheet_image_link_col']+1)
-                    values = sheet.get('values', [])
-                    current_potd = int(values[0][0])  # this will be the top left cell which indicates the latest added potd
-                    row = current_potd - number + 2  # this gets the row requested
-                    # update the source_msg in the sheet
-                    request = cfg.Config.service.spreadsheets().values().update(spreadsheetId=cfg.Config.config['potd_sheet'], 
-                                                                range=f'{column}{row}', valueInputOption='RAW',body={"range": f'{column}{row}', "values": [[image_link]] })
-                    response = request.execute()
-            except:
-                pass
-
-        for image_link in image_links:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(image_link) as resp:
-                    if resp.status != 200:
-                        return await ctx.send('Could not download file...')
-                    data = io.BytesIO(await resp.read())
-                    await ctx.send(file=discord.File(data, f'potd.png'))
 
 async def setup(bot):
     await bot.add_cog(Potd(bot))
