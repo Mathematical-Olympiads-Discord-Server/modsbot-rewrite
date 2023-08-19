@@ -1609,7 +1609,10 @@ class Potd(Cog):
             sql = 'INSERT INTO ratings (prob, userid, rating) VALUES (?, ?, ?)'
             cursor.execute(sql, (potd, ctx.author.id, rating))
             cfg.db.commit()
-            await ctx.send(f'<@{ctx.author.id}> You have rated POTD {potd} d||{rating}  ||.')
+            if rating < 10:
+                    await ctx.send(f'<@{ctx.author.id}> You have rated POTD {potd} d||{rating}  ||.')
+            else:
+                await ctx.send(f'<@{ctx.author.id}> You have rated POTD {potd} d||{rating}||.')
         else:
             if not overwrite:
                 await ctx.send(
@@ -1618,7 +1621,10 @@ class Potd(Cog):
             else:
                 cursor.execute(f'UPDATE ratings SET rating = {rating} WHERE idratings = {result[0]}')
                 cfg.db.commit()
-                await ctx.send(f'<@{ctx.author.id}> You have rated POTD {potd} d||{rating}  ||.')
+                if rating < 10:
+                    await ctx.send(f'<@{ctx.author.id}> You have rated POTD {potd} d||{rating}  ||.')
+                else:
+                    await ctx.send(f'<@{ctx.author.id}> You have rated POTD {potd} d||{rating}||.')
         await self.edit_source(potd)
 
     @commands.command(aliases=['rating'], brief='Finds the median of a POTD\'s ratings')
@@ -1634,16 +1640,23 @@ class Potd(Cog):
 
         sql = f'SELECT * FROM ratings WHERE prob = {potd} AND userid not in {blacklisted_users_string} ORDER BY rating'
         cursor.execute(sql)
-        result = cursor.fetchall()
+        result = list(map(lambda x: list(x), cursor.fetchall()))
         if len(result) == 0:
             await ctx.send(f'No ratings for POTD {potd} yet. ')
         else:
+            for row in result:
+                if row[3] < 10:
+                    row[3] = str(row[3]) + '  '
+
             median = statistics.median([row[3] for row in result])
-            await ctx.send(f'Median community rating for POTD {potd} is d||{median}  ||. ')
+            if len(str(median)) == 1:
+                await ctx.send(f'Median community rating for POTD {potd} is d||{median}  ||. ')
+            else:
+                await ctx.send(f'Median community rating for POTD {potd} is d||{median}||. ')
             if full:
                 embed = discord.Embed()
                 embed.add_field(name=f'Full list of community rating for POTD {potd}',
-                    value='\n'.join([f'<@!{row[2]}>: d||{row[3]}  ||' for row in result]))
+                    value='\n'.join([f'<@!{row[2]}>: d||{row[3]}||' for row in result]))
                 await ctx.send(embed=embed)
 
     @commands.command(aliases=['myrating'], brief='Checks your rating of a potd. ')
