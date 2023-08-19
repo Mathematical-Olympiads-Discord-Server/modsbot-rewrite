@@ -122,7 +122,7 @@ class Potd(Cog):
                     return i[0]
         return None
 
-    def generate_source(self, potd_row, display=True):
+    def generate_source(self, potd_row, display=True, caller_id = 0):
         # Figure out whose potd it is
         curators = cfg.Config.service.spreadsheets().values().get(spreadsheetId=cfg.Config.config['potd_sheet'],
                                                                range=CURATOR_RANGE).execute().get('values', [])
@@ -148,7 +148,15 @@ class Potd(Cog):
 
         # Community Rating footer
         cursor = cfg.db.cursor()
-        cursor.execute(f'SELECT * FROM ratings WHERE prob = {potd_row[0]}')
+
+        cursor.execute(f'''SELECT blacklisted_user_id
+        FROM potd_rater_blacklist
+        WHERE discord_user_id = {caller_id}
+        LIMIT 1000000;''')
+        blacklisted_users = list(map(lambda x: x[0],cursor.fetchall()))
+        blacklisted_users_string = "('" + "','".join(map(str, blacklisted_users)) + "')"
+
+        cursor.execute(f'SELECT * FROM ratings WHERE prob = {potd_row[0]} AND userid not in {blacklisted_users_string}')
         result = cursor.fetchall()
 
         community_rating = ''
@@ -550,9 +558,9 @@ class Potd(Cog):
             return
         else:
             if datetime.now() - timedelta(hours=10)  - timedelta(days=1) > datetime.strptime(potd_row[cfg.Config.config['potd_sheet_date_col']], '%d %b %Y'):
-                source = self.generate_source(potd_row, True)
+                source = self.generate_source(potd_row, True, ctx.author.id)
             else:
-                source = self.generate_source(potd_row, False)
+                source = self.generate_source(potd_row, False, ctx.author.id)
             await ctx.send(embed=source)
 
     @commands.command(aliases=['search'], brief='Search for a POTD by genre and difficulty.',
@@ -1616,7 +1624,16 @@ class Potd(Cog):
     @commands.command(aliases=['rating'], brief='Finds the median of a POTD\'s ratings')
     async def potd_rating(self, ctx, potd: int, full: bool = True):
         cursor = cfg.db.cursor()
-        cursor.execute(f'SELECT * FROM ratings WHERE prob = {potd} ORDER BY rating')
+
+        cursor.execute(f'''SELECT blacklisted_user_id
+        FROM potd_rater_blacklist
+        WHERE discord_user_id = {ctx.author.id}
+        LIMIT 1000000;''')
+        blacklisted_users = list(map(lambda x: x[0],cursor.fetchall()))
+        blacklisted_users_string = "('" + "','".join(map(str, blacklisted_users)) + "')"
+
+        sql = f'SELECT * FROM ratings WHERE prob = {potd} AND userid not in {blacklisted_users_string} ORDER BY rating'
+        cursor.execute(sql)
         result = cursor.fetchall()
         if len(result) == 0:
             await ctx.send(f'No ratings for POTD {potd} yet. ')
@@ -1661,6 +1678,52 @@ class Potd(Cog):
             cursor.execute(f'DELETE FROM ratings WHERE prob = {potd} AND userid = {ctx.author.id}')
             await ctx.author.send(f'Removed your rating of difficulty level {result[3]} for potd {potd}. ')
             await self.edit_source(potd)
+
+    @commands.command(aliases=['blacklist', 'rater_blacklist'], brief='Blacklist a user from community rating. ')
+    async def potd_rater_blacklist(self, ctx, user_id: int):
+        user = self.bot.get_user(user_id)
+        if user != None:
+            cursor = cfg.db.cursor()
+            cursor.execute(f'''SELECT blacklisted_user_id
+                FROM potd_rater_blacklist
+                WHERE discord_user_id = {ctx.author.id}
+                LIMIT 1000000;''')
+            blacklisted_users = cursor.fetchall()
+            if str(user_id) not in list(map(lambda x: x[0], blacklisted_users)):
+                sql = 'INSERT INTO potd_rater_blacklist (discord_user_id, blacklisted_user_id, create_date) VALUES (?, ?, ?)'
+                cursor.execute(sql, (str(ctx.author.id), str(user_id), datetime.now()))
+                cfg.db.commit()
+                await ctx.send(f"User {user.display_name} is added to your blacklist.")
+            else:
+                await ctx.send(f"User {user.display_name} is already in your blacklist.")
+        else:
+            await ctx.send(f"User with ID {user_id} is not found!")
+
+    @commands.command(aliases=['unblacklist', 'rater_unblacklist'], brief='Unblacklist a user from community rating. ')
+    async def potd_rater_unblacklist(self, ctx, user_id: int):
+        user = self.bot.get_user(user_id)
+        if user != None:
+            cursor = cfg.db.cursor()
+            sql = f'DELETE FROM potd_rater_blacklist WHERE blacklisted_user_id = {user_id} AND discord_user_id = {ctx.author.id}'
+            cursor.execute(sql)
+            cfg.db.commit()
+            await ctx.send(f"User {user.display_name} is removed from your blacklist.")
+        else:
+            await ctx.send(f"User with ID {user_id} is not found!")
+
+    @commands.command(aliases=['myblacklist'], brief='Get your potd rating blacklist.')
+    async def potd_myblacklist(self, ctx):
+        cursor = cfg.db.cursor()
+        cursor.execute(f'''SELECT blacklisted_user_id
+        FROM potd_rater_blacklist
+        WHERE discord_user_id = {ctx.author.id}
+        LIMIT 1000000;''')
+        blacklisted_users = cursor.fetchall()
+
+        embed = discord.Embed()
+        embed.add_field(name=f'{ctx.author.display_name}\'s POTD rating blacklist',
+                            value='\n'.join([f'<@!{blacklisted_users[i][0]}>' for i in range(len(blacklisted_users))]))
+        await ctx.send(embed=embed)
 
     def potd_notif_embed(self, ctx, colour):
 
@@ -1935,3 +1998,5 @@ class Potd(Cog):
 
 async def setup(bot):
     await bot.add_cog(Potd(bot))
+
+# TODO: Fix total to exclude unpublished POTD
