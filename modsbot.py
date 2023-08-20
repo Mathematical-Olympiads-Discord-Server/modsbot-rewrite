@@ -76,6 +76,11 @@ class MODSBot(commands.Bot):
             potd_id INT NOT NULL,
             create_date DATE
             )''' )
+        cursor.execute('''CREATE TABLE IF NOT EXISTS potd_rater_blacklist (
+            discord_user_id TEXT,
+            blacklisted_user_id TEXT,
+            create_date DATE
+            )''')
         db.commit()
 
         # Load cogs
