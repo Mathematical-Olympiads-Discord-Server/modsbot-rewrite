@@ -1656,11 +1656,11 @@ class Potd(Cog):
         if len(result) == 0:
             await ctx.send(f'No ratings for POTD {potd} yet. ')
         else:
+            median = statistics.median([row[3] for row in result])
             for row in result:
                 if row[3] < 10:
                     row[3] = str(row[3]) + '  '
 
-            median = statistics.median([row[3] for row in result])
             if len(str(median)) == 1:
                 await ctx.send(f'Median community rating for POTD {potd} is d||{median}  ||. ')
             else:
