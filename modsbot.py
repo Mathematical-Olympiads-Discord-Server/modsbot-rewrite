@@ -1,6 +1,7 @@
 import logging
 import math
 import re
+import sqlite3
 import threading
 import time
 import traceback
@@ -10,13 +11,11 @@ import schedule
 from discord.ext import commands
 from ruamel import yaml
 
-import sqlite3
-
 cfgfile = open("config/config.yml")
 config = yaml.safe_load(cfgfile)
 
-import matplotlib.pyplot as plt
 import matplotlib
+import matplotlib.pyplot as plt
 
 matplotlib.use("agg")
 logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)

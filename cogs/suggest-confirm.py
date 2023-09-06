@@ -1,6 +1,7 @@
+import asyncio
+
 import discord
 from discord.ext import commands
-import asyncio
 
 from cogs import config as cfg
 

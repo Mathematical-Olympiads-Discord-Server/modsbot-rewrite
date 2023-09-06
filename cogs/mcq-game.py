@@ -1,6 +1,7 @@
 import random
 
 from discord.ext import commands
+
 from cogs import config as cfg
 
 Cog = commands.Cog

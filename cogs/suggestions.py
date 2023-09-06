@@ -1,6 +1,6 @@
 import operator
-from datetime import datetime
 import time
+from datetime import datetime
 
 import bidict
 import discord

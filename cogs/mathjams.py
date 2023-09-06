@@ -1,6 +1,7 @@
+import sqlite3
+
 import schedule
 from discord.ext import commands
-import sqlite3
 
 from cogs import config as cfg
 

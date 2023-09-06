@@ -2,14 +2,14 @@ import ast
 import datetime as dt
 import logging
 import math
-import pickle
-import schedule
-from datetime import datetime
 import os
+import pickle
+from datetime import datetime
 
 import discord
 import matplotlib
 import matplotlib.pyplot as plt
+import schedule
 from discord.ext import commands
 from discord.ext.commands import BucketType
 
