@@ -1,8 +1,10 @@
-import discord
-from discord.ext import commands
 import asyncio
 
+import discord
+from discord.ext import commands
+
 from cogs import config as cfg
+
 
 class SuggestConfirmManager(commands.Cog):
     def __init__(self, bot):
@@ -26,16 +28,19 @@ class SuggestConfirmManager(commands.Cog):
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.user_id == self.bot.user.id:
             return
-        if payload.message_id in self.active_suggest_confirms and self.active_suggest_confirms[payload.message_id].authorId == payload.user_id:
-            if payload.emoji.name == '✅':
+        if (
+            payload.message_id in self.active_suggest_confirms
+            and self.active_suggest_confirms[payload.message_id].authorId
+            == payload.user_id
+        ):
+            if payload.emoji.name == "✅":
                 await self.active_suggest_confirms[payload.message_id].confirm()
                 await self.delete_after(0, payload.message_id)
-            elif payload.emoji.name == '❌':
+            elif payload.emoji.name == "❌":
                 await self.delete_after(0, payload.message_id)
 
 
 class SuggestConfirm:
-
     def __init__(self, bot, ctx: commands.Context, suggestion: str, mode: str):
         self.bot = bot
         self.ctx = ctx
@@ -46,23 +51,26 @@ class SuggestConfirm:
         self.mode = mode
 
     async def open(self):
-        #TODO: edit the message
-        self.message = await self.ctx.send(f'<@!{self.authorId}> You are about to submit the following suggestion:\n<{self.suggestion_url}>\n{self.suggestion}\n\n'
-                                           'Confirm by reacting ✅, Cancel by reacting ❌')
-        await self.message.add_reaction('✅')
-        await self.message.add_reaction('❌')
+        # TODO: edit the message
+        self.message = await self.ctx.send(
+            f"<@!{self.authorId}> You are about to submit the following suggestion:\n<{self.suggestion_url}>\n{self.suggestion}\n\n"
+            "Confirm by reacting ✅, Cancel by reacting ❌"
+        )
+        await self.message.add_reaction("✅")
+        await self.message.add_reaction("❌")
 
     async def confirm(self):
-        await self.bot.get_cog('Suggestions').add_suggestion(ctx=self.ctx, suggestion=self.suggestion, mode=self.mode)
+        await self.bot.get_cog("Suggestions").add_suggestion(
+            ctx=self.ctx, suggestion=self.suggestion, mode=self.mode
+        )
         await self.remove()
-        
+
     async def remove(self):
         try:
             await self.message.delete()
         except discord.NotFound:
             pass
 
+
 async def setup(bot):
     await bot.add_cog(SuggestConfirmManager(bot))
-
-

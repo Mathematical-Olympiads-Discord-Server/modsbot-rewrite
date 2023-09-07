@@ -1,6 +1,7 @@
+import asyncio
+
 import discord
 from discord.ext import commands
-import asyncio
 
 
 class MenuManager(commands.Cog):
@@ -15,7 +16,9 @@ class MenuManager(commands.Cog):
             await self.active_menus[menu_id].remove()
             del self.active_menus[menu_id]
 
-    async def new_menu(self, ctx: commands.Context, pages: list, cur_page: int = 0, timeout: int = 60):
+    async def new_menu(
+        self, ctx: commands.Context, pages: list, cur_page: int = 0, timeout: int = 60
+    ):
         menu = Menu(ctx, pages, cur_page, timeout)
         await menu.open()
         self.active_menus[menu.message.id] = menu
@@ -26,13 +29,17 @@ class MenuManager(commands.Cog):
         if payload.user_id == self.bot.user.id:
             return
         if payload.message_id in self.active_menus:
-            if payload.emoji.name == '◀':
-                await self.active_menus[payload.message_id].previous_page(payload.user_id)
-            elif payload.emoji.name == '⏹':
-                if payload.message_id in self.active_menus \
-                        and self.active_menus[payload.message_id].owner == payload.user_id:
+            if payload.emoji.name == "◀":
+                await self.active_menus[payload.message_id].previous_page(
+                    payload.user_id
+                )
+            elif payload.emoji.name == "⏹":
+                if (
+                    payload.message_id in self.active_menus
+                    and self.active_menus[payload.message_id].owner == payload.user_id
+                ):
                     await self.delete_after(0, payload.message_id)
-            elif payload.emoji.name == '▶':
+            elif payload.emoji.name == "▶":
                 await self.active_menus[payload.message_id].next_page(payload.user_id)
 
     @commands.Cog.listener()
@@ -40,19 +47,24 @@ class MenuManager(commands.Cog):
         if payload.user_id == self.bot.user.id:
             return
         if payload.message_id in self.active_menus:
-            if payload.emoji.name == '◀':
-                await self.active_menus[payload.message_id].previous_page(payload.user_id)
-            elif payload.emoji.name == '⏹':
-                if payload.message_id in self.active_menus \
-                        and self.active_menus[payload.message_id].owner == payload.user_id:
+            if payload.emoji.name == "◀":
+                await self.active_menus[payload.message_id].previous_page(
+                    payload.user_id
+                )
+            elif payload.emoji.name == "⏹":
+                if (
+                    payload.message_id in self.active_menus
+                    and self.active_menus[payload.message_id].owner == payload.user_id
+                ):
                     await self.delete_after(0, payload.message_id)
-            elif payload.emoji.name == '▶':
+            elif payload.emoji.name == "▶":
                 await self.active_menus[payload.message_id].next_page(payload.user_id)
 
 
 class Menu:
-
-    def __init__(self, ctx: commands.Context, pages: list, cur_page: int = 0, timeout: int = 60):
+    def __init__(
+        self, ctx: commands.Context, pages: list, cur_page: int = 0, timeout: int = 60
+    ):
         assert not len(pages) == 0
         self.ctx = ctx
         self.pages = pages
@@ -63,9 +75,9 @@ class Menu:
 
     async def open(self):
         self.message = await self.ctx.send(embed=self.pages[self.cur_page])
-        await self.message.add_reaction('◀')
-        await self.message.add_reaction('⏹')
-        await self.message.add_reaction('▶')
+        await self.message.add_reaction("◀")
+        await self.message.add_reaction("⏹")
+        await self.message.add_reaction("▶")
 
     async def next_page(self, user_id):
         if self.cur_page < len(self.pages) - 1 and user_id == self.owner:
@@ -81,12 +93,10 @@ class Menu:
         try:
             await self.message.clear_reactions()
         except discord.Forbidden as e:
-            await self.message.remove_reaction('◀', self.ctx.me)
-            await self.message.remove_reaction('⏹', self.ctx.me)
-            await self.message.remove_reaction('▶', self.ctx.me)
+            await self.message.remove_reaction("◀", self.ctx.me)
+            await self.message.remove_reaction("⏹", self.ctx.me)
+            await self.message.remove_reaction("▶", self.ctx.me)
 
 
 async def setup(bot):
     await bot.add_cog(MenuManager(bot))
-
-
