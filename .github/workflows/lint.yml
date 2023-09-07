@@ -19,3 +19,5 @@ jobs:
         run: black . --check --diff
       - name: Check with isort
         run: isort . --check --diff
+      - name: Check with pre-commit
+        run: pre-commit run
