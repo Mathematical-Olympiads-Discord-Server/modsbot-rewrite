@@ -13,9 +13,9 @@ class Core(Cog):
         try:
             await ctx.bot.reload_extension(cog)
         except Exception as e:
-            await ctx.send("Failed to load: `{}`\n```py\n{}\n```".format(cog, e))
+            await ctx.send(f"Failed to load: `{cog}`\n```py\n{e}\n```")
         else:
-            await ctx.send("Reloaded cog {} successfully".format(cog))
+            await ctx.send(f"Reloaded cog {cog} successfully")
 
     @commands.command(brief="Gets the schedule")
     @commands.is_owner()
