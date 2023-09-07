@@ -92,7 +92,7 @@ class Menu:
     async def remove(self):
         try:
             await self.message.clear_reactions()
-        except discord.Forbidden as e:
+        except discord.Forbidden:
             await self.message.remove_reaction("◀", self.ctx.me)
             await self.message.remove_reaction("⏹", self.ctx.me)
             await self.message.remove_reaction("▶", self.ctx.me)

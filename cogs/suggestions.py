@@ -1,5 +1,4 @@
 import operator
-import time
 from datetime import datetime
 
 import bidict
@@ -223,7 +222,10 @@ class Suggestions(Cog):
 
             # Create message
             m = await self.bot.get_channel(target_channel).send(
-                f"**{suggestion_string} `#{len(list_to_read) + 1}` by <@!{ctx.author.id}>:** `[Pending]`\n<{ctx.message.jump_url}>\n{suggestion}"
+                f"**{suggestion_string} `#{len(list_to_read) + 1}` by "
+                f"<@!{ctx.author.id}>:** `[Pending]`\n"
+                f"<{ctx.message.jump_url}>\n"
+                f"{suggestion}"
             )
             await m.add_reaction("👍")
             await m.add_reaction("🤷")
@@ -431,9 +433,10 @@ class Suggestions(Cog):
         )
 
         embed.set_footer(
-            text="You received this DM because you either have the `Suggestions-Notify` role, "
-            "voted on the suggestion, or reacted with 🔔. If you do not want to be notified "
-            "about suggestion changes, please react with 🔕. "
+            text="You received this DM because you either have the "
+            "`Suggestions-Notify` role, voted on the suggestion, or reacted with 🔔. "
+            "If you do not want to be notified about suggestion changes, "
+            "please react with 🔕. "
         )
 
         if notify:
@@ -447,7 +450,10 @@ class Suggestions(Cog):
                 except Exception:
                     dm_failed.append(id)
             if dm_failed != []:
-                msg = "Remember to turn on DMs from this server to get private notifications! "
+                msg = (
+                    "Remember to turn on DMs from this server to get private"
+                    "notifications!"
+                )
                 for id in dm_failed:
                     msg += f"<@{id}> "
                 await bot_spam.send(msg, embed=embed)
@@ -456,14 +462,19 @@ class Suggestions(Cog):
         suggestion.status = new_status
         suggestion.reason = reason
         update_suggestions()
-        await suggestion_message.edit(
-            content=f"**{suggestion_string} `#{sugg_id}` by <@!{suggestion.userid}>:** `[{new_status}: {reason}]`\n{suggestion.jump_url}\n{suggestion.body}"
+        content = (
+            f"**{suggestion_string} `#{sugg_id}` by <@!{suggestion.userid}>:** "
+            f"`[{new_status}: {reason}]`\n{suggestion.jump_url}\n{suggestion.body}"
         )
+        await suggestion_message.edit(content=content)
 
         # Finish up
         await bot_spam.send("Finished.")
         await ctx.guild.get_channel(cfg.Config.config["log_channel"]).send(
-            f"**{suggestion_string} `#{sugg_id}` set to `[{new_status}]` by {ctx.author.nick} ({ctx.author.id})\nReason: `{reason}`**\n{suggestion.body}"
+            f"**{suggestion_string} `#{sugg_id}` set to `[{new_status}]` by "
+            f"{ctx.author.nick} ({ctx.author.id})\n"
+            f"Reason: `{reason}`**\n"
+            f"{suggestion.body}"
         )
         self.lock = False
         return suggestion
@@ -592,7 +603,7 @@ class Suggestions(Cog):
         if (
             message.channel.id == cfg.Config.config["suggestion_channel"]
         ) and message.reference:
-            if not message.author.id in cfg.Config.config["staff"]:
+            if message.author.id not in cfg.Config.config["staff"]:
                 return
 
             ctx = await self.bot.get_context(message)
@@ -603,7 +614,7 @@ class Suggestions(Cog):
                 if s.msgid == str(message.reference.message_id):
                     suggestion = s
                     break
-            if suggestion == None:
+            if suggestion is None:
                 return
 
             # Identify suggestion status

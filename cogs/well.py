@@ -23,9 +23,8 @@ class Well(Cog):
 
         cursor = cfg.db.cursor()
         cursor.execute(
-            f"""INSERT OR IGNORE INTO settings (setting, value) VALUES
-            ('well_time', '00:00')
-            """
+            """INSERT OR IGNORE INTO settings (setting, value) VALUES
+            ('well_time', '00:00')"""
         )  # Treated as UTC
         cfg.db.commit()
         cursor.execute("SELECT value FROM settings WHERE setting = 'well_time'")
@@ -63,7 +62,7 @@ class Well(Cog):
         for i in well:
             if len(i) < 4:
                 pass
-            elif person != None:
+            elif person is not None:
                 if person != i[3]:
                     remind = True
                 else:
@@ -78,7 +77,8 @@ class Well(Cog):
 
         if remind:
             await self.bot.get_channel(cfg.Config.config["well_channel"]).send(
-                f"Next person goes in the well today! <@&{cfg.Config.config['well_manager_role']}>"
+                f"Next person goes in the well today! "
+                f"<@&{cfg.Config.config['well_manager_role']}>"
             )
 
     @commands.command()
@@ -89,8 +89,10 @@ class Well(Cog):
         if hour is None:
             next_period = now + (today + self.time - now) % timedelta(days=1)
             await ctx.send(
-                f"Next well day ({(next_period-self.time).strftime(r'%b %d')}) starts on <t:{cfg.timestamp(next_period)}>.\n"
-                f"Use {cfg.Config.config['prefix']}well_time [hour] [min] (in GMT) to adjust well time."
+                f"Next well day ({(next_period-self.time).strftime(r'%b %d')}) "
+                f"starts on <t:{cfg.timestamp(next_period)}>.\n"
+                f"Use {cfg.Config.config['prefix']}well_time [hour] [min] (in GMT) to "
+                "adjust well time."
             )
         else:
             self.time = timedelta(hours=hour, minutes=min)
@@ -107,13 +109,13 @@ class Well(Cog):
             cursor = cfg.db.cursor()
             cursor.execute(
                 f"""UPDATE settings SET value = '{self.hour:02d}:{self.minute:02d}'
-				WHERE setting = 'well_time'
-				"""
+                WHERE setting = 'well_time'"""
             )
             cfg.db.commit()
             next_period = now + (today + self.time - now) % timedelta(days=1)
             await ctx.send(
-                f"Next well day ({(next_period-self.time).strftime(r'%b %d')}) starts on <t:{cfg.timestamp(next_period)}>."
+                f"Next well day ({(next_period-self.time).strftime(r'%b %d')}) starts "
+                f"on <t:{cfg.timestamp(next_period)}>."
             )
 
     @commands.command()
@@ -178,7 +180,8 @@ class Well(Cog):
             body={"range": WELL_RANGE, "majorDimension": "ROWS", "values": append},
         ).execute()
         await ctx.reply(
-            f"Scheduled <@{person}> for {days} days of well starting {new.strftime(r'%b %d')} (<t:{cfg.timestamp(new + self.time)}>)."
+            f"Scheduled <@{person}> for {days} days of well starting "
+            f"{new.strftime(r'%b %d')} (<t:{cfg.timestamp(new + self.time)}>)."
         )
 
 

@@ -1,5 +1,4 @@
 import logging
-import math
 import re
 import sqlite3
 import threading
@@ -7,15 +6,13 @@ import time
 import traceback
 
 import discord
+import matplotlib
 import schedule
 from discord.ext import commands
 from ruamel import yaml
 
 cfgfile = open("config/config.yml")
 config = yaml.safe_load(cfgfile)
-
-import matplotlib
-import matplotlib.pyplot as plt
 
 matplotlib.use("agg")
 logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
@@ -139,7 +136,10 @@ class MODSBot(commands.Bot):
 
         if spam:
             try:
-                log_message = f"Muted {message.author.mention} ({message.author.id}) for spam:\n```{message.content}```"
+                log_message = (
+                    f"Muted {message.author.mention} ({message.author.id}) "
+                    f"for spam:\n```{message.content}```"
+                )
                 await message.delete()
                 await message.author.add_roles(
                     message.guild.get_role(self.config["muted_role"])
@@ -166,8 +166,9 @@ class MODSBot(commands.Bot):
         log_channel = self.get_channel(self.config["log_channel"])
 
         if isinstance(exception, commands.CommandInvokeError):
-            # all exceptions are wrapped in CommandInvokeError if they are not a subclass of CommandError
-            # you can access the original exception with .original
+            # all exceptions are wrapped in CommandInvokeError if they are not a
+            # subclass of CommandError you can access the original exception with
+            # .original
             exception: commands.CommandInvokeError
             if isinstance(exception.original, discord.Forbidden):
                 # permissions error
@@ -215,7 +216,8 @@ class MODSBot(commands.Bot):
         elif isinstance(exception, commands.CommandOnCooldown):
             exception: commands.CommandOnCooldown
             await ctx.send(
-                f"You're going too fast! Try again in {exception.retry_after:.5f} seconds."
+                f"You're going too fast! "
+                f"Try again in {exception.retry_after:.5f} seconds."
             )
 
         elif isinstance(exception, commands.CommandNotFound):
@@ -225,7 +227,7 @@ class MODSBot(commands.Bot):
         elif isinstance(exception, commands.UserInputError):
             error = " ".join(exception.args)
             error_data = re.findall(
-                'Converting to "(.*)" failed for parameter "(.*)"\.', error
+                r'Converting to "(.*)" failed for parameter "(.*)"\.', error
             )
             if not error_data:
                 await ctx.send("Huh? {}".format(" ".join(exception.args)))

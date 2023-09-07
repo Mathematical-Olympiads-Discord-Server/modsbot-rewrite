@@ -1,5 +1,3 @@
-import sqlite3
-
 import schedule
 from discord.ext import commands
 
@@ -49,13 +47,14 @@ class Mathjams(Cog):
     @commands.command()
     @commands.check(cfg.is_staff)
     async def mathjams(self, ctx, status: bool = None):
-        if status == None:
+        if status is None:
             self.ping = not self.ping
         else:
             self.ping = status
         cursor = cfg.db.cursor()
         cursor.execute(
-            f"UPDATE settings SET value = '{str(self.ping)}' WHERE setting = 'mathjams_ping'"
+            f"UPDATE settings SET value = '{str(self.ping)}' "
+            f"WHERE setting = 'mathjams_ping'"
         )
         cfg.db.commit()
         await ctx.guild.get_channel(cfg.Config.config["log_channel"]).send(

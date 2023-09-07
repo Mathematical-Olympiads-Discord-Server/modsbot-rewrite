@@ -1,2 +1,16 @@
 [tool.isort]
 profile = "black"
+
+[tool.flake8]
+max-line-length = 88
+exclude = [
+    "venv",
+    ".venv",
+    "env",
+    ".env",
+    ".git",
+]
+extend-ignore = [
+    "E203",
+    "E722",  # 'do not use bare except'  TODO: fix all occurences
+]
