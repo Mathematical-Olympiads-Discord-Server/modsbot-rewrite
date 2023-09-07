@@ -42,9 +42,9 @@ class MODSBot(commands.Bot):
 
     async def on_ready(self):
         self.logger.info("Connected to Discord")
-        self.logger.info("Guilds  : {}".format(len(self.guilds)))
-        self.logger.info("Users   : {}".format(len(set(self.get_all_members()))))
-        self.logger.info("Channels: {}".format(len(list(self.get_all_channels()))))
+        self.logger.info(f"Guilds  : {len(self.guilds)}")
+        self.logger.info(f"Users   : {len(set(self.get_all_members()))}")
+        self.logger.info(f"Channels: {len(list(self.get_all_channels()))}")
         await self.set_presence("MODSBot: use -help")
 
         # Set up some stuff in data/modsdb.db
@@ -105,9 +105,9 @@ class MODSBot(commands.Bot):
             try:
                 await self.load_extension(cog)
             except Exception:
-                self.logger.exception("Failed to load cog {}.".format(cog))
+                self.logger.exception(f"Failed to load cog {cog}.")
             else:
-                self.logger.info("Loaded cog {}.".format(cog))
+                self.logger.info(f"Loaded cog {cog}.")
 
         MODS_SERVER = discord.Object(id=self.config["mods_guild"])
         self.tree.copy_global_to(guild=MODS_SERVER)
@@ -126,9 +126,9 @@ class MODSBot(commands.Bot):
             search_str = message.content
             for i in message.embeds:
                 if i.title != i.Empty:
-                    search_str += " " + i.title
+                    search_str += f" {i.title}"
                 if i.description != i.Empty:
-                    search_str += " " + i.description
+                    search_str += f" {i.description}"
             if re.search("discord", search_str, re.I) and re.search(
                 "nitro", search_str, re.I
             ):
@@ -172,7 +172,7 @@ class MODSBot(commands.Bot):
             if isinstance(exception.original, discord.Forbidden):
                 # permissions error
                 try:
-                    await ctx.send("Permissions error: `{}`".format(exception))
+                    await ctx.send(f"Permissions error: `{exception}`")
                 except discord.Forbidden:
                     # we can't send messages in that channel
                     pass
@@ -193,8 +193,8 @@ class MODSBot(commands.Bot):
                         type(exception), exception, exception.__traceback__
                     )
                 )
-            except RecursionError:
-                raise exception
+            except RecursionError as e:
+                raise exception from e
 
             self.logger.error(log_message)
             try:
@@ -224,22 +224,21 @@ class MODSBot(commands.Bot):
 
         elif isinstance(exception, commands.UserInputError):
             error = " ".join(exception.args)
-            error_data = re.findall(
+            if error_data := re.findall(
                 'Converting to "(.*)" failed for parameter "(.*)"\.', error
-            )
-            if not error_data:
-                await ctx.send("Huh? {}".format(" ".join(exception.args)))
-            else:
+            ):
                 await ctx.send(
                     "Huh? I thought `{1}` was supposed to be a `{0}`...".format(
                         *error_data[0]
                     )
                 )
+            else:
+                await ctx.send(f'Huh? {" ".join(exception.args)}')
         else:
             info = traceback.format_exception(
                 type(exception), exception, exception.__traceback__, chain=False
             )
-            log_message = "Unhandled command exception - {}".format("".join(info))
+            log_message = f'Unhandled command exception - {"".join(info)}'
             self.logger.error(log_message)
             try:
                 await log_channel.send(f"```{log_message}```")
