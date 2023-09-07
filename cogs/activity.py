@@ -3,7 +3,6 @@ import contextlib
 import datetime as dt
 import logging
 import math
-import os
 import pickle
 from datetime import datetime
 
@@ -47,10 +46,12 @@ def moving_avg(data, interval):
     moving_averages = [rolling_sum / interval]
     # Loop over the remaining elements in the array
     for i in range(interval, len(data)):
-        # Add the current element to the rolling sum and subtract the element interval positions earlier
+        # Add the current element to the rolling sum and subtract the element interval
+        # positions earlier
         rolling_sum += data[i] - data[i - interval]
 
-        # Calculate the moving average for the current interval and append it to the list of moving averages
+        # Calculate the moving average for the current interval and append it to the
+        # list of moving averages
         moving_averages.append(rolling_sum / interval)
 
     # Return the list of moving averages
@@ -72,8 +73,8 @@ class Activity(Cog):
         ):  # Ignore messages from bots and DMs
             cursor = cfg.db.cursor()
             cursor.execute(
-                "INSERT INTO messages (discord_message_id, discord_channel_id, discord_user_id, message_length, "
-                "message_date) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO messages (discord_message_id, discord_channel_id, "
+                "discord_user_id, message_length, message_date) VALUES (?, ?, ?, ?, ?)",
                 (
                     message.id,
                     message.channel.id,
@@ -133,7 +134,7 @@ class Activity(Cog):
         to_check = ctx.author if other is None else other
         cursor = cfg.db.cursor()
         cursor.execute(
-            f"""SELECT message_date, message_length 
+            f"""SELECT message_date, message_length
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
@@ -165,7 +166,7 @@ class Activity(Cog):
     ):
         cursor = cfg.db.cursor()
         cursor.execute(
-            f"""SELECT discord_user_id, message_date, message_length 
+            f"""SELECT discord_user_id, message_date, message_length
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(30 - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
@@ -236,7 +237,7 @@ class Activity(Cog):
         interval = min(flags.interval, 30)
         cursor = cfg.db.cursor()
         cursor.execute(
-            f"""SELECT discord_user_id, message_date, message_length 
+            f"""SELECT discord_user_id, message_date, message_length
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
@@ -308,7 +309,7 @@ class Activity(Cog):
         interval = min(flags.interval, 30)
         cursor = cfg.db.cursor()
         cursor.execute(
-            f"""SELECT discord_channel_id, message_date, message_length 
+            f"""SELECT discord_channel_id, message_date, message_length
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
@@ -350,9 +351,11 @@ class Activity(Cog):
                 print(j)
                 pageMin = 20 * j
                 pageMax = min(20 * j + 20, len(scores))
-                page = discord.Embed(
-                    title=f"Top channels by activity score ({interval} day) - Page {j + 1}"
+                title = (
+                    f"Top channels by activity score ({interval} day)"
+                    f" - Page {j + 1}"
                 )
+                page = discord.Embed(title=title)
                 lines = "\n".join(
                     [
                         f"`{i + 1}.` <#{scores[i][0]}>: `{scores[i][1]}`"
@@ -403,7 +406,8 @@ class Activity(Cog):
             f"""
         SELECT date(message_date) as date, COUNT(*) AS number
         FROM messages
-        WHERE date(message_date) BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
+        WHERE date(message_date)
+        BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
         and discord_user_id = {user.id}
         GROUP BY discord_user_id, DATE(message_date)
@@ -466,7 +470,8 @@ class Activity(Cog):
         aliases=["sa"],
         brief="Show server/channel's activity graph.",
         help="`-server_activity`: show server's activity graph\n"
-        "`-server_activity --interval 60`: show server's activity graph for past 60 days\n"
+        "`-server_activity --interval 60`: show server's "
+        "activity graph for past 60 days\n"
         "`-server_activity --channel #lounge`: show lounge's activity graph\n"
         "`-server_activity --interval 60 --channel #lounge`: combine commands",
     )
@@ -495,7 +500,9 @@ class Activity(Cog):
                 f"""
             SELECT date(message_date) as date, COUNT(*) AS number
             FROM messages
-            WHERE date(message_date) BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}" AND "{str(dt.date.today() + dt.timedelta(1))}"
+            WHERE date(message_date)
+            BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
+            AND "{str(dt.date.today() + dt.timedelta(1))}"
             GROUP BY DATE(message_date)
             ORDER BY DATE(message_date);
             """
@@ -505,7 +512,9 @@ class Activity(Cog):
                 f"""
             SELECT date(message_date) as date, COUNT(*) AS number
             FROM messages
-            WHERE date(message_date) BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}" AND "{str(dt.date.today() + dt.timedelta(1))}"
+            WHERE date(message_date)
+            BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
+            AND "{str(dt.date.today() + dt.timedelta(1))}"
             AND discord_channel_id = {channel.id}
             GROUP BY DATE(message_date)
             ORDER BY DATE(message_date);

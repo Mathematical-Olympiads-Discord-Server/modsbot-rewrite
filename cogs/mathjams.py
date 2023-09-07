@@ -1,5 +1,3 @@
-import sqlite3
-
 import schedule
 from discord.ext import commands
 

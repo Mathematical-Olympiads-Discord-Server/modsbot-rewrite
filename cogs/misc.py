@@ -19,15 +19,20 @@ class Misc(Cog):
         self.bot = bot
 
     def record(self):
-        g = self.bot.get_guild(cfg.Config.config["mods_guild"])
+        # TODO: work out what to do with this
+        g = self.bot.get_guild(cfg.Config.config["mods_guild"])  # noqa: F841
 
     @Cog.listener()
     async def on_raw_reaction_add(self, payload):
         if payload.channel_id != cfg.Config.config["welcome_channel"]:
             return
         if payload.user_id in in_verif_speedrun_mode:
+            time_elapsed = (
+                datetime.now(timezone.utc).timestamp()
+                - payload.member.joined_at.timestamp()
+            )
             await self.bot.get_channel(cfg.Config.config["bot_spam_channel"]).send(
-                f"<@!{payload.user_id}>: `{datetime.now(timezone.utc).timestamp() - payload.member.joined_at.timestamp()}`s"
+                f"<@!{payload.user_id}>: `{time_elapsed}`s"
             )
 
         guild = self.bot.get_guild(cfg.Config.config["mods_guild"])
@@ -49,7 +54,8 @@ class Misc(Cog):
             )
             if verif_time_delta < 15 and payload.user_id not in in_verif_speedrun_mode:
                 await self.bot.get_channel(cfg.Config.config["warn_channel"]).send(
-                    f"{payload.member.mention} verified in like, epsilon time ({verif_time_delta}s exactly)"
+                    f"{payload.member.mention} verified in like, "
+                    f"epsilon time ({verif_time_delta}s exactly)"
                 )
 
             try:
@@ -61,17 +67,17 @@ class Misc(Cog):
 
             if payload.user_id not in in_verif_speedrun_mode:
                 await self.bot.get_user(payload.user_id).send(
-                    f"Welcome to the server! Check out the self-assignable "
-                    f"roles in <#671639229293395978> or start chatting in "
-                    f"our <#533153217119387660>. If you have any issues "
-                    f"related to the server, please feel free to DM "
-                    f"<@!696261358932721694>. We hope you enjoy your time "
-                    f"here. 😄\n\n*Please note that we are a Mathematical "
-                    f"Olympiad discord server. If you want help with "
-                    f"non-Olympiad mathematics, please visit the "
-                    f"**Mathematics** discord server at "
-                    f"<https://discord.sg/math> or the **Homework Help** "
-                    f"discord server at <https://discord.gg/YudDZtb>.*"
+                    "Welcome to the server! Check out the self-assignable "
+                    "roles in <#671639229293395978> or start chatting in "
+                    "our <#533153217119387660>. If you have any issues "
+                    "related to the server, please feel free to DM "
+                    "<@!696261358932721694>. We hope you enjoy your time "
+                    "here. 😄\n\n*Please note that we are a Mathematical "
+                    "Olympiad discord server. If you want help with "
+                    "non-Olympiad mathematics, please visit the "
+                    "**Mathematics** discord server at "
+                    "<https://discord.sg/math> or the **Homework Help** "
+                    "discord server at <https://discord.gg/YudDZtb>.*"
                 )
 
     @commands.command(
