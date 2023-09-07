@@ -23,7 +23,7 @@ class Well(Cog):
 
         cursor = cfg.db.cursor()
         cursor.execute(
-            f"""INSERT OR IGNORE INTO settings (setting, value) VALUES
+            """INSERT OR IGNORE INTO settings (setting, value) VALUES
             ('well_time', '00:00')
             """
         )  # Treated as UTC
@@ -159,17 +159,16 @@ class Well(Cog):
         else:
             new = last + timedelta(days=1)
 
-        append = []
-        for i in range(days):
-            append.append(
-                [
-                    (new + timedelta(days=i)).strftime("%d-%b-%Y"),
-                    i + 1,
-                    person_name,
-                    str(person),
-                    "Bucket List",
-                ]
-            )
+        append = [
+            [
+                (new + timedelta(days=i)).strftime("%d-%b-%Y"),
+                i + 1,
+                person_name,
+                str(person),
+                "Bucket List",
+            ]
+            for i in range(days)
+        ]
         cfg.Config.service.spreadsheets().values().append(
             spreadsheetId=cfg.Config.config["well_sheet"],
             range=WELL_RANGE,
