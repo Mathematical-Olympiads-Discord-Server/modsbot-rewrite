@@ -103,7 +103,7 @@ def update_suggestions():
 
 class Suggestion:
     def __str__(self):
-        return "{}: \t {}".format(self.id, self.body)
+        return f"{self.id}: \t {self.body}"
 
     def __init__(
         self, id, msgid, time, username, userid, status, body, reason, jump_url
@@ -300,7 +300,7 @@ class Suggestions(Cog):
         try:
             update_suggestions()
         except Exception as e:
-            await ctx.send("```Python \n {}```".format(e))
+            await ctx.send(f"```Python \n {e}```")
             return
         await ctx.send("Finished!")
 
@@ -340,12 +340,7 @@ class Suggestions(Cog):
         ids_to_dm = set()
 
         # Get the message
-        suggestion = None
-        for s in list_to_read:
-            if s.id == sugg_id:
-                suggestion = s
-                break
-
+        suggestion = next((s for s in list_to_read if s.id == sugg_id), None)
         if suggestion is None:
             await bot_spam.send("No suggestion with that ID!")
             self.lock = False
@@ -360,37 +355,27 @@ class Suggestions(Cog):
             for reaction in suggestion_message.reactions:
                 # Add everyone who reacted
                 if reaction.emoji == "🔔":
-                    bell = set()
                     users = [x async for x in reaction.users()]
-                    for u in users:
-                        bell.add(u.id)
+                    bell = {u.id for u in users}
                 elif reaction.emoji == "🔕":
-                    no_bell = set()
                     users = [x async for x in reaction.users()]
-                    for u in users:
-                        no_bell.add(u.id)
+                    no_bell = {u.id for u in users}
                 else:
                     users = [x async for x in reaction.users()]
                     votes_for[reaction.emoji] = len(users) - 1
                     for u in users:
                         voted.add(u.id)
         # Add everyone with the suggestions role
-        ping_role = set(
-            [
-                x.id
-                for x in ctx.guild.get_role(
-                    cfg.Config.config["suggestion_role"]
-                ).members
-            ]
-        )
-        no_ping_role = set(
-            [
-                x.id
-                for x in ctx.guild.get_role(
-                    cfg.Config.config["suggestion_no_notify"]
-                ).members
-            ]
-        )
+        ping_role = {
+            x.id
+            for x in ctx.guild.get_role(cfg.Config.config["suggestion_role"]).members
+        }
+        no_ping_role = {
+            x.id
+            for x in ctx.guild.get_role(
+                cfg.Config.config["suggestion_no_notify"]
+            ).members
+        }
         ids_to_dm = set()
         ids_to_dm = (
             ids_to_dm.union(ping_role)
@@ -405,10 +390,8 @@ class Suggestions(Cog):
 
         # Construct the embed
         embed = discord.Embed(
-            title="{} status change".format(suggestion_string),
-            description="{} {} changed status from {} to {}".format(
-                suggestion_string, suggestion.id, suggestion.status, new_status
-            ),
+            title=f"{suggestion_string} status change",
+            description=f"{suggestion_string} {suggestion.id} changed status from {suggestion.status} to {new_status}",
             colour=status_colours[statuses.inverse[new_status]],
         )
         embed.add_field(name="Suggestor", value=suggestion.username, inline=False)
@@ -424,9 +407,7 @@ class Suggestions(Cog):
         )
         embed.add_field(
             name="Vote split",
-            value="👍: {}, 🤷: {}, 👎: {}".format(
-                votes_for["👍"], votes_for["🤷"], votes_for["👎"]
-            ),
+            value=f'👍: {votes_for["👍"]}, 🤷: {votes_for["🤷"]}, 👎: {votes_for["👎"]}',
             inline=True,
         )
 
@@ -590,46 +571,48 @@ class Suggestions(Cog):
     @Cog.listener()
     async def on_message(self, message: discord.Message):
         if (
-            message.channel.id == cfg.Config.config["suggestion_channel"]
-        ) and message.reference:
-            if not message.author.id in cfg.Config.config["staff"]:
-                return
+            message.channel.id != cfg.Config.config["suggestion_channel"]
+            or not message.reference
+        ):
+            return
+        if message.author.id not in cfg.Config.config["staff"]:
+            return
 
-            ctx = await self.bot.get_context(message)
+        ctx = await self.bot.get_context(message)
 
-            # Get suggestion
-            suggestion = None
-            for s in suggestion_list:
-                if s.msgid == str(message.reference.message_id):
-                    suggestion = s
-                    break
-            if suggestion == None:
-                return
+        # Get suggestion
+        suggestion = None
+        for s in suggestion_list:
+            if s.msgid == str(message.reference.message_id):
+                suggestion = s
+                break
+        if suggestion is None:
+            return
 
-            # Identify suggestion status
-            space = message.content.find(" ")
-            if space == -1:
-                new_status = message.content
-                reason = None
-            else:
-                new_status = message.content[:space]
-                reason = message.content[space + 1 :]
-            valid = False
-            for i in status_aliases.inverse:
-                if new_status.lower() in i:
-                    new_status = statuses[status_aliases.inverse[i]]
-                    valid = True
-                    break
-            if not valid:
-                return
+        # Identify suggestion status
+        space = message.content.find(" ")
+        if space == -1:
+            new_status = message.content
+            reason = None
+        else:
+            new_status = message.content[:space]
+            reason = message.content[space + 1 :]
+        valid = False
+        for i in status_aliases.inverse:
+            if new_status.lower() in i:
+                new_status = statuses[status_aliases.inverse[i]]
+                valid = True
+                break
+        if not valid:
+            return
 
-            # Change suggestion status
-            await self.change_suggestion_status_back(
-                ctx, int(s.id), new_status, reason, "server"
-            )
+        # Change suggestion status
+        await self.change_suggestion_status_back(
+            ctx, int(s.id), new_status, reason, "server"
+        )
 
-            # Delete message
-            await message.delete(delay=15)
+        # Delete message
+        await message.delete(delay=15)
 
 
 async def setup(bot):
