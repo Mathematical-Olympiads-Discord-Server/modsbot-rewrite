@@ -49,8 +49,9 @@ rule_settings:
 
 # rule_tags: {} # Additional rule tags.
 
-# metrics:
-#   quality_threshold: 25.0
+metrics:
+  quality_threshold: 0.0  # TODO increase this threshold (default is 25)
+# TODO consider adding sourcery to pre-commit and github actions
 
 # github:
 #   labels: []

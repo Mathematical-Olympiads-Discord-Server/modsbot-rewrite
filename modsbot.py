@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import math
 import re
@@ -138,7 +139,7 @@ class MODSBot(commands.Bot):
             spam = True
 
         if spam:
-            try:
+            with contextlib.suppress(Exception):
                 log_message = f"Muted {message.author.mention} ({message.author.id}) for spam:\n```{message.content}```"
                 await message.delete()
                 await message.author.add_roles(
@@ -150,8 +151,6 @@ class MODSBot(commands.Bot):
                 await message.guild.get_channel(self.config["warn_channel"]).send(
                     log_message
                 )
-            except Exception:
-                pass
             return
 
         if message.author.id in self.blacklist:
@@ -171,19 +170,17 @@ class MODSBot(commands.Bot):
             exception: commands.CommandInvokeError
             if isinstance(exception.original, discord.Forbidden):
                 # permissions error
-                try:
+                with contextlib.suppress(
+                    discord.Forbidden  # we can't send messages in that channel
+                ):
                     await ctx.send(f"Permissions error: `{exception}`")
-                except discord.Forbidden:
-                    # we can't send messages in that channel
-                    pass
                 return
 
             elif isinstance(exception.original, discord.HTTPException):
-                try:
+                with contextlib.suppress(
+                    discord.Forbidden  # we can't send messages in that channel
+                ):
                     await ctx.send("Sorry, I can't send that.")
-                except discord.Forbidden:
-                    pass
-
                 return
 
             # Print to log then notify developers
@@ -203,11 +200,8 @@ class MODSBot(commands.Bot):
                 ):  # send log messages in chunks to prevent hitting 2k char limit
                     await log_channel.send(f"```{log_message[i:i+1900]}```")
             except Exception:
-                try:
+                with contextlib.suppress(Exception):
                     await log_channel.send("Failed to send error message.")
-                except Exception:
-                    pass
-
             return
 
         if isinstance(exception, commands.CheckFailure):
@@ -243,10 +237,8 @@ class MODSBot(commands.Bot):
             try:
                 await log_channel.send(f"```{log_message}```")
             except Exception:
-                try:
+                with contextlib.suppress(Exception):
                     await log_channel.send("Failed to send error message.")
-                except Exception:
-                    pass
 
 
 def executor():

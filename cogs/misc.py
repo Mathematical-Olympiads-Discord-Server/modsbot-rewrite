@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from random import choice
 
 import discord
@@ -27,7 +27,7 @@ class Misc(Cog):
             return
         if payload.user_id in in_verif_speedrun_mode:
             await self.bot.get_channel(cfg.Config.config["bot_spam_channel"]).send(
-                f"<@!{payload.user_id}>: `{datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}`s"
+                f"<@!{payload.user_id}>: `{datetime.now(timezone.utc).timestamp() - payload.member.joined_at.timestamp()}`s"
             )
 
         guild = self.bot.get_guild(cfg.Config.config["mods_guild"])
@@ -44,7 +44,8 @@ class Misc(Cog):
             and cfg.Config.config["unverified_role"] in role_ids
         ):
             verif_time_delta = (
-                datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()
+                datetime.now(timezone.utc).timestamp()
+                - payload.member.joined_at.timestamp()
             )
             if verif_time_delta < 15 and payload.user_id not in in_verif_speedrun_mode:
                 await self.bot.get_channel(cfg.Config.config["warn_channel"]).send(
@@ -99,8 +100,8 @@ class Misc(Cog):
     @commands.command(brief="Return my User ID")
     async def myid(self, ctx):
         name = ctx.author.name
-        id = ctx.author.id
-        await ctx.send(f"{name}'s User ID: {id}")
+        author_id = ctx.author.id
+        await ctx.send(f"{name}'s User ID: {author_id}")
 
     @commands.command()
     async def verify_speedrun_mode(self, ctx):

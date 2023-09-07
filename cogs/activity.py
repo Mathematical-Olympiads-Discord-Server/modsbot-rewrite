@@ -1,4 +1,5 @@
 import ast
+import contextlib
 import datetime as dt
 import logging
 import math
@@ -199,18 +200,14 @@ class Activity(Cog):
             if member.id in actives_today:
                 continued_actives.add(member.id)
             else:
-                try:
+                with contextlib.suppress(Exception):
                     await member.remove_roles(active_role)
-                except Exception:
-                    pass
                 removed_actives.add(member.id)
 
         for id in actives_today:
             if id not in continued_actives:
-                try:
+                with contextlib.suppress(Exception):
                     await ctx.guild.get_member(id).add_roles(active_role)
-                except Exception:
-                    pass
                 new_actives.add(id)
 
         ca = (

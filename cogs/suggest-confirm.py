@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 
 import discord
 from discord.ext import commands
@@ -66,10 +67,8 @@ class SuggestConfirm:
         await self.remove()
 
     async def remove(self):
-        try:
+        with contextlib.suppress(discord.NotFound):
             await self.message.delete()
-        except discord.NotFound:
-            pass
 
 
 async def setup(bot):

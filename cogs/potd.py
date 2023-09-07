@@ -1,5 +1,6 @@
 import ast
 import asyncio
+import contextlib
 import io
 import math
 import random
@@ -101,10 +102,8 @@ class Potd(Cog):
         self.late = False
         self.ping_daily = False
         self.dm_list = []
-        try:
+        with contextlib.suppress(Exception):
             self.timer.cancel()
-        except Exception:
-            pass
         self.timer = None
 
     def reset_if_necessary(self):
@@ -197,7 +196,7 @@ class Potd(Cog):
                 f"There are {len(result)} community difficulty ratings. "
             )
             if display:
-                try:
+                with contextlib.suppress(Exception):
                     underrate_count = sum(row[3] < int(potd_row[6]) for row in result)
                     if underrate_count > 0:
                         community_rating += (
@@ -208,8 +207,6 @@ class Potd(Cog):
                         community_rating += (
                             f"{overrate_count} rated higher than current rating. "
                         )
-                except Exception:
-                    pass
             community_rating += "\n"
 
         # Final footer
@@ -224,15 +221,15 @@ class Potd(Cog):
     async def edit_source(self, potd):
         sheet = self.get_potd_sheet()
         potd_row = self.get_potd_row(potd, sheet)
-        try:
-            if datetime.now() - timedelta(hours=10) - timedelta(
-                days=1
-            ) > datetime.strptime(
-                potd_row[cfg.Config.config["potd_sheet_date_col"]], "%d %b %Y"
-            ):
-                potd_source = self.generate_source(potd_row, True)
-            else:
-                potd_source = self.generate_source(potd_row, False)
+        with contextlib.suppress(Exception):
+            potd_source = (
+                self.generate_source(potd_row, True)
+                if datetime.now() - timedelta(hours=10) - timedelta(days=1)
+                > datetime.strptime(
+                    potd_row[cfg.Config.config["potd_sheet_date_col"]], "%d %b %Y"
+                )
+                else self.generate_source(potd_row, False)
+            )
             potd_source_msg_id = potd_row[
                 cfg.Config.config["potd_sheet_message_id_col"]
             ]
@@ -240,8 +237,6 @@ class Potd(Cog):
                 cfg.Config.config["potd_channel"]
             ).fetch_message(potd_source_msg_id)
             await potd_source_msg.edit(embed=potd_source)
-        except Exception:
-            pass
 
     def schedule_potd(self, mode=None):
         self.bot.loop.create_task(self.check_potd(mode))
@@ -265,8 +260,8 @@ class Potd(Cog):
             .get("values", [])
         )
         try:
-            i = int(potds[0][0]) - int(potd_id)
-        except Exception:
+            i = int(potds[0][0]) - potd_id
+        except ValueError:
             return "Invalid entry (A2) in spreadsheet! "
         potd_row = potds[i]
 
@@ -278,12 +273,10 @@ class Potd(Cog):
         except Exception:
             return "Day not recognized. "
         for curator in curators:
-            try:
+            with contextlib.suppress(Exception):
                 if curator[4] == day:
                     mentions += f"<@{curator[0]}> "
                     r_list.append(curator)
-            except Exception:
-                pass
         if urgent:
             return f'{mentions}<@&{cfg.Config.config["problem_curator_role"]}> '
         if mentions == "":
@@ -292,12 +285,10 @@ class Potd(Cog):
         # Searches for curator whose last curation on this day of the week was longest ago.
         i += 7
         while (i < len(potds)) and (len(r_list) > 1):
-            try:
+            with contextlib.suppress(Exception):
                 for curator in r_list:
                     if curator[0] == self.curator_id(curators, potds[i][3]):
                         r_list.remove(curator)
-            except Exception:
-                pass
             i += 7
         return f"<@{r_list[0][0]}> "
 
@@ -358,14 +349,15 @@ class Potd(Cog):
 
         # Check today's potd
         if mode is None:
-            next = datetime.now()
-            date = next.strftime("%d %b %Y")
+            time_for_date = datetime.now()
+            date = time_for_date.strftime("%d %b %Y")
             soon = [
-                (next + timedelta(days=i)).strftime("%d %b %Y") for i in range(1, 4)
+                (time_for_date + timedelta(days=i)).strftime("%d %b %Y")
+                for i in range(1, 4)
             ]
         else:
-            next = datetime.now() + timedelta(hours=mode)
-            date = next.strftime("%d %b %Y")
+            time_for_date = datetime.now() + timedelta(hours=mode)
+            date = time_for_date.strftime("%d %b %Y")
             soon = [date]
         if date[0] == "0":
             date = date[1:]
@@ -464,158 +456,153 @@ class Potd(Cog):
     @Cog.listener()
     async def on_message(self, message: discord.Message):
         if (
-            message.channel.id == self.listening_in_channel
-            and int(message.author.id) == cfg.Config.config["paradox_id"]
+            message.channel.id != self.listening_in_channel
+            or int(message.author.id) != cfg.Config.config["paradox_id"]
         ):
-            # m = await message.channel.send(
-            #     '{} \nRate this problem with `-rate {} <rating>` and check its user difficulty rating with `-rating {}`'.format(
-            #         self.to_send, self.requested_number, self.requested_number))
-            self.listening_in_channel = -1  # Prevent reset
-            source_msg = await message.channel.send(embed=self.to_send)
-            await source_msg.add_reaction("👍")
-            if self.late:
-                await source_msg.add_reaction("⏰")
+            return
+        # m = await message.channel.send(
+        #     '{} \nRate this problem with `-rate {} <rating>` and check its user difficulty rating with `-rating {}`'.format(
+        #         self.to_send, self.requested_number, self.requested_number))
+        self.listening_in_channel = -1  # Prevent reset
+        source_msg = await message.channel.send(embed=self.to_send)
+        await source_msg.add_reaction("👍")
+        if self.late:
+            await source_msg.add_reaction("⏰")
 
-            if message.channel.id == cfg.Config.config["potd_channel"]:
-                # record the ID of the source_msg if it is in POTD channel
-                # get the row and column to update
-                column = openpyxl.utils.get_column_letter(
-                    cfg.Config.config["potd_sheet_message_id_col"] + 1
+        if message.channel.id == cfg.Config.config["potd_channel"]:
+            # record the ID of the source_msg if it is in POTD channel
+            # get the row and column to update
+            column = openpyxl.utils.get_column_letter(
+                cfg.Config.config["potd_sheet_message_id_col"] + 1
+            )
+            reply = (
+                cfg.Config.service.spreadsheets()
+                .values()
+                .get(spreadsheetId=cfg.Config.config["potd_sheet"], range=POTD_RANGE)
+                .execute()
+            )
+            values = reply.get("values", [])
+            current_potd = int(
+                values[0][0]
+            )  # this will be the top left cell which indicates the latest added potd
+            row = (
+                current_potd - self.requested_number + 2
+            )  # this gets the row requested
+            # update the source_msg in the sheet
+            request = (
+                cfg.Config.service.spreadsheets()
+                .values()
+                .update(
+                    spreadsheetId=cfg.Config.config["potd_sheet"],
+                    range=f"{column}{row}",
+                    valueInputOption="RAW",
+                    body={
+                        "range": f"{column}{row}",
+                        "values": [[str(source_msg.id)]],
+                    },
                 )
-                reply = (
-                    cfg.Config.service.spreadsheets()
-                    .values()
-                    .get(
-                        spreadsheetId=cfg.Config.config["potd_sheet"], range=POTD_RANGE
-                    )
-                    .execute()
-                )
-                values = reply.get("values", [])
-                current_potd = int(
-                    values[0][0]
-                )  # this will be the top left cell which indicates the latest added potd
-                row = (
-                    current_potd - self.requested_number + 2
-                )  # this gets the row requested
-                # update the source_msg in the sheet
-                request = (
-                    cfg.Config.service.spreadsheets()
-                    .values()
-                    .update(
-                        spreadsheetId=cfg.Config.config["potd_sheet"],
-                        range=f"{column}{row}",
-                        valueInputOption="RAW",
-                        body={
-                            "range": f"{column}{row}",
-                            "values": [[str(source_msg.id)]],
-                        },
-                    )
-                )
-                response = request.execute()
+            )
+            response = request.execute()
 
-                # record the link to rendered image if it is in POTD channel
-                # get the row and column to update
-                column = openpyxl.utils.get_column_letter(
-                    cfg.Config.config["potd_sheet_image_link_col"] + 1
+            # record the link to rendered image if it is in POTD channel
+            # get the row and column to update
+            column = openpyxl.utils.get_column_letter(
+                cfg.Config.config["potd_sheet_image_link_col"] + 1
+            )
+            reply = (
+                cfg.Config.service.spreadsheets()
+                .values()
+                .get(spreadsheetId=cfg.Config.config["potd_sheet"], range=POTD_RANGE)
+                .execute()
+            )
+            values = reply.get("values", [])
+            current_potd = int(
+                values[0][0]
+            )  # this will be the top left cell which indicates the latest added potd
+            row = (
+                current_potd - self.requested_number + 2
+            )  # this gets the row requested
+            # update the source_msg in the sheet
+            request = (
+                cfg.Config.service.spreadsheets()
+                .values()
+                .update(
+                    spreadsheetId=cfg.Config.config["potd_sheet"],
+                    range=f"{column}{row}",
+                    valueInputOption="RAW",
+                    body={
+                        "range": f"{column}{row}",
+                        "values": [[str(message.attachments[0].proxy_url)]],
+                    },
                 )
-                reply = (
-                    cfg.Config.service.spreadsheets()
-                    .values()
-                    .get(
-                        spreadsheetId=cfg.Config.config["potd_sheet"], range=POTD_RANGE
-                    )
-                    .execute()
+            )
+            response = request.execute()
+
+        bot_log = self.bot.get_channel(cfg.Config.config["log_channel"])
+
+        ping_msg = None
+        if self.ping_daily:
+            r = self.bot.get_guild(cfg.Config.config["mods_guild"]).get_role(
+                cfg.Config.config["potd_role"]
+            )
+            await r.edit(mentionable=True)
+            ping_msg = await message.channel.send(
+                f'<@&{cfg.Config.config["potd_role"]}>'
+            )
+            await r.edit(mentionable=False)
+
+            if self.enable_dm:
+                bot_spam = self.bot.get_channel(cfg.Config.config["bot_spam_channel"])
+                potd_discussion_channel = self.bot.get_channel(
+                    cfg.Config.config["potd_discussion_channel"]
                 )
-                values = reply.get("values", [])
-                current_potd = int(
-                    values[0][0]
-                )  # this will be the top left cell which indicates the latest added potd
-                row = (
-                    current_potd - self.requested_number + 2
-                )  # this gets the row requested
-                # update the source_msg in the sheet
-                request = (
-                    cfg.Config.service.spreadsheets()
-                    .values()
-                    .update(
-                        spreadsheetId=cfg.Config.config["potd_sheet"],
-                        range=f"{column}{row}",
-                        valueInputOption="RAW",
-                        body={
-                            "range": f"{column}{row}",
-                            "values": [[str(message.attachments[0].proxy_url)]],
-                        },
-                    )
+
+                ping_embed = discord.Embed(
+                    title=f"POTD {self.latest_potd} has been posted: ",
+                    description=f"{potd_discussion_channel.mention}\n{message.jump_url}",
+                    colour=0xDCDCDC,
                 )
-                response = request.execute()
+                for field in self.to_send.to_dict()["fields"]:
+                    ping_embed.add_field(name=field["name"], value=field["value"])
+                if message.attachments == []:
+                    await bot_log.send("No attachments found! ")
+                else:
+                    ping_embed.set_image(url=message.attachments[0].url)
+                    dm_failed = []
+                    for id in self.dm_list:
+                        user = self.bot.get_user(int(id))
+                        try:
+                            await user.send(embed=ping_embed)
+                        except Exception:
+                            dm_failed.append(id)
+                    if dm_failed != []:
+                        msg = "Remember to turn on DMs from this server to get private notifications! "
+                        for id in dm_failed:
+                            msg += f"<@{id}> "
+                        await bot_spam.send(msg, embed=ping_embed)
 
-            bot_log = self.bot.get_channel(cfg.Config.config["log_channel"])
+        if message.channel.id == cfg.Config.config["potd_channel"]:
+            try:
+                await message.publish()
+                await source_msg.publish()
+            except Exception:
+                await bot_log.send("Failed to publish!")
 
-            ping_msg = None
-            if self.ping_daily:
-                r = self.bot.get_guild(cfg.Config.config["mods_guild"]).get_role(
-                    cfg.Config.config["potd_role"]
-                )
-                await r.edit(mentionable=True)
-                ping_msg = await message.channel.send(
-                    "<@&{}>".format(cfg.Config.config["potd_role"])
-                )
-                await r.edit(mentionable=False)
-
-                if self.enable_dm:
-                    bot_spam = self.bot.get_channel(
-                        cfg.Config.config["bot_spam_channel"]
-                    )
-                    potd_discussion_channel = self.bot.get_channel(
-                        cfg.Config.config["potd_discussion_channel"]
-                    )
-
-                    ping_embed = discord.Embed(
-                        title=f"POTD {self.latest_potd} has been posted: ",
-                        description=f"{potd_discussion_channel.mention}\n{message.jump_url}",
-                        colour=0xDCDCDC,
-                    )
-                    for field in self.to_send.to_dict()["fields"]:
-                        ping_embed.add_field(name=field["name"], value=field["value"])
-                    if message.attachments == []:
-                        await bot_log.send("No attachments found! ")
-                    else:
-                        ping_embed.set_image(url=message.attachments[0].url)
-                        dm_failed = []
-                        for id in self.dm_list:
-                            user = self.bot.get_user(int(id))
-                            try:
-                                await user.send(embed=ping_embed)
-                            except Exception:
-                                dm_failed.append(id)
-                        if dm_failed != []:
-                            msg = "Remember to turn on DMs from this server to get private notifications! "
-                            for id in dm_failed:
-                                msg += f"<@{id}> "
-                            await bot_spam.send(msg, embed=ping_embed)
-
-            if message.channel.id == cfg.Config.config["potd_channel"]:
-                try:
-                    await message.publish()
-                    await source_msg.publish()
-                except Exception:
-                    await bot_log.send("Failed to publish!")
-
-            cursor = cfg.db.cursor()
-            if ping_msg is None:
-                cursor.execute(
-                    f"""INSERT INTO potd_info (potd_id, problem_msg_id, source_msg_id, ping_msg_id) VALUES
+        cursor = cfg.db.cursor()
+        if ping_msg is None:
+            cursor.execute(
+                f"""INSERT INTO potd_info (potd_id, problem_msg_id, source_msg_id, ping_msg_id) VALUES
                     ('{self.latest_potd}', '{message.id}', '{source_msg.id}', '')"""
-                )
-            else:
-                cursor.execute(
-                    f"""INSERT INTO potd_info (potd_id, problem_msg_id, source_msg_id, ping_msg_id) VALUES
+            )
+        else:
+            cursor.execute(
+                f"""INSERT INTO potd_info (potd_id, problem_msg_id, source_msg_id, ping_msg_id) VALUES
                     ('{self.latest_potd}', '{message.id}', '{source_msg.id}', '{ping_msg.id}')"""
-                )
-            cfg.db.commit()
+            )
+        cfg.db.commit()
 
-            await self.reset_potd()
-            await bot_log.send("POTD execution successful.")
+        await self.reset_potd()
+        await bot_log.send("POTD execution successful.")
 
     @commands.command(
         aliases=["potd"], brief="Displays the potd with the provided number. "
@@ -970,8 +957,8 @@ class Potd(Cog):
             )
             return
         else:
-            if template == "IMO":
-                difficulty_bounds = [[5, 7], [7, 9], [9, 11], [5, 7], [7, 9], [9, 11]]
+            if template == "AFMO":  # easter egg
+                difficulty_bounds = [[12, "T"], [12, "T"], [12, "T"], [13, "T"]]
             elif template == "AMO":
                 difficulty_bounds = [
                     [2, 3],
@@ -989,16 +976,6 @@ class Potd(Cog):
                 difficulty_bounds = [[1, 2], [1, 2], [2, 3], [2, 3], [3, 5], [3, 6]]
             elif template == "BMO2":
                 difficulty_bounds = [[3, 4], [4, 5], [5, 6], [6, 7]]
-            elif template == "IGO":
-                difficulty_bounds = [[5, 6], [6, 7], [7, 8], [8, 9], [9, 10]]
-            elif template == "NZMO2":
-                difficulty_bounds = [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6]]
-            elif template == "SMO2":
-                difficulty_bounds = [[4, 5], [5, 6], [6, 7], [7, 8], [8, 9]]
-            elif template == "USAMO":
-                difficulty_bounds = [[5, 7], [7, 9], [9, 11], [5, 7], [7, 9], [9, 11]]
-            elif template == "USAJMO":
-                difficulty_bounds = [[3, 5], [5, 7], [7, 8], [3, 5], [5, 7], [7, 8]]
             elif template == "CHINA":
                 difficulty_bounds = [
                     [7, 8],
@@ -1008,9 +985,16 @@ class Potd(Cog):
                     [8, 10],
                     [10, 12],
                 ]
-            elif template == "AFMO":  # easter egg
-                difficulty_bounds = [[12, "T"], [12, "T"], [12, "T"], [13, "T"]]
-
+            elif template == "IGO":
+                difficulty_bounds = [[5, 6], [6, 7], [7, 8], [8, 9], [9, 10]]
+            elif template in {"IMO", "USAMO"}:
+                difficulty_bounds = [[5, 7], [7, 9], [9, 11], [5, 7], [7, 9], [9, 11]]
+            elif template == "NZMO2":
+                difficulty_bounds = [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6]]
+            elif template == "SMO2":
+                difficulty_bounds = [[4, 5], [5, 6], [6, 7], [7, 8], [8, 9]]
+            elif template == "USAJMO":
+                difficulty_bounds = [[3, 5], [5, 7], [7, 8], [3, 5], [5, 7], [7, 8]]
         # SMO2 seems to have an unspoken rule to start with geometry at P1 and nowhere else
         if template == "SMO2":
             genre_rule = ["G", "ACN", "ACN", "ACN", "ACN"]
@@ -1215,7 +1199,7 @@ class Potd(Cog):
         search_unsolved: bool,
     ):
         solved_potd = []
-        if search_unsolved is True:
+        if search_unsolved:
             get_solved_potd = self.get_potd_solved(ctx)
             get_read_potd = self.get_potd_read(ctx)
             solved_potd = get_solved_potd + get_read_potd
@@ -1909,12 +1893,9 @@ class Potd(Cog):
                         + "\n"
                     )
                 else:
-                    output_string += (
-                        "**D" + key + ":** " + f"{solved_by_difficulty[key]} " + "\n"
-                    )
-            if show_total == True:
+                    output_string += f"**D{key}:** {solved_by_difficulty[key]} \n"
+            if show_total:
                 output_string += f"(Total: {len(potd_list)}/{len(potd_rows)})"
-            await self.send_potd_solved(ctx, output_string)
         elif flag == "s":
             solved_by_genre = {"A": [], "C": [], "G": [], "N": []}
             for number in potd_list:
@@ -1956,20 +1937,15 @@ class Potd(Cog):
                         + "\n"
                     )
                 else:
-                    output_string += (
-                        "**" + key + ":** " + f"{solved_by_genre[key]} " + "\n"
-                    )
+                    output_string += f"**{key}:** {solved_by_genre[key]} \n"
             if show_total == True:
                 output_string += f"(Total: {len(potd_list)}/{len(potd_rows)})"
-            await self.send_potd_solved(ctx, output_string)
         else:
-            if show_total == True:
-                output_string = f"__**Your {adjective} POTD**__ \n{potd_list}" + "\n"
-            else:
-                output_string = f"__**Your {adjective} POTD**__ \n{potd_list}" + "\n"
+            output_string = f"__**Your {adjective} POTD**__ \n{potd_list}" + "\n"
             if show_total == True:
                 output_string += f"(Total: {len(potd_list)}/{len(potd_rows)})"
-            await self.send_potd_solved(ctx, output_string)
+
+        await self.send_potd_solved(ctx, output_string)
 
     def get_potd_solved(self, ctx):
         cursor = cfg.db.cursor()
@@ -2233,12 +2209,10 @@ class Potd(Cog):
         cfg.db.commit()
         for i in result:
             for j in i:
-                try:
+                with contextlib.suppress(Exception):
                     await self.bot.get_channel(
                         cfg.Config.config["potd_channel"]
                     ).get_partial_message(int(j)).delete()
-                except Exception:
-                    pass
         self.listening_in_channel = -1
 
     @commands.command(
@@ -2560,16 +2534,17 @@ class Potd(Cog):
         if len(criteria) == 1:
             temp = criteria[0].split("-")
             if len(temp) == 2:
-                try:
-                    min = int(temp[0])
-                    max = int(temp[1])
-                    if 0 <= min <= max <= 12:
+                with contextlib.suppress(ValueError):
+                    min_difficulty = int(temp[0])
+                    max_difficulty = int(temp[1])
+                    if 0 <= min_difficulty <= max_difficulty <= 12:
                         if result[1] == "xxxxxxxxxxxxxxxx":
                             result[1] = "                "
                         temp = "".join(
                             "xxxx"
                             if result[1][4 * i] == "x"
-                            else str(min).ljust(2) + str(max).ljust(2)
+                            else str(min_difficulty).ljust(2)
+                            + str(max_difficulty).ljust(2)
                             for i in range(4)
                         )
                         cursor.execute(
@@ -2584,9 +2559,6 @@ class Potd(Cog):
                         cfg.db.rollback()
                         await ctx.send(f"`{criteria[0]}` Invalid difficulty range! ")
                     return
-                except ValueError:
-                    pass
-
         remaining = ["a", "c", "g", "n"]
         for i in criteria:
             if i in remaining:
@@ -2609,9 +2581,9 @@ class Potd(Cog):
                     await ctx.send(f"`{i}` Invalid input format! ")
                     return
                 try:
-                    min = int(criterion[0])
-                    max = int(criterion[1])
-                    if not (0 <= min <= max <= 12):
+                    min_difficulty = int(criterion[0])
+                    max_difficulty = int(criterion[1])
+                    if not (0 <= min_difficulty <= max_difficulty <= 12):
                         cfg.db.rollback()
                         await ctx.send(f"`{i}` Invalid difficulty range! ")
                         return
@@ -2623,7 +2595,7 @@ class Potd(Cog):
                 index = ["a", "c", "g", "n"].index(i[0])
                 result[
                     1
-                ] = f"{result[1][:4*index]}{str(min).ljust(2)}{str(max).ljust(2)}{result[1][4*index+4:]}"
+                ] = f"{result[1][:4*index]}{str(min_difficulty).ljust(2)}{str(max_difficulty).ljust(2)}{result[1][4*index+4:]}"
 
         cursor.execute(
             f"UPDATE potd_ping2 SET criteria = '{result[1]}' WHERE user_id = '{ctx.author.id}'"

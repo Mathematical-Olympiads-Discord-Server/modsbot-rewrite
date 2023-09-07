@@ -61,44 +61,30 @@ def from_list(s):
 
 
 def update_suggestions():
-    # ===Suggestions===
+    upload_suggestion_list(suggestion_list, "Suggestions")
+    upload_suggestion_list(tech_suggestion_list, "Tech Suggestions")
+
+
+def upload_suggestion_list(suggestion_list_var, sheet_name):
     # Sort the list
-    suggestion_list.sort(key=operator.attrgetter("id"))
-    suggestion_list.sort(key=lambda x: statuses.inverse[x.status])
+    suggestion_list_var.sort(key=operator.attrgetter("id"))
+    suggestion_list_var.sort(key=lambda x: statuses.inverse[x.status])
 
     # Clear the sheet
     cfg.Config.service.spreadsheets().values().clear(
-        spreadsheetId=cfg.Config.config["suggestion_sheet"], range="Suggestions!A2:J"
+        spreadsheetId=cfg.Config.config["suggestion_sheet"], range=f"{sheet_name}!A2:J"
     ).execute()
     # Write new data
-    r_body = {"values": [s.to_list() for s in suggestion_list]}
+    result = {"values": [s.to_list() for s in suggestion_list_var]}
     cfg.Config.service.spreadsheets().values().append(
         spreadsheetId=cfg.Config.config["suggestion_sheet"],
-        range="Suggestions!A1",
+        range=f"{sheet_name}!A1",
         valueInputOption="RAW",
         insertDataOption="INSERT_ROWS",
-        body=r_body,
+        body=result,
     ).execute()
 
-    # ===Tech Suggestions===
-    # Sort the list
-    tech_suggestion_list.sort(key=operator.attrgetter("id"))
-    tech_suggestion_list.sort(key=lambda x: statuses.inverse[x.status])
-
-    # Clear the sheet
-    cfg.Config.service.spreadsheets().values().clear(
-        spreadsheetId=cfg.Config.config["suggestion_sheet"],
-        range="Tech Suggestions!A2:J",
-    ).execute()
-    # Write new data
-    r_body = {"values": [s.to_list() for s in tech_suggestion_list]}
-    cfg.Config.service.spreadsheets().values().append(
-        spreadsheetId=cfg.Config.config["suggestion_sheet"],
-        range="Tech Suggestions!A1",
-        valueInputOption="RAW",
-        insertDataOption="INSERT_ROWS",
-        body=r_body,
-    ).execute()
+    return result
 
 
 class Suggestion:
