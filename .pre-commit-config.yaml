@@ -23,4 +23,4 @@ repos:
   rev: v1.8.0
   hooks:
   - id: sourcery
-    args: [--no-summary]
+    args: [--no-summary, --fix]
