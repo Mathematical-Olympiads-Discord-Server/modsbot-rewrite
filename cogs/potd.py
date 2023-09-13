@@ -2277,11 +2277,11 @@ class Potd(Cog):
 
         await self.delete_potd(ctx, number)
         await self.potd_display(ctx, number)
-    
+
     def format(self, rating):
         if rating >= 10:
-            return f'd||`{rating}`||'
-        return f'd||`{rating} `||'
+            return f"d||`{rating}`||"
+        return f"d||`{rating} `||"
 
     @commands.command(aliases=["rate"], brief="Rates a potd based on difficulty. ")
     async def potd_rate(self, ctx, potd: int, rating: int, overwrite: bool = False):
@@ -2353,7 +2353,9 @@ class Potd(Cog):
                 embed = discord.Embed()
                 embed.add_field(
                     name=f"Full list of community rating for POTD {potd}",
-                    value="\n".join([f"<@!{row[2]}>: {self.format(row[3])}" for row in result]),
+                    value="\n".join(
+                        f"<@!{row[2]}>: {self.format(row[3])}" for row in result
+                    ),
                 )
                 await ctx.send(embed=embed)
 
