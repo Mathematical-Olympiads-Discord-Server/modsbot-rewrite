@@ -1,5 +1,5 @@
+import contextlib
 import logging
-import math
 import re
 import sqlite3
 import threading
@@ -7,15 +7,13 @@ import time
 import traceback
 
 import discord
+import matplotlib
 import schedule
 from discord.ext import commands
 from ruamel import yaml
 
 cfgfile = open("config/config.yml")
 config = yaml.safe_load(cfgfile)
-
-import matplotlib
-import matplotlib.pyplot as plt
 
 matplotlib.use("agg")
 logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
@@ -42,9 +40,9 @@ class MODSBot(commands.Bot):
 
     async def on_ready(self):
         self.logger.info("Connected to Discord")
-        self.logger.info("Guilds  : {}".format(len(self.guilds)))
-        self.logger.info("Users   : {}".format(len(set(self.get_all_members()))))
-        self.logger.info("Channels: {}".format(len(list(self.get_all_channels()))))
+        self.logger.info(f"Guilds  : {len(self.guilds)}")
+        self.logger.info(f"Users   : {len(set(self.get_all_members()))}")
+        self.logger.info(f"Channels: {len(list(self.get_all_channels()))}")
         await self.set_presence("MODSBot: use -help")
 
         # Set up some stuff in data/modsdb.db
@@ -105,9 +103,9 @@ class MODSBot(commands.Bot):
             try:
                 await self.load_extension(cog)
             except Exception:
-                self.logger.exception("Failed to load cog {}.".format(cog))
+                self.logger.exception(f"Failed to load cog {cog}.")
             else:
-                self.logger.info("Loaded cog {}.".format(cog))
+                self.logger.info(f"Loaded cog {cog}.")
 
         MODS_SERVER = discord.Object(id=self.config["mods_guild"])
         self.tree.copy_global_to(guild=MODS_SERVER)
@@ -126,9 +124,9 @@ class MODSBot(commands.Bot):
             search_str = message.content
             for i in message.embeds:
                 if i.title != i.Empty:
-                    search_str += " " + i.title
+                    search_str += f" {i.title}"
                 if i.description != i.Empty:
-                    search_str += " " + i.description
+                    search_str += f" {i.description}"
             if re.search("discord", search_str, re.I) and re.search(
                 "nitro", search_str, re.I
             ):
@@ -138,8 +136,11 @@ class MODSBot(commands.Bot):
             spam = True
 
         if spam:
-            try:
-                log_message = f"Muted {message.author.mention} ({message.author.id}) for spam:\n```{message.content}```"
+            with contextlib.suppress(Exception):
+                log_message = (
+                    f"Muted {message.author.mention} ({message.author.id}) "
+                    f"for spam:\n```{message.content}```"
+                )
                 await message.delete()
                 await message.author.add_roles(
                     message.guild.get_role(self.config["muted_role"])
@@ -150,8 +151,6 @@ class MODSBot(commands.Bot):
                 await message.guild.get_channel(self.config["warn_channel"]).send(
                     log_message
                 )
-            except Exception:
-                pass
             return
 
         if message.author.id in self.blacklist:
@@ -166,24 +165,23 @@ class MODSBot(commands.Bot):
         log_channel = self.get_channel(self.config["log_channel"])
 
         if isinstance(exception, commands.CommandInvokeError):
-            # all exceptions are wrapped in CommandInvokeError if they are not a subclass of CommandError
-            # you can access the original exception with .original
+            # all exceptions are wrapped in CommandInvokeError if they are not a
+            # subclass of CommandError you can access the original exception with
+            # .original
             exception: commands.CommandInvokeError
             if isinstance(exception.original, discord.Forbidden):
                 # permissions error
-                try:
-                    await ctx.send("Permissions error: `{}`".format(exception))
-                except discord.Forbidden:
-                    # we can't send messages in that channel
-                    pass
+                with contextlib.suppress(
+                    discord.Forbidden  # we can't send messages in that channel
+                ):
+                    await ctx.send(f"Permissions error: `{exception}`")
                 return
 
             elif isinstance(exception.original, discord.HTTPException):
-                try:
+                with contextlib.suppress(
+                    discord.Forbidden  # we can't send messages in that channel
+                ):
                     await ctx.send("Sorry, I can't send that.")
-                except discord.Forbidden:
-                    pass
-
                 return
 
             # Print to log then notify developers
@@ -193,8 +191,8 @@ class MODSBot(commands.Bot):
                         type(exception), exception, exception.__traceback__
                     )
                 )
-            except RecursionError:
-                raise exception
+            except RecursionError as e:
+                raise exception from e
 
             self.logger.error(log_message)
             try:
@@ -203,11 +201,8 @@ class MODSBot(commands.Bot):
                 ):  # send log messages in chunks to prevent hitting 2k char limit
                     await log_channel.send(f"```{log_message[i:i+1900]}```")
             except Exception:
-                try:
+                with contextlib.suppress(Exception):
                     await log_channel.send("Failed to send error message.")
-                except Exception:
-                    pass
-
             return
 
         if isinstance(exception, commands.CheckFailure):
@@ -215,7 +210,8 @@ class MODSBot(commands.Bot):
         elif isinstance(exception, commands.CommandOnCooldown):
             exception: commands.CommandOnCooldown
             await ctx.send(
-                f"You're going too fast! Try again in {exception.retry_after:.5f} seconds."
+                f"You're going too fast! "
+                f"Try again in {exception.retry_after:.5f} seconds."
             )
 
         elif isinstance(exception, commands.CommandNotFound):
@@ -224,30 +220,27 @@ class MODSBot(commands.Bot):
 
         elif isinstance(exception, commands.UserInputError):
             error = " ".join(exception.args)
-            error_data = re.findall(
-                'Converting to "(.*)" failed for parameter "(.*)"\.', error
-            )
-            if not error_data:
-                await ctx.send("Huh? {}".format(" ".join(exception.args)))
-            else:
+            if error_data := re.findall(
+                r'Converting to "(.*)" failed for parameter "(.*)"\.', error
+            ):
                 await ctx.send(
                     "Huh? I thought `{1}` was supposed to be a `{0}`...".format(
                         *error_data[0]
                     )
                 )
+            else:
+                await ctx.send(f'Huh? {" ".join(exception.args)}')
         else:
             info = traceback.format_exception(
                 type(exception), exception, exception.__traceback__, chain=False
             )
-            log_message = "Unhandled command exception - {}".format("".join(info))
+            log_message = f'Unhandled command exception - {"".join(info)}'
             self.logger.error(log_message)
             try:
                 await log_channel.send(f"```{log_message}```")
             except Exception:
-                try:
+                with contextlib.suppress(Exception):
                     await log_channel.send("Failed to send error message.")
-                except Exception:
-                    pass
 
 
 def executor():

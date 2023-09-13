@@ -1,8 +1,8 @@
 import ast
+import contextlib
 import datetime as dt
 import logging
 import math
-import os
 import pickle
 from datetime import datetime
 
@@ -25,12 +25,9 @@ def sigmoid(x):
 
 
 def weight(chars, m_date, last_m, now_ts):
-    if last_m is None:
-        interval = 100
-    else:
-        interval = m_date - last_m
+    interval = 100 if last_m is None else m_date - last_m
     interval = abs(interval)
-    chars = chars if not chars == 0 else 1
+    chars = chars if chars != 0 else 1
     # print(interval)
     try:
         return (
@@ -44,18 +41,17 @@ def weight(chars, m_date, last_m, now_ts):
 
 
 def moving_avg(data, interval):
-    moving_averages = []
-
     # Initialize the rolling sum
     rolling_sum = sum(data[:interval])
-    moving_averages.append(rolling_sum / interval)
-
+    moving_averages = [rolling_sum / interval]
     # Loop over the remaining elements in the array
     for i in range(interval, len(data)):
-        # Add the current element to the rolling sum and subtract the element interval positions earlier
+        # Add the current element to the rolling sum and subtract the element interval
+        # positions earlier
         rolling_sum += data[i] - data[i - interval]
 
-        # Calculate the moving average for the current interval and append it to the list of moving averages
+        # Calculate the moving average for the current interval and append it to the
+        # list of moving averages
         moving_averages.append(rolling_sum / interval)
 
     # Return the list of moving averages
@@ -77,8 +73,8 @@ class Activity(Cog):
         ):  # Ignore messages from bots and DMs
             cursor = cfg.db.cursor()
             cursor.execute(
-                "INSERT INTO messages (discord_message_id, discord_channel_id, discord_user_id, message_length, "
-                "message_date) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO messages (discord_message_id, discord_channel_id, "
+                "discord_user_id, message_length, message_date) VALUES (?, ?, ?, ?, ?)",
                 (
                     message.id,
                     message.channel.id,
@@ -105,8 +101,8 @@ class Activity(Cog):
                     today_messages[user] += activity_dict[user]
                 else:
                     today_messages[user] = activity_dict[user]
-            await ctx.send("Done!: New activity: ```{}```".format(today_messages))
-        except:
+            await ctx.send(f"Done!: New activity: ```{today_messages}```")
+        except Exception:
             await ctx.send("Something went wrong! ")
 
     @commands.command()
@@ -118,7 +114,7 @@ class Activity(Cog):
     def f_dump(self):
         if self.new_message:
             pickle.dump(today_messages, open("data/activity_dump.p", "wb+"))
-            self.logger.info("Dumped activity: {}".format(str(today_messages)))
+            self.logger.info(f"Dumped activity: {str(today_messages)}")
         else:
             self.logger.info("No new messages. ")
         self.new_message = False
@@ -130,7 +126,7 @@ class Activity(Cog):
         today_messages.clear()
         for i in x:
             today_messages[i] = x[i]
-        await ctx.send("Loaded: ```{}```".format(today_messages))
+        await ctx.send(f"Loaded: ```{today_messages}```")
 
     @commands.command(aliases=["ad", "as"], brief="Show my activity score.")
     async def activity_score(self, ctx, other: discord.User = None):
@@ -138,7 +134,7 @@ class Activity(Cog):
         to_check = ctx.author if other is None else other
         cursor = cfg.db.cursor()
         cursor.execute(
-            f"""SELECT message_date, message_length 
+            f"""SELECT message_date, message_length
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
@@ -153,7 +149,7 @@ class Activity(Cog):
         last_message_time = -1
         score = 0
 
-        now = datetime.utcnow().timestamp()
+        now = datetime.now(dt.timezone.utc).timestamp()
         for message in tss:
             if last_message_time != -1:
                 score += weight(message[1], message[0], last_message_time, now)
@@ -170,7 +166,7 @@ class Activity(Cog):
     ):
         cursor = cfg.db.cursor()
         cursor.execute(
-            f"""SELECT discord_user_id, message_date, message_length 
+            f"""SELECT discord_user_id, message_date, message_length
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(30 - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
@@ -184,18 +180,16 @@ class Activity(Cog):
         last_message = {}
         activity = {}
 
-        now = datetime.utcnow().timestamp()
+        now = datetime.now(dt.timezone.utc).timestamp()
         for message in tss:
             if message[0] in activity:
                 activity[message[0]] += weight(
                     message[2], message[1], last_message[message[0]], now
                 )
-                last_message[message[0]] = message[1]
             else:
                 activity[message[0]] = weight(message[2], message[1], None, now)
-                last_message[message[0]] = message[1]
-
-        actives_today = set([i for i in activity if activity[i] >= threshold])
+            last_message[message[0]] = message[1]
+        actives_today = {i for i in activity if activity[i] >= threshold}
         print([i for i in activity if activity[i] >= threshold])
         print(len([i for i in activity if activity[i] >= threshold]))
 
@@ -207,33 +201,23 @@ class Activity(Cog):
             if member.id in actives_today:
                 continued_actives.add(member.id)
             else:
-                try:
+                with contextlib.suppress(Exception):
                     await member.remove_roles(active_role)
-                except:
-                    pass
                 removed_actives.add(member.id)
 
         for id in actives_today:
             if id not in continued_actives:
-                try:
+                with contextlib.suppress(Exception):
                     await ctx.guild.get_member(id).add_roles(active_role)
-                except:
-                    pass
                 new_actives.add(id)
 
         ca = (
             ", ".join([str(x) for x in continued_actives])
-            if len(continued_actives) > 0
+            if continued_actives
             else "None"
         )
-        ra = (
-            ", ".join([str(x) for x in removed_actives])
-            if len(removed_actives) > 0
-            else "None"
-        )
-        na = (
-            ", ".join([str(x) for x in new_actives]) if len(new_actives) > 0 else "None"
-        )
+        ra = ", ".join([str(x) for x in removed_actives]) if removed_actives else "None"
+        na = ", ".join([str(x) for x in new_actives]) if new_actives else "None"
         print(f"Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```")
         await ctx.guild.get_channel(cfg.Config.config["log_channel"]).send(
             f"Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```"
@@ -250,10 +234,10 @@ class Activity(Cog):
     )
     @commands.cooldown(1, 10, BucketType.user)
     async def activity_top(self, ctx, *, flags: ActtopFlags):
-        interval = flags.interval if flags.interval < 30 else 30
+        interval = min(flags.interval, 30)
         cursor = cfg.db.cursor()
         cursor.execute(
-            f"""SELECT discord_user_id, message_date, message_length 
+            f"""SELECT discord_user_id, message_date, message_length
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
@@ -267,17 +251,15 @@ class Activity(Cog):
         last_message = {}
         score = {}
 
-        now = datetime.utcnow().timestamp()
+        now = datetime.now(dt.timezone.utc).timestamp()
         for message in tss:
             if message[0] in score:
                 score[message[0]] += weight(
                     message[2], message[1], last_message[message[0]], now
                 )
-                last_message[message[0]] = message[1]
             else:
                 score[message[0]] = weight(message[2], message[1], None, now)
-                last_message[message[0]] = message[1]
-
+            last_message[message[0]] = message[1]
         scores = [(x, int(score[x])) for x in score]
         scores.sort(key=lambda x: -x[1])
 
@@ -324,10 +306,10 @@ class Activity(Cog):
     )
     @commands.cooldown(1, 10, BucketType.user)
     async def channel_top(self, ctx, *, flags: ChtopFlags):
-        interval = flags.interval if flags.interval < 30 else 30
+        interval = min(flags.interval, 30)
         cursor = cfg.db.cursor()
         cursor.execute(
-            f"""SELECT discord_channel_id, message_date, message_length 
+            f"""SELECT discord_channel_id, message_date, message_length
         FROM messages
         WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
@@ -338,17 +320,15 @@ class Activity(Cog):
         last_message = {}
         score = {}
 
-        now = datetime.utcnow().timestamp()
+        now = datetime.now(dt.timezone.utc).timestamp()
         for message in tss:
             if message[0] in score:
                 score[message[0]] += weight(
                     message[2], message[1], last_message[message[0]], now
                 )
-                last_message[message[0]] = message[1]
             else:
                 score[message[0]] = weight(message[2], message[1], None, now)
-                last_message[message[0]] = message[1]
-
+            last_message[message[0]] = message[1]
         scores = [(x, int(score[x])) for x in score]
         scores.sort(key=lambda x: -x[1])
 
@@ -371,9 +351,11 @@ class Activity(Cog):
                 print(j)
                 pageMin = 20 * j
                 pageMax = min(20 * j + 20, len(scores))
-                page = discord.Embed(
-                    title=f"Top channels by activity score ({interval} day) - Page {j + 1}"
+                title = (
+                    f"Top channels by activity score ({interval} day)"
+                    f" - Page {j + 1}"
                 )
+                page = discord.Embed(title=title)
                 lines = "\n".join(
                     [
                         f"`{i + 1}.` <#{scores[i][0]}>: `{scores[i][1]}`"
@@ -411,10 +393,9 @@ class Activity(Cog):
         epoch = dt.date(2019, 1, 11)  # This is when the server was created
         if interval is None:
             interval = (end - epoch) / delta
-        if interval > (end - epoch) / delta:
-            interval = (end - epoch) / delta
+        interval = min(interval, (end - epoch) / delta)
         if interval < 1:
-            await ctx.send(f"Interval must be at least 1.")
+            await ctx.send("Interval must be at least 1.")
             return
 
         if user is None:
@@ -425,7 +406,8 @@ class Activity(Cog):
             f"""
         SELECT date(message_date) as date, COUNT(*) AS number
         FROM messages
-        WHERE date(message_date) BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
+        WHERE date(message_date)
+        BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
         and discord_user_id = {user.id}
         GROUP BY discord_user_id, DATE(message_date)
@@ -488,7 +470,8 @@ class Activity(Cog):
         aliases=["sa"],
         brief="Show server/channel's activity graph.",
         help="`-server_activity`: show server's activity graph\n"
-        "`-server_activity --interval 60`: show server's activity graph for past 60 days\n"
+        "`-server_activity --interval 60`: show server's "
+        "activity graph for past 60 days\n"
         "`-server_activity --channel #lounge`: show lounge's activity graph\n"
         "`-server_activity --interval 60 --channel #lounge`: combine commands",
     )
@@ -506,38 +489,38 @@ class Activity(Cog):
         epoch = dt.date(2019, 1, 11)  # This is when the server was created
         if interval is None:
             interval = (end - epoch) / delta
-        if interval > (end - epoch) / delta:
-            interval = (end - epoch) / delta
+        interval = min(interval, (end - epoch) / delta)
         if interval < 1:
-            await ctx.send(f"Interval must be at least 1.")
+            await ctx.send("Interval must be at least 1.")
             return
 
-        if channel == None:
-            cursor = cfg.db.cursor()
+        cursor = cfg.db.cursor()
+        if channel is None:
             cursor.execute(
                 f"""
             SELECT date(message_date) as date, COUNT(*) AS number
             FROM messages
-            WHERE date(message_date) BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}" AND "{str(dt.date.today() + dt.timedelta(1))}"
+            WHERE date(message_date)
+            BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
+            AND "{str(dt.date.today() + dt.timedelta(1))}"
             GROUP BY DATE(message_date)
             ORDER BY DATE(message_date);
             """
             )
-            result = cursor.fetchall()
         else:
-            cursor = cfg.db.cursor()
             cursor.execute(
                 f"""
             SELECT date(message_date) as date, COUNT(*) AS number
             FROM messages
-            WHERE date(message_date) BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}" AND "{str(dt.date.today() + dt.timedelta(1))}"
+            WHERE date(message_date)
+            BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
+            AND "{str(dt.date.today() + dt.timedelta(1))}"
             AND discord_channel_id = {channel.id}
             GROUP BY DATE(message_date)
             ORDER BY DATE(message_date);
             """
             )
-            result = cursor.fetchall()
-
+        result = cursor.fetchall()
         plt.style.use("ggplot")
 
         start = end - (interval - 1) * delta
@@ -576,8 +559,8 @@ class Activity(Cog):
 
         plt.xlabel("Date")
         plt.ylabel("Messages")
-        if channel == None:
-            plt.title(f"MODS's Activity")
+        if channel is None:
+            plt.title("MODS's Activity")
         else:
             plt.title(f"{channel.name}'s Activity")
         plt.axhline(y=10, linewidth=1, color="r")

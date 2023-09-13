@@ -96,7 +96,7 @@ def create_databases(db_file_name: str) -> None:
             "run this script again."
         )
         return
-    conn = sqlite3.connect("data/" + db_file_name)
+    conn = sqlite3.connect(f"data/{db_file_name}")
     cursor = conn.cursor()
     for database_creation_command in DATABASES_TO_CREATE:
         cursor.execute(database_creation_command)
@@ -152,7 +152,7 @@ def write_token_file() -> None:
 
     token = input("Enter the bot token: ")
 
-    with open("config/" + token_file_name, "w") as token_file:
+    with open(f"config/{token_file_name}", "w") as token_file:
         token_file.write(token)
 
 
