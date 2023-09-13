@@ -2321,6 +2321,9 @@ class Potd(Cog):
         await self.delete_potd(ctx, number)
         await self.potd_display(ctx, number)
 
+    def format(self, rating):
+        return f"d||`{rating}`||" if rating >= 10 else f"d||`{rating} `||"
+
     @commands.command(aliases=["rate"], brief="Rates a potd based on difficulty. ")
     async def potd_rate(self, ctx, potd: int, rating: int, overwrite: bool = False):
         if rating < 0 or rating > 14:
@@ -2344,30 +2347,21 @@ class Potd(Cog):
             sql = "INSERT INTO ratings (prob, userid, rating) VALUES (?, ?, ?)"
             cursor.execute(sql, (potd, ctx.author.id, rating))
             cfg.db.commit()
-            if rating < 10:
-                await ctx.send(
-                    f"<@{ctx.author.id}> You have rated POTD {potd} d||{rating}  ||."
-                )
-            else:
-                await ctx.send(
-                    f"<@{ctx.author.id}> You have rated POTD {potd} d||{rating}||."
-                )
+            await ctx.send(
+                f"<@{ctx.author.id}> You have rated POTD {potd} {self.format(rating)}."
+            )
         elif overwrite:
             cursor.execute(
                 f"UPDATE ratings SET rating = {rating} WHERE idratings = {result[0]}"
             )
             cfg.db.commit()
-            if rating < 10:
-                await ctx.send(
-                    f"<@{ctx.author.id}> You have rated POTD {potd} d||{rating}  ||."
-                )
-            else:
-                await ctx.send(
-                    f"<@{ctx.author.id}> You have rated POTD {potd} d||{rating}||."
-                )
+            await ctx.send(
+                f"<@{ctx.author.id}> You have rated POTD {potd} {self.format(rating)}."
+            )
         else:
             await ctx.send(
-                f"<@{ctx.author.id}> You already rated this POTD d||{result[3]}  ||. "
+                f"<@{ctx.author.id}> You already rated this POTD "
+                "{self.format(result[3])}. "
                 "If you wish to overwrite append `True` to your previous message, "
                 f"like `-rate {potd} <rating> True` "
             )
@@ -2392,24 +2386,18 @@ class Potd(Cog):
         )
         cursor.execute(sql)
         if result := list(map(lambda x: list(x), cursor.fetchall())):
-            median = statistics.median([row[3] for row in result])
-            for row in result:
-                if row[3] < 10:
-                    row[3] = f"{str(row[3])}  "
+            median = float(statistics.median([row[3] for row in result]))
 
-            if len(str(median)) == 1:
-                await ctx.send(
-                    f"Median community rating for POTD {potd} is d||{median}  ||. "
-                )
-            else:
-                await ctx.send(
-                    f"Median community rating for POTD {potd} is d||{median}||. "
-                )
+            await ctx.send(
+                f"Median community rating for POTD {potd} is {self.format(median)}. "
+            )
             if full:
                 embed = discord.Embed()
                 embed.add_field(
                     name=f"Full list of community rating for POTD {potd}",
-                    value="\n".join([f"<@!{row[2]}>: d||{row[3]}||" for row in result]),
+                    value="\n".join(
+                        f"<@!{row[2]}>: {self.format(row[3])}" for row in result
+                    ),
                 )
                 await ctx.send(embed=embed)
 
