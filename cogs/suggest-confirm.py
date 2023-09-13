@@ -1,9 +1,8 @@
 import asyncio
+import contextlib
 
 import discord
 from discord.ext import commands
-
-from cogs import config as cfg
 
 
 class SuggestConfirmManager(commands.Cog):
@@ -53,7 +52,9 @@ class SuggestConfirm:
     async def open(self):
         # TODO: edit the message
         self.message = await self.ctx.send(
-            f"<@!{self.authorId}> You are about to submit the following suggestion:\n<{self.suggestion_url}>\n{self.suggestion}\n\n"
+            f"<@!{self.authorId}> You are about to submit the following suggestion:\n"
+            f"<{self.suggestion_url}>\n"
+            f"{self.suggestion}\n\n"
             "Confirm by reacting ✅, Cancel by reacting ❌"
         )
         await self.message.add_reaction("✅")
@@ -66,10 +67,8 @@ class SuggestConfirm:
         await self.remove()
 
     async def remove(self):
-        try:
+        with contextlib.suppress(discord.NotFound):
             await self.message.delete()
-        except discord.NotFound:
-            pass
 
 
 async def setup(bot):

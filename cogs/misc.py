@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from random import choice
 
 import discord
@@ -19,23 +19,26 @@ class Misc(Cog):
         self.bot = bot
 
     def record(self):
-        g = self.bot.get_guild(cfg.Config.config["mods_guild"])
+        # TODO: work out what to do with this
+        g = self.bot.get_guild(cfg.Config.config["mods_guild"])  # noqa: F841
 
     @Cog.listener()
     async def on_raw_reaction_add(self, payload):
         if payload.channel_id != cfg.Config.config["welcome_channel"]:
             return
         if payload.user_id in in_verif_speedrun_mode:
+            time_elapsed = (
+                datetime.now(timezone.utc).timestamp()
+                - payload.member.joined_at.timestamp()
+            )
             await self.bot.get_channel(cfg.Config.config["bot_spam_channel"]).send(
-                f"<@!{payload.user_id}>: `{datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()}`s"
+                f"<@!{payload.user_id}>: `{time_elapsed}`s"
             )
 
         guild = self.bot.get_guild(cfg.Config.config["mods_guild"])
         user = guild.get_member(payload.user_id)
 
-        role_ids = set()
-        for r in user.roles:
-            role_ids.add(r.id)
+        role_ids = {r.id for r in user.roles}
         m = await self.bot.get_channel(payload.channel_id).fetch_message(
             payload.message_id
         )
@@ -46,11 +49,13 @@ class Misc(Cog):
             and cfg.Config.config["unverified_role"] in role_ids
         ):
             verif_time_delta = (
-                datetime.utcnow().timestamp() - payload.member.joined_at.timestamp()
+                datetime.now(timezone.utc).timestamp()
+                - payload.member.joined_at.timestamp()
             )
             if verif_time_delta < 15 and payload.user_id not in in_verif_speedrun_mode:
                 await self.bot.get_channel(cfg.Config.config["warn_channel"]).send(
-                    f"{payload.member.mention} verified in like, epsilon time ({verif_time_delta}s exactly)"
+                    f"{payload.member.mention} verified in like, "
+                    f"epsilon time ({verif_time_delta}s exactly)"
                 )
 
             try:
@@ -62,17 +67,17 @@ class Misc(Cog):
 
             if payload.user_id not in in_verif_speedrun_mode:
                 await self.bot.get_user(payload.user_id).send(
-                    f"Welcome to the server! Check out the self-assignable "
-                    f"roles in <#671639229293395978> or start chatting in "
-                    f"our <#533153217119387660>. If you have any issues "
-                    f"related to the server, please feel free to DM "
-                    f"<@!696261358932721694>. We hope you enjoy your time "
-                    f"here. 😄\n\n*Please note that we are a Mathematical "
-                    f"Olympiad discord server. If you want help with "
-                    f"non-Olympiad mathematics, please visit the "
-                    f"**Mathematics** discord server at "
-                    f"<https://discord.sg/math> or the **Homework Help** "
-                    f"discord server at <https://discord.gg/YudDZtb>.*"
+                    "Welcome to the server! Check out the self-assignable "
+                    "roles in <#671639229293395978> or start chatting in "
+                    "our <#533153217119387660>. If you have any issues "
+                    "related to the server, please feel free to DM "
+                    "<@!696261358932721694>. We hope you enjoy your time "
+                    "here. 😄\n\n*Please note that we are a Mathematical "
+                    "Olympiad discord server. If you want help with "
+                    "non-Olympiad mathematics, please visit the "
+                    "**Mathematics** discord server at "
+                    "<https://discord.sg/math> or the **Homework Help** "
+                    "discord server at <https://discord.gg/YudDZtb>.*"
                 )
 
     @commands.command(
@@ -101,8 +106,8 @@ class Misc(Cog):
     @commands.command(brief="Return my User ID")
     async def myid(self, ctx):
         name = ctx.author.name
-        id = ctx.author.id
-        await ctx.send(f"{name}'s User ID: {id}")
+        author_id = ctx.author.id
+        await ctx.send(f"{name}'s User ID: {author_id}")
 
     @commands.command()
     async def verify_speedrun_mode(self, ctx):
@@ -123,7 +128,7 @@ class Misc(Cog):
     async def on_message(self, message: discord.Message):
         if message.author.id in aphasiad:
             m_len = len(message.content.split())
-            x = " ".join((choice(words) for i in range(m_len)))
+            x = " ".join(choice(words) for _ in range(m_len))
             await message.delete()
             await message.channel.send(f"{message.author.mention}: {x}")
 

@@ -4,7 +4,7 @@ repos:
   hooks:
   - id: check-yaml
   - id: end-of-file-fixer
-    # - id: trailing-whitespace  # TODO: enable this again at some point
+  - id: trailing-whitespace
 - repo: https://github.com/psf/black
   rev: 22.10.0
   hooks:
@@ -14,3 +14,13 @@ repos:
   hooks:
   - id: isort
     name: isort (python)
+- repo: https://github.com/pycqa/flake8
+  rev: 6.1.0
+  hooks:
+  - id: flake8
+    additional_dependencies: [flake8-pyproject]
+- repo: https://github.com/sourcery-ai/sourcery
+  rev: v1.8.0
+  hooks:
+  - id: sourcery
+    args: [--no-summary, --fix]

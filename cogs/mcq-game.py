@@ -24,14 +24,12 @@ class Game:
 
     async def new_question(self):
         qid = random.randint(1, number_of_questions)
-        cursor.execute("SELECT * FROM problems WHERE idproblems = {}".format(qid))
+        cursor.execute(f"SELECT * FROM problems WHERE idproblems = {qid}")
         problem = cursor.fetchone()
         m = await self.ctx.send(problem[1])  # problem statement
         await m.delete()
-        if not problem[2] == "":
-            await self.ctx.send(
-                "Extra links: \n{}".format(problem[2])
-            )  # extra attachments
+        if problem[2] != "":
+            await self.ctx.send(f"Extra links: \n{problem[2]}")  # extra attachments
         self.current_answer = problem[3]
         self.previous_source = problem[4]
         self.has_answered.clear()
@@ -48,9 +46,9 @@ class Game:
             self.has_answered.add(message.author)
             if message.content == self.current_answer:
                 await self.ctx.send(
-                    "Correct answer from {}".format(message.author.display_name)
+                    f"Correct answer from {message.author.display_name}"
                 )
-                await self.ctx.send("Previous source: {}".format(self.previous_source))
+                await self.ctx.send(f"Previous source: {self.previous_source}")
                 await self.new_question()
                 self.players[message.author] += 1
             else:
@@ -64,12 +62,12 @@ class MCQ_Game_Controller(Cog):
     @commands.command(aliases=["prob"])
     async def get_random_problem(self, ctx):
         qid = random.randint(1, number_of_questions)
-        cursor.execute("SELECT * FROM problems WHERE idproblems = {}".format(qid))
+        cursor.execute(f"SELECT * FROM problems WHERE idproblems = {qid}")
         problem = cursor.fetchone()
         m = await ctx.send(problem[1])  # problem statement
         await m.delete()
-        if not problem[2] == "":
-            await ctx.send("Extra links: \n{}".format(problem[2]))  # extra attachments
+        if problem[2] != "":
+            await ctx.send(f"Extra links: \n{problem[2]}")  # extra attachments
 
     @commands.command()
     @commands.is_owner()
