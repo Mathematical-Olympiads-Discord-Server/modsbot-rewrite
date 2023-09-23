@@ -1,30 +1,15 @@
-import asyncio
-import contextlib
-import io
 import random
-import re
-import statistics
-import threading
-from datetime import datetime, timedelta
-from typing import Optional
+from datetime import datetime, timedelta, timezone
 
-import aiohttp
 import discord
-import openpyxl.utils
-import schedule
+
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import BucketType
 
-from cogs import config as cfg
+from cogs.config import Config as cfg
 
-Cog = commands.Cog
-
-POTD_RANGE = "POTD!A2:S"
-CURATOR_RANGE = "Curators!A3:E"
-
-days = [None, "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-
+from utils import potd_utils
 
 def is_pc(ctx):
     if ctx.guild is None:
@@ -2893,6 +2878,3 @@ class Potd(Cog):
 
 async def setup(bot):
     await bot.add_cog(Potd(bot))
-
-
-# TODO: Fix total to exclude unpublished POTD

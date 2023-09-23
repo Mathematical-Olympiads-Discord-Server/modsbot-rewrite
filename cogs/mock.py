@@ -1,48 +1,18 @@
-import asyncio
-import contextlib
-import io
-import random
-import re
-import statistics
-import threading
-from datetime import datetime, timedelta
-from typing import Optional
-
-import aiohttp
 import discord
-import openpyxl.utils
-import schedule
-from discord import app_commands
+import re
+
 from discord.ext import commands
 from discord.ext.commands import BucketType
+import random
 
-from cogs import config as cfg
+from cogs.config import Config as cfg
 
 Cog = commands.Cog
 
-POTD_RANGE = "POTD!A2:S"
-CURATOR_RANGE = "Curators!A3:E"
-
-days = [None, "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+from utils import potd_utils
 
 
-def is_pc(ctx):
-    if ctx.guild is None:
-        return False
-    return cfg.Config.config["problem_curator_role"] in [x.id for x in ctx.author.roles]
-
-
-async def dm_or_channel(
-    user: discord.User, channel: discord.abc.Messageable, content="", *args, **kargs
-):
-    try:
-        if user is not None and not user.bot:
-            await user.send(*args, content=content, **kargs)
-    except Exception:
-        await channel.send(*args, content=user.mention + "\n" + content, **kargs)
-
-
-class Potd(Cog):
+class Mock(Cog):
     def __init__(self, bot: commands.Bot):
         self.listening_in_channel = -1
         self.to_send = ""
@@ -2892,7 +2862,4 @@ class Potd(Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(Potd(bot))
-
-
-# TODO: Fix total to exclude unpublished POTD
+    await bot.add_cog(Mock(bot))
