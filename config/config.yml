@@ -5,10 +5,14 @@ cogs:
   - cogs.config
   - cogs.activity
   - cogs.core
+  - cogs.daily
   - cogs.invites
+  - cogs.marking
   - cogs.mcq-game
   - cogs.misc
+  - cogs.mock
   - cogs.potd
+  - cogs.ratings
   - cogs.suggestions
   - cogs.mathjams
   - cogs.well
