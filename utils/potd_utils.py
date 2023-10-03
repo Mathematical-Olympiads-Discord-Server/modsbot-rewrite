@@ -1,20 +1,17 @@
-import discord
-import random
-from datetime import datetime, timedelta, timezone
+import contextlib
 import io
-import aiohttp
+import random
+from datetime import datetime, timedelta
 from typing import Optional
-import uuid
-import asyncio
-import os
-import re
-import subprocess
-from pdf2image import convert_from_path
+
+import aiohttp
+import discord
 
 from cogs.config import Config as cfg
 
 POTD_RANGE = "POTD!A2:S"
 CURATOR_RANGE = "Curators!A3:E"
+
 
 def is_pc(ctx):
     if ctx.guild is None:
@@ -31,6 +28,7 @@ async def dm_or_channel(
     except Exception:
         await channel.send(*args, content=user.mention + "\n" + content, **kargs)
 
+
 def curator_id(curators, value):
     value = str(value)
     if not value:
@@ -40,6 +38,7 @@ def curator_id(curators, value):
             if value == str(i[j]):
                 return i[0]
     return None
+
 
 def generate_source(potd_row, display=True, caller_id=0):
     # Figure out whose potd it is
@@ -61,9 +60,7 @@ def generate_source(potd_row, display=True, caller_id=0):
 
     if display:
         source.add_field(name="Source", value=f"||`{potd_row[4]}{padding}`||")
-        source.add_field(
-            name="Difficulty", value=f"||`{str(potd_row[6]).ljust(5)}`||"
-        )
+        source.add_field(name="Difficulty", value=f"||`{str(potd_row[6]).ljust(5)}`||")
         source.add_field(name="Genre", value=f"||`{str(potd_row[5]).ljust(5)}`||")
     else:
         source.add_field(name="Source", value="(To be revealed)")
@@ -90,9 +87,7 @@ def generate_source(potd_row, display=True, caller_id=0):
 
     community_rating = ""
     if len(result) > 0:
-        community_rating += (
-            f"There are {len(result)} community difficulty ratings. "
-        )
+        community_rating += f"There are {len(result)} community difficulty ratings. "
         if display:
             with contextlib.suppress(Exception):
                 underrate_count = sum(row[3] < int(potd_row[6]) for row in result)
@@ -117,6 +112,7 @@ def generate_source(potd_row, display=True, caller_id=0):
 
     return source
 
+
 async def edit_source(bot, potd):
     sheet = get_potd_sheet()
     potd_row = get_potd_row(potd, sheet)
@@ -129,13 +125,12 @@ async def edit_source(bot, potd):
             )
             else generate_source(potd_row, False)
         )
-        potd_source_msg_id = potd_row[
-            cfg.Config.config["potd_sheet_message_id_col"]
-        ]
+        potd_source_msg_id = potd_row[cfg.Config.config["potd_sheet_message_id_col"]]
         potd_source_msg = await bot.get_channel(
             cfg.Config.config["potd_channel"]
         ).fetch_message(potd_source_msg_id)
         await potd_source_msg.edit(embed=potd_source)
+
 
 async def fetch(ctx, number: int, flag: str = ""):
     sheet = get_potd_sheet()
@@ -156,9 +151,7 @@ async def fetch(ctx, number: int, flag: str = ""):
                             return await ctx.send("Could not download file...")
                         data = io.BytesIO(await resp.read())
                         if "s" not in flag:
-                            await ctx.send(
-                                file=discord.File(data, f"potd{number}.png")
-                            )
+                            await ctx.send(file=discord.File(data, f"potd{number}.png"))
                         else:
                             await ctx.send(
                                 file=discord.File(data, f"SPOILER_potd{number}.png")
@@ -185,6 +178,7 @@ async def fetch(ctx, number: int, flag: str = ""):
             await ctx.send(f"There is no potd for day {number}. ")
             return
 
+
 def check_for_image_link(potd_row) -> Optional[str]:
     if len(potd_row) >= 19 and potd_row[
         cfg.Config.config["potd_sheet_image_link_col"]
@@ -192,6 +186,7 @@ def check_for_image_link(potd_row) -> Optional[str]:
         return potd_row[cfg.Config.config["potd_sheet_image_link_col"]]
     else:
         return None
+
 
 def texify_potd(potd_row) -> str:
     return (
@@ -205,6 +200,7 @@ def texify_potd(potd_row) -> str:
         + str(potd_row[cfg.Config.config["potd_sheet_statement_col"]])
         + "```"
     )
+
 
 def pick_potd(
     diff_lower_bound_filter,
@@ -224,9 +220,7 @@ def pick_potd(
     def match_genre(x, genre_filter):
         for genre in genre_filter:
             if len(
-                set(x[cfg.Config.config["potd_sheet_genre_col"]]).intersection(
-                    genre
-                )
+                set(x[cfg.Config.config["potd_sheet_genre_col"]]).intersection(genre)
             ) == len(genre):
                 return True
         return False
@@ -306,6 +300,7 @@ def pick_potd(
     else:
         return None
 
+
 def get_potd_statement(number: int, potds):
     current_potd = int(
         potds[0][0]
@@ -322,6 +317,7 @@ def get_potd_statement(number: int, potds):
     except IndexError:
         return None
 
+
 def get_potd_solved(ctx):
     cursor = cfg.db.cursor()
     cursor.execute(
@@ -330,6 +326,7 @@ def get_potd_solved(ctx):
         "ORDER BY potd_id DESC"
     )
     return [x[1] for x in cursor.fetchall()]
+
 
 def get_potd_read(ctx):
     cursor = cfg.db.cursor()
@@ -340,6 +337,7 @@ def get_potd_read(ctx):
     )
     return [x[1] for x in cursor.fetchall()]
 
+
 def get_potd_todo(ctx):
     cursor = cfg.db.cursor()
     cursor.execute(
@@ -349,10 +347,12 @@ def get_potd_todo(ctx):
     )
     return [x[1] for x in cursor.fetchall()]
 
+
 def get_potd_rated(ctx):
     cursor = cfg.db.cursor()
     cursor.execute(f"SELECT * FROM ratings WHERE userid = {ctx.author.id}")
     return [x[1] for x in cursor.fetchall()]
+
 
 def get_potd_sheet():
     return (
@@ -360,7 +360,8 @@ def get_potd_sheet():
         .values()
         .get(spreadsheetId=cfg.Config.config["potd_sheet"], range=POTD_RANGE)
         .execute()
-    )    
+    )
+
 
 def get_potd_row(number, sheet):
     values = sheet.get("values", [])

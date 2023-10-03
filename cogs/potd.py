@@ -1,15 +1,20 @@
+import contextlib
 import random
-from datetime import datetime, timedelta, timezone
+import threading
+from datetime import datetime, timedelta
 
 import discord
-
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import BucketType
 
 from cogs.config import Config as cfg
-
 from utils import potd_utils
+
+Cog = commands.Cog
+
+POTD_RANGE = "POTD!A2:S"
+
 
 class Potd(Cog):
     def __init__(self, bot: commands.Bot):
@@ -641,6 +646,7 @@ class Potd(Cog):
             "Your POTD notification settings have been updated: ",
             embed=self.potd_notif_embed(ctx, 0x5FE36A),
         )
+
 
 async def setup(bot):
     await bot.add_cog(Potd(bot))

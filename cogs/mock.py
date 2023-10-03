@@ -1,15 +1,15 @@
-import discord
+import random
 import re
 
 from discord.ext import commands
 from discord.ext.commands import BucketType
-import random
 
 from cogs.config import Config as cfg
+from utils import potd_utils
 
 Cog = commands.Cog
 
-from utils import potd_utils
+POTD_RANGE = "POTD!A2:S"
 
 
 class Mock(Cog):
@@ -392,6 +392,7 @@ class Mock(Cog):
                 rule_string = f"[{parse_rule['diff_lower']} {parse_rule['diff_upper']}]"
             rule_strings.append(rule_string)
         return " ".join(rule_strings)
+
 
 async def setup(bot):
     await bot.add_cog(Mock(bot))

@@ -1,15 +1,14 @@
-import discord
 import statistics
-from datetime import datetime, timezone
+from datetime import datetime
 
+import discord
 from discord.ext import commands
-from discord.ext.commands import BucketType
 
 from cogs.config import Config as cfg
+from utils import potd_utils
 
 Cog = commands.Cog
 
-from utils import potd_utils
 
 class Ratings(Cog):
     def __init__(self, bot: commands.Bot):

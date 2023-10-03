@@ -1,20 +1,22 @@
-from datetime import datetime, timedelta, timezone
-import re
-from typing import Optional
+import contextlib
+import threading
+from datetime import datetime, timedelta
 
 import discord
+import openpyxl
 import schedule
-import threading
-
-from discord import app_commands
 from discord.ext import commands
-from discord.ext.commands import BucketType
 
 from cogs import config as cfg
-
 from utils import potd_utils
 
 Cog = commands.Cog
+
+POTD_RANGE = "POTD!A2:S"
+CURATOR_RANGE = "Curators!A3:E"
+
+days = [None, "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
 
 class Daily(Cog):
     def __init__(self, bot: commands.Bot):
@@ -491,6 +493,7 @@ class Daily(Cog):
             f"**POTD notifications set to `{self.enable_dm}` "
             f"by {ctx.author.nick} ({ctx.author.id})**"
         )
+
 
 async def setup(bot):
     await bot.add_cog(Daily(bot))

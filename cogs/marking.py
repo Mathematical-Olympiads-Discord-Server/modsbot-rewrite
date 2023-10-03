@@ -1,16 +1,16 @@
-import discord
+import random
+from datetime import datetime
 
-from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import BucketType
-from datetime import datetime, timezone
-import random
 
 from cogs.config import Config as cfg
+from utils import potd_utils
 
 Cog = commands.Cog
 
-from utils import potd_utils
+POTD_RANGE = "POTD!A2:S"
+
 
 class Marking(Cog):
     def __init__(self, bot: commands.Bot):
@@ -661,6 +661,7 @@ class Marking(Cog):
             ):  # we end a batch at "," or "]"
                 await ctx.send(output_batch)
                 output_batch = ""
+
 
 async def setup(bot):
     await bot.add_cog(Marking(bot))

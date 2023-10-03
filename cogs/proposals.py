@@ -1,11 +1,12 @@
-import discord
+import asyncio
+
 from discord.ext import commands
 
 from cogs import config as cfg
-
 from utils import potd_utils
 
 Cog = commands.Cog
+
 
 class Proposals(Cog):
     def post_proposed_potd(self):
@@ -181,6 +182,7 @@ class Proposals(Cog):
     @commands.check(cfg.is_mod_or_tech)
     async def potd_proposal(self, ctx):
         self.bot.loop.create_task(self.post_proposed_potd_task())
+
 
 async def setup(bot):
     await bot.add_cog(Proposals(bot))
