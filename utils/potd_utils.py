@@ -49,8 +49,8 @@ def generate_source(potd_row, display=True, caller_id=0):
         .execute()
         .get("values", [])
     )
-    id = curator_id(curators, potd_row[3])
-    curator = "Unknown Curator" if id is None else f"<@!{id}>"
+    potd_curator_id = curator_id(curators, potd_row[3])
+    curator = "Unknown Curator" if potd_curator_id is None else f"<@!{potd_curator_id}>"
     # TODO: investigate this
     difficulty_length = len(potd_row[5]) + len(potd_row[6])  # noqa: F841
     padding = " " * (max(35 - len(potd_row[4]), 1))
