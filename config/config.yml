@@ -12,6 +12,7 @@ cogs:
   - cogs.misc
   - cogs.mock
   - cogs.potd
+  - cogs.proposals
   - cogs.ratings
   - cogs.suggestions
   - cogs.mathjams
