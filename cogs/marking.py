@@ -1,10 +1,11 @@
 import random
+from collections import defaultdict
 from datetime import datetime
 
 from discord.ext import commands
 from discord.ext.commands import BucketType
 
-from cogs.config import Config as cfg
+from cogs import config as cfg
 from utils import potd_utils
 
 Cog = commands.Cog
@@ -26,8 +27,8 @@ class Marking(Cog):
             await ctx.send("Error: The input contains non-integer values.")
             return
 
-        if len(potd_numbers) > 30:
-            await ctx.send("Please don't send more than 30 POTDs in each call.")
+        if len(potd_numbers) > 200:
+            await ctx.send("Please don't send more than 200 POTDs in each call.")
             return
 
         # insert to DB
@@ -156,8 +157,8 @@ class Marking(Cog):
             await ctx.send("Error: The input contains non-integer values.")
             return
 
-        if len(potd_numbers) > 30:
-            await ctx.send("Please don't send more than 30 POTDs in each call.")
+        if len(potd_numbers) > 200:
+            await ctx.send("Please don't send more than 200 POTDs in each call.")
             return
 
         # delete from DB
@@ -187,8 +188,8 @@ class Marking(Cog):
             await ctx.send("Error: The input contains non-integer values.")
             return
 
-        if len(potd_numbers) > 30:
-            await ctx.send("Please don't send more than 30 POTDs in each call.")
+        if len(potd_numbers) > 200:
+            await ctx.send("Please don't send more than 200 POTDs in each call.")
             return
 
         # insert to DB
@@ -309,8 +310,8 @@ class Marking(Cog):
             await ctx.send("Error: The input contains non-integer values.")
             return
 
-        if len(potd_numbers) > 30:
-            await ctx.send("Please don't send more than 30 POTDs in each call.")
+        if len(potd_numbers) > 200:
+            await ctx.send("Please don't send more than 200 POTDs in each call.")
             return
 
         # delete from DB
@@ -374,8 +375,8 @@ class Marking(Cog):
             await ctx.send("Error: The input contains non-integer values.")
             return
 
-        if len(potd_numbers) > 30:
-            await ctx.send("Please don't send more than 30 POTDs in each call.")
+        if len(potd_numbers) > 200:
+            await ctx.send("Please don't send more than 200 POTDs in each call.")
             return
 
         # insert to DB
@@ -425,8 +426,8 @@ class Marking(Cog):
             await ctx.send("Error: The input contains non-integer values.")
             return
 
-        if len(potd_numbers) > 30:
-            await ctx.send("Please don't send more than 30 POTDs in each call.")
+        if len(potd_numbers) > 200:
+            await ctx.send("Please don't send more than 200 POTDs in each call.")
             return
 
         # delete from DB
@@ -566,7 +567,7 @@ class Marking(Cog):
                 key: solved_by_difficulty[key] for key in sorted_keys
             }
 
-            output_string = f"__**Your {adjective} POTD**__ \n"
+            output_string =  f"# __Your {adjective} POTD__ \n"
             for key in solved_by_difficulty:
                 if show_total is True:
                     total = len(
@@ -611,7 +612,7 @@ class Marking(Cog):
                 if "N" in genre:
                     solved_by_genre["N"].append(number)
 
-            output_string = f"__**Your {adjective} POTD**__ \n"
+            output_string =  f"# __Your {adjective} POTD__ \n"
             for key in solved_by_genre:
                 if show_total is True:
                     total = len(
@@ -634,6 +635,73 @@ class Marking(Cog):
                     output_string += f"**{key}:** {solved_by_genre[key]} \n"
             if show_total is True:
                 output_string += f"(Total: {len(potd_list)}/{len(potd_rows)})"
+        elif flag == "sd":
+            solved_ordered = {
+                "A": defaultdict(list),
+                "C": defaultdict(list),
+                "G": defaultdict(list),
+                "N": defaultdict(list),
+            }
+            for number in potd_list:
+                if number > current_potd or number <= 0:
+                    genre = "(Unknown)"
+                    difficulty = "(Unknown)"
+                else:
+                    potd_row = potd_rows[current_potd - number]
+                    if len(potd_row) > cfg.Config.config["potd_sheet_genre_col"]:
+                        genre = potd_row[cfg.Config.config["potd_sheet_genre_col"]]
+                    else:
+                        genre = "(Unknown)"
+                    if len(potd_row) > cfg.Config.config["potd_sheet_difficulty_col"]:
+                        difficulty = potd_row[cfg.Config.config["potd_sheet_difficulty_col"]]
+                    else:
+                        difficulty = "(Unknown)"
+
+                for subj in "ACGN":
+                    if subj in genre:
+                        solved_ordered[subj][difficulty].append(number)
+
+            output_string = f"# __Your {adjective} POTD__ \n"
+            for subj in solved_ordered:
+                output_string += f"## {subj}: \n"
+                sorted_keys = sorted(
+                    solved_ordered[subj].keys(),
+                    key=lambda x: (x.isnumeric(), int(x) if x.isnumeric() else x),
+                    reverse=True,
+                )
+                for diff in sorted_keys:
+                    if show_total:
+                        total = len(
+                            [
+                                potd
+                                for potd in potd_rows
+                                if len(potd) > cfg.Config.config["potd_sheet_difficulty_col"]
+                                and len(potd) > cfg.Config.config["potd_sheet_genre_col"]
+                                and subj in potd[cfg.Config.config["potd_sheet_genre_col"]]
+                                and potd[cfg.Config.config["potd_sheet_difficulty_col"]]
+                                == diff
+                            ]
+                        )
+                        output_string += (
+                            "**D"
+                            + diff
+                            + ":** "
+                            + f"{solved_ordered[subj][diff]} ({len(solved_ordered[subj][diff])}/{total})"
+                            + "\n"
+                        )
+                    else:
+                        output_string += f"**{diff}:** {solved_ordered[subj][diff]} \n"
+                if show_total:
+                    probs = [potd for l in solved_ordered[subj].values() for potd in l]
+                    total_subj = len(
+                        [
+                            potd
+                            for potd in potd_rows
+                            if len(potd) > cfg.Config.config["potd_sheet_genre_col"]
+                            and potd[cfg.Config.config["potd_sheet_genre_col"]] == subj
+                        ]
+                    )
+                    output_string += f"(Total: {len(probs)}/{total_subj}) \n"
         else:
             output_string = f"__**Your {adjective} POTD**__ \n{potd_list}" + "\n"
             if show_total is True:

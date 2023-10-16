@@ -4,7 +4,7 @@ from datetime import datetime
 import discord
 from discord.ext import commands
 
-from cogs.config import Config as cfg
+from cogs import config as cfg
 from utils import potd_utils
 
 Cog = commands.Cog

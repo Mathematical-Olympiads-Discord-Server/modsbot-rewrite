@@ -7,7 +7,7 @@ from typing import Optional
 import aiohttp
 import discord
 
-from cogs.config import Config as cfg
+from cogs import config as cfg
 
 POTD_RANGE = "POTD!A2:S"
 CURATOR_RANGE = "Curators!A3:E"

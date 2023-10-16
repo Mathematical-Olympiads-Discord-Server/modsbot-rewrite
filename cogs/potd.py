@@ -8,7 +8,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import BucketType
 
-from cogs.config import Config as cfg
+from cogs import config as cfg
 from utils import potd_utils
 
 Cog = commands.Cog
