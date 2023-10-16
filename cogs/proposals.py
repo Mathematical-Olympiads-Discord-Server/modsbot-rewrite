@@ -1,6 +1,6 @@
 import asyncio
-import schedule
 
+import schedule
 from discord.ext import commands
 
 from cogs import config as cfg
