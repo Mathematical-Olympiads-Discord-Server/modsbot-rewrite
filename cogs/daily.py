@@ -48,23 +48,21 @@ class Daily(Cog):
         cursor.execute("SELECT value FROM settings WHERE setting = 'potd_dm'")
         self.enable_dm = cursor.fetchone()[0] == "True"
 
-        schedule.every().day.at("10:00").do(self.schedule_potd).tag("cogs.potd")
+        schedule.every().day.at("10:00").do(self.schedule_potd).tag("cogs.daily")
         schedule.every().day.at("09:00").do(lambda: self.schedule_potd(1)).tag(
-            "cogs.potd"
+            "cogs.daily"
         )
         schedule.every().day.at("07:00").do(lambda: self.schedule_potd(3)).tag(
-            "cogs.potd"
+            "cogs.daily"
         )
         schedule.every().day.at("04:00").do(lambda: self.schedule_potd(6)).tag(
-            "cogs.potd"
+            "cogs.daily"
         )
         schedule.every().day.at("22:00").do(lambda: self.schedule_potd(12)).tag(
-            "cogs.potd"
+            "cogs.daily"
         )
 
-        schedule.every().hour.at("10:00").do(self.post_proposed_potd).tag(
-            "cogs.potd.proposal"
-        )
+
 
     @commands.command()
     @commands.check(potd_utils.is_pc)

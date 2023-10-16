@@ -1,4 +1,5 @@
 import asyncio
+import schedule
 
 from discord.ext import commands
 
@@ -11,6 +12,10 @@ Cog = commands.Cog
 class Proposals(Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+
+        schedule.every().hour.at("10:00").do(self.post_proposed_potd).tag(
+            "cogs.proposals"
+        )
 
     def post_proposed_potd(self):
         self.bot.loop.create_task(self.post_proposed_potd_task())
