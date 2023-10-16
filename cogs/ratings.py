@@ -54,8 +54,8 @@ class Ratings(Cog):
         else:
             await ctx.send(
                 f"<@{ctx.author.id}> You already rated this POTD "
-                "{self.format(result[3])}. "
-                "If you wish to overwrite append `True` to your previous message, "
+                f"{self.format(result[3])}. "
+                f"If you wish to overwrite append `True` to your previous message, "
                 f"like `-rate {potd} <rating> True` "
             )
         await potd_utils.edit_source(self.bot, potd)

@@ -9,6 +9,9 @@ Cog = commands.Cog
 
 
 class Proposals(Cog):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+
     def post_proposed_potd(self):
         self.bot.loop.create_task(self.post_proposed_potd_task())
 
