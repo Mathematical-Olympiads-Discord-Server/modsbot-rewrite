@@ -62,8 +62,6 @@ class Daily(Cog):
             "cogs.daily"
         )
 
-
-
     @commands.command()
     @commands.check(potd_utils.is_pc)
     async def reset_potd(self, ctx=None):

@@ -567,7 +567,7 @@ class Marking(Cog):
                 key: solved_by_difficulty[key] for key in sorted_keys
             }
 
-            output_string =  f"# __Your {adjective} POTD__ \n"
+            output_string = f"# __Your {adjective} POTD__ \n"
             for key in solved_by_difficulty:
                 if show_total is True:
                     total = len(
@@ -612,7 +612,7 @@ class Marking(Cog):
                 if "N" in genre:
                     solved_by_genre["N"].append(number)
 
-            output_string =  f"# __Your {adjective} POTD__ \n"
+            output_string = f"# __Your {adjective} POTD__ \n"
             for key in solved_by_genre:
                 if show_total is True:
                     total = len(
@@ -653,7 +653,9 @@ class Marking(Cog):
                     else:
                         genre = "(Unknown)"
                     if len(potd_row) > cfg.Config.config["potd_sheet_difficulty_col"]:
-                        difficulty = potd_row[cfg.Config.config["potd_sheet_difficulty_col"]]
+                        difficulty = potd_row[
+                            cfg.Config.config["potd_sheet_difficulty_col"]
+                        ]
                     else:
                         difficulty = "(Unknown)"
 
@@ -675,9 +677,12 @@ class Marking(Cog):
                             [
                                 potd
                                 for potd in potd_rows
-                                if len(potd) > cfg.Config.config["potd_sheet_difficulty_col"]
-                                and len(potd) > cfg.Config.config["potd_sheet_genre_col"]
-                                and subj in potd[cfg.Config.config["potd_sheet_genre_col"]]
+                                if len(potd)
+                                > cfg.Config.config["potd_sheet_difficulty_col"]
+                                and len(potd)
+                                > cfg.Config.config["potd_sheet_genre_col"]
+                                and subj
+                                in potd[cfg.Config.config["potd_sheet_genre_col"]]
                                 and potd[cfg.Config.config["potd_sheet_difficulty_col"]]
                                 == diff
                             ]
