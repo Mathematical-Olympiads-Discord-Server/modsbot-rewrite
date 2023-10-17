@@ -567,7 +567,7 @@ class Marking(Cog):
                 key: solved_by_difficulty[key] for key in sorted_keys
             }
 
-            output_string = f"# __Your {adjective} POTD__ \n"
+            output_string = f"__**Your {adjective} POTD__ \n"
             for key in solved_by_difficulty:
                 if show_total is True:
                     total = len(
@@ -612,7 +612,7 @@ class Marking(Cog):
                 if "N" in genre:
                     solved_by_genre["N"].append(number)
 
-            output_string = f"# __Your {adjective} POTD__ \n"
+            output_string = f"__**Your {adjective} POTD__ \n"
             for key in solved_by_genre:
                 if show_total is True:
                     total = len(
@@ -663,9 +663,9 @@ class Marking(Cog):
                     if subj in genre:
                         solved_ordered[subj][difficulty].append(number)
 
-            output_string = f"# __Your {adjective} POTD__ \n"
+            output_string = f"__**Your {adjective} POTD__ \n"
             for subj in solved_ordered:
-                output_string += f"## {subj}: \n"
+                output_string += f"**{subj}: \n"
                 sorted_keys = sorted(
                     solved_ordered[subj].keys(),
                     key=lambda x: (x.isnumeric(), int(x) if x.isnumeric() else x),
@@ -697,7 +697,7 @@ class Marking(Cog):
                     else:
                         output_string += f"**{diff}:** {solved_ordered[subj][diff]} \n"
                 if show_total:
-                    probs = [potd for l in solved_ordered[subj].values() for potd in l]
+                    probs = [potd for x in solved_ordered[subj].values() for potd in x]
                     total_subj = len(
                         [
                             potd
