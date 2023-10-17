@@ -148,8 +148,8 @@ class Daily(Cog):
         if mentions == "":
             return f"No responsible curators found for the potd on {potd_row[1]}!"
 
-        # Searches for curator whose last curation on this day of the week was longest
-        # ago.
+        # Searches for curator whose last curation on this day of
+        # the week was longest ago.
         i += 7
         while (i < len(potds)) and (len(r_list) > 1):
             with contextlib.suppress(Exception):

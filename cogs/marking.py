@@ -691,7 +691,8 @@ class Marking(Cog):
                             "**D"
                             + diff
                             + ":** "
-                            + f"{solved_ordered[subj][diff]} ({len(solved_ordered[subj][diff])}/{total})"
+                            + f"{solved_ordered[subj][diff]} "
+                            + f"({len(solved_ordered[subj][diff])}/{total})"
                             + "\n"
                         )
                     else:

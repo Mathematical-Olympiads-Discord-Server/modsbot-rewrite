@@ -46,12 +46,13 @@ def moving_avg(data, interval):
     moving_averages = [rolling_sum / interval]
     # Loop over the remaining elements in the array
     for i in range(interval, len(data)):
-        # Add the current element to the rolling sum and subtract the element interval
+        # Add the current element to the rolling sum
+        # and subtract the element interval
         # positions earlier
         rolling_sum += data[i] - data[i - interval]
 
-        # Calculate the moving average for the current interval and append it to the
-        # list of moving averages
+        # Calculate the moving average for the current interval
+        # and append it to the list of moving averages
         moving_averages.append(rolling_sum / interval)
 
     # Return the list of moving averages
@@ -73,8 +74,9 @@ class Activity(Cog):
         ):  # Ignore messages from bots and DMs
             cursor = cfg.db.cursor()
             cursor.execute(
-                "INSERT INTO messages (discord_message_id, discord_channel_id, "
-                "discord_user_id, message_length, message_date) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO messages (discord_message_id, "
+                "discord_channel_id, discord_user_id, message_length, "
+                "message_date) VALUES (?, ?, ?, ?, ?)",
                 (
                     message.id,
                     message.channel.id,
@@ -136,11 +138,13 @@ class Activity(Cog):
         cursor.execute(
             f"""SELECT message_date, message_length
         FROM messages
-        WHERE message_date BETWEEN "{str(dt.date.today() - dt.timedelta(interval - 1))}"
+        WHERE message_date BETWEEN 
+        "{str(dt.date.today() - dt.timedelta(interval - 1))}"
         AND "{str(dt.date.today() + dt.timedelta(1))}"
         AND discord_channel_id != {cfg.Config.config['bot_spam_channel']}
         and discord_channel_id != {cfg.Config.config['muted_channel']}
-        and discord_channel_id != {cfg.Config.config['staff_bot_spam_channel']}
+        and discord_channel_id != 
+        {cfg.Config.config['staff_bot_spam_channel']}
         and discord_user_id = {to_check.id}
         LIMIT 1000000;"""
         )
