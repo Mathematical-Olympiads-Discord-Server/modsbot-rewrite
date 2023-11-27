@@ -647,6 +647,38 @@ class Potd(Cog):
             embed=self.potd_notif_embed(ctx, 0x5FE36A),
         )
 
+    
+    def parse_genre_input(self, genre):
+        complex_genres = genre.split("'")[1::2]
+        simple_genres = "".join(genre.split("'")[::2])
+
+        genre_filter = []
+        for character in simple_genres:
+            if character.upper() == "A":
+                genre_filter.append("A")
+            if character.upper() == "C":
+                genre_filter.append("C")
+            if character.upper() == "G":
+                genre_filter.append("G")
+            if character.upper() == "N":
+                genre_filter.append("N")
+
+        for item in complex_genres:
+            parsed_complex_genre = set()
+            for character in item:
+                if character.upper() == "A":
+                    parsed_complex_genre.add("A")
+                if character.upper() == "C":
+                    parsed_complex_genre.add("C")
+                if character.upper() == "G":
+                    parsed_complex_genre.add("G")
+                if character.upper() == "N":
+                    parsed_complex_genre.add("N")
+            parsed_complex_genre = "".join(parsed_complex_genre)
+            genre_filter.append(parsed_complex_genre)
+
+        return set(genre_filter)
+
 
 async def setup(bot):
     await bot.add_cog(Potd(bot))
