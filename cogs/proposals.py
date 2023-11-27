@@ -25,14 +25,14 @@ class Proposals(Cog):
         proposed_problems = (
             cfg.Config.service.spreadsheets()
             .values()
-            .get(spreadsheetId=cfg.Config.config["potd_proposal_sheet"], range="A:M")
+            .get(spreadsheetId=cfg.Config.config["potd_proposal_sheet"], range="A:P")
             .execute()
             .get("values", [])
         )
 
         for i, problem in enumerate(proposed_problems):
             # Find unposted problems
-            if len(problem) < 12 or problem[11] == "":
+            if len(problem) < 14 or problem[13] == "":
                 number = i
                 user = problem[1]
                 user_id = problem[2]
@@ -53,6 +53,14 @@ class Proposals(Cog):
                     proposer_msg = problem[10]
                 except Exception:
                     proposer_msg = ""
+                try:
+                    solution = problem[11]
+                except Exception:
+                    solution = ""
+                try:
+                    solution_link = problem[12]
+                except Exception:
+                    solution_link = ""
 
                 # Post in forum
                 forum = self.bot.get_channel(cfg.Config.config["potd_proposal_forum"])
@@ -104,15 +112,28 @@ class Proposals(Cog):
                     )
                     await asyncio.sleep(10)
 
+                if solution not in ["", None]:
+                    await thread.send("Solution:")
+                    await thread.send(
+                        f"<@{cfg.Config.config['paradox_id']}> texsp\n"
+                        f"||```latex\n{solution}```||"
+                    )
+                    await asyncio.sleep(10)
+
+                if solution_link not in ["", None]:
+                    solution_link_msg = f"\nSolution link: {solution_link}\n"
+                    await thread.send(solution_link_msg)
+                    await asyncio.sleep(10)
+
                 # Mark problem as posted
                 request = (
                     cfg.Config.service.spreadsheets()
                     .values()
                     .update(
                         spreadsheetId=cfg.Config.config["potd_proposal_sheet"],
-                        range=f"L{i+1}",
+                        range=f"N{i+1}",
                         valueInputOption="RAW",
-                        body={"range": f"L{i+1}", "values": [["Y"]]},
+                        body={"range": f"N{i+1}", "values": [["Y"]]},
                     )
                 )
                 request.execute()
@@ -123,9 +144,22 @@ class Proposals(Cog):
                     .values()
                     .update(
                         spreadsheetId=cfg.Config.config["potd_proposal_sheet"],
-                        range=f"M{i+1}",
+                        range=f"O{i+1}",
                         valueInputOption="RAW",
-                        body={"range": f"M{i+1}", "values": [[str(thread.id)]]},
+                        body={"range": f"O{i+1}", "values": [[str(thread.id)]]},
+                    )
+                )
+                request.execute()
+
+                # Initialize status as "Pending"
+                request = (
+                    cfg.Config.service.spreadsheets()
+                    .values()
+                    .update(
+                        spreadsheetId=cfg.Config.config["potd_proposal_sheet"],
+                        range=f"P{i+1}",
+                        valueInputOption="RAW",
+                        body={"range": f"P{i+1}", "values": [["Pending"]]},
                     )
                 )
                 request.execute()
@@ -173,7 +207,7 @@ class Proposals(Cog):
         proposed_problems = (
             cfg.Config.service.spreadsheets()
             .values()
-            .get(spreadsheetId=cfg.Config.config["potd_proposal_sheet"], range="A:M")
+            .get(spreadsheetId=cfg.Config.config["potd_proposal_sheet"], range="A:P")
             .execute()
             .get("values", [])
         )
@@ -181,9 +215,22 @@ class Proposals(Cog):
         # Edit the thread tag
         forum = self.bot.get_channel(cfg.Config.config["potd_proposal_forum"])
         row = number
-        thread_id = proposed_problems[row][12]
+        thread_id = proposed_problems[row][14]
         thread = ctx.guild.get_thread(int(thread_id))
         await thread.edit(applied_tags=[forum.get_tag(tag_id)])
+
+        # Edit the status in spreadsheet
+        request = (
+            cfg.Config.service.spreadsheets()
+            .values()
+            .update(
+                spreadsheetId=cfg.Config.config["potd_proposal_sheet"],
+                range=f"P{number+1}",
+                valueInputOption="RAW",
+                body={"range": f"P{number+1}", "values": [[status]]},
+            )
+        )
+        request.execute()
 
     # manually invoke the proposal check
     @commands.command()
