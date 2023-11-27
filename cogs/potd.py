@@ -647,7 +647,6 @@ class Potd(Cog):
             embed=self.potd_notif_embed(ctx, 0x5FE36A),
         )
 
-    
     def parse_genre_input(self, genre):
         complex_genres = genre.split("'")[1::2]
         simple_genres = "".join(genre.split("'")[::2])
