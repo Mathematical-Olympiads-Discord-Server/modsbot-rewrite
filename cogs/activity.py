@@ -235,7 +235,7 @@ class Activity(Cog):
         brief="Show user activity leaderboard.",
         help="`-acttop`: show user activity leaderboard\n"
         "`-acttop --interval 15`: show leaderboard for the last 15 days",
-        cooldown_after_parsing=True
+        cooldown_after_parsing=True,
     )
     @commands.cooldown(1, 10, BucketType.user)
     async def activity_top(self, ctx, *, flags: ActtopFlags):
@@ -308,7 +308,7 @@ class Activity(Cog):
         brief="Show channel activity leaderboard.",
         help="`-chtop`: show channel activity leaderboard (by activity points)\n"
         "`-chtop --interval 15`: show leaderboard for the last 15 days",
-        cooldown_after_parsing=True
+        cooldown_after_parsing=True,
     )
     @commands.cooldown(1, 10, BucketType.user)
     async def channel_top(self, ctx, *, flags: ChtopFlags):
@@ -384,7 +384,7 @@ class Activity(Cog):
         "`-activity --interval 60`: show my activity graph for past 60 days\n"
         "`-activity --user @user`: show activity graph for @user\n"
         "`-activity --interval 60 --user @user`: combine commands",
-        cooldown_after_parsing=True
+        cooldown_after_parsing=True,
     )
     async def activity(self, ctx, *, flags: ActivityFlags):
         matplotlib.use("agg")
@@ -481,7 +481,7 @@ class Activity(Cog):
         "activity graph for past 60 days\n"
         "`-server_activity --channel #lounge`: show lounge's activity graph\n"
         "`-server_activity --interval 60 --channel #lounge`: combine commands",
-        cooldown_after_parsing=True
+        cooldown_after_parsing=True,
     )
     async def server_activity(self, ctx, *, flags: ServerActivityFlags):
         matplotlib.use("agg")

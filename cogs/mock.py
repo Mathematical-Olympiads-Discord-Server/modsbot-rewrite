@@ -47,7 +47,7 @@ class Mock(Cog):
         "[3,5],[5,7],[7,8],[3,5],[5,7],[7,8]\n"
         "CHINA (Crushingly Hard Imbalanced Nightmarish Assessment):\n"
         "[7,8],[8,10],[10,12],[7,8],[8,10],[10,12]",
-        cooldown_after_parsing=True
+        cooldown_after_parsing=True,
     )
     @commands.cooldown(1, 30, BucketType.user)
     async def potd_mock(self, ctx, template: str = "IMO", search_unsolved: bool = True):
@@ -178,7 +178,7 @@ class Mock(Cog):
         "paper where problem 1 is d5-7, problem 2 is d7-9, etc.\n"
         "`-mock_custom [3 4 G] [4 5 G] [5 6 G] [6 7 G]`: create a mock paper where "
         "problem 1 is d3-4 geometry, problem 2 is d4-5 geometry, etc.",
-        cooldown_after_parsing=True
+        cooldown_after_parsing=True,
     )
     @commands.cooldown(1, 30, BucketType.user)
     async def potd_mock_custom(self, ctx, *, rules):

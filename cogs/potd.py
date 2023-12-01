@@ -30,8 +30,11 @@ class Potd(Cog):
     async def potd_fetch(self, ctx, number: int, flag: str = ""):
         await potd_utils.fetch(ctx, number, flag)
 
-    @commands.command(aliases=["source"], brief="Get the source of a potd by id.",
-                      cooldown_after_parsing=True)
+    @commands.command(
+        aliases=["source"],
+        brief="Get the source of a potd by id.",
+        cooldown_after_parsing=True,
+    )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_source(self, ctx, number: int):
         sheet = potd_utils.get_potd_sheet()
@@ -65,7 +68,7 @@ class Potd(Cog):
         "including (algebra OR (combinatorics AND geometry) OR number theory).\n"
         "`-search 4 6 ACGN false`: Search for a POTD with difficulty d4 to d6. "
         "Allow getting problems marked in the `-solved` list.",
-        cooldown_after_parsing=True
+        cooldown_after_parsing=True,
     )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_search(
@@ -167,8 +170,9 @@ class Potd(Cog):
         else:
             await interaction.response.send_message("No POTD found!", ephemeral=True)
 
-    @commands.command(aliases=["hint"], brief="Get hint for the POTD.",
-                      cooldown_after_parsing=True)
+    @commands.command(
+        aliases=["hint"], brief="Get hint for the POTD.", cooldown_after_parsing=True
+    )
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_hint(self, ctx, number: int, hint_number: int = 1):
         sheet = potd_utils.get_potd_sheet()
@@ -260,8 +264,11 @@ class Potd(Cog):
             else:
                 await ctx.send("Hint number should be from 1 to 3.")
 
-    @commands.command(aliases=["answer"], brief="Get answer for the POTD.",
-                      cooldown_after_parsing=True)
+    @commands.command(
+        aliases=["answer"],
+        brief="Get answer for the POTD.",
+        cooldown_after_parsing=True,
+    )
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_answer(self, ctx, number: int):
         sheet = potd_utils.get_potd_sheet()
@@ -290,8 +297,11 @@ class Potd(Cog):
                     f"||```latex\n{latex}```||"
                 )
 
-    @commands.command(aliases=["discussion"], brief="Get discussion for the POTD.",
-                      cooldown_after_parsing=True)
+    @commands.command(
+        aliases=["discussion"],
+        brief="Get discussion for the POTD.",
+        cooldown_after_parsing=True,
+    )
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_discussion(self, ctx, number: int):
         sheet = potd_utils.get_potd_sheet()
@@ -315,8 +325,11 @@ class Potd(Cog):
                     f"||```latex\n{latex}```||"
                 )
 
-    @commands.command(aliases=["solution"], brief="Get solution for the POTD.",
-                      cooldown_after_parsing=True)
+    @commands.command(
+        aliases=["solution"],
+        brief="Get solution for the POTD.",
+        cooldown_after_parsing=True,
+    )
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_solution(self, ctx, number: int):
         sheet = potd_utils.get_potd_sheet()
