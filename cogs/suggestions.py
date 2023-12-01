@@ -157,7 +157,7 @@ class Suggestions(Cog):
         tech_suggestion_list.sort(key=operator.attrgetter("id"))
         tech_suggestion_list.sort(key=lambda x: statuses.inverse[x.status])
 
-    @commands.command(brief="Suggest a change to the server. ")
+    @commands.command(brief="Suggest a change to the server. ", cooldown_after_parsing=True)
     @commands.cooldown(1, 600, BucketType.user)
     async def suggest(self, ctx, *, suggestion):
         if self.lock:
@@ -170,7 +170,7 @@ class Suggestions(Cog):
             ctx, suggestion=suggestion, mode="server"
         )
 
-    @commands.command(brief="Suggest a tech change to the server. ")
+    @commands.command(brief="Suggest a tech change to the server. ", cooldown_after_parsing=True)
     @commands.cooldown(1, 600, BucketType.user)
     async def tech_suggest(self, ctx, *, suggestion):
         if self.lock:
