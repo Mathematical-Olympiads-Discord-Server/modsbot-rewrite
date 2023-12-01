@@ -490,6 +490,118 @@ class Daily(Cog):
             f"by {ctx.author.nick} ({ctx.author.id})**"
         )
 
+    @commands.command(
+        aliases=["potd"], brief="Displays the potd with the provided number. "
+    )
+    @commands.check(potd_utils.is_pc)
+    async def potd_display(self, ctx, number: int):
+        # It can only handle one at a time!
+        if self.listening_in_channel != -1:
+            await potd_utils.dm_or_channel(
+                ctx.author,
+                self.bot.get_channel(cfg.Config.config["helper_lounge"]),
+                "Please wait until the previous call has finished!",
+            )
+            return
+
+        # Read from the spreadsheet
+        reply = (
+            cfg.Config.service.spreadsheets()
+            .values()
+            .get(spreadsheetId=cfg.Config.config["potd_sheet"], range=POTD_RANGE)
+            .execute()
+        )
+        values = reply.get("values", [])
+        current_potd = int(
+            values[0][0]
+        )  # this will be the top left cell which indicates the latest added potd
+        potd_row = values[current_potd - number]  # this gets the row requested
+
+        # Create the message to send
+        to_tex = ""
+        try:
+            to_tex = (
+                "<@419356082981568522>\n```tex\n\\textbf{Day "
+                + str(potd_row[0])
+                + "} --- "
+                + str(potd_row[2])
+                + " "
+                + str(potd_row[1])
+                + "\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}"
+                + str(potd_row[8])
+                + "```"
+            )
+        except IndexError:
+            await potd_utils.dm_or_channel(
+                ctx.author,
+                self.bot.get_channel(cfg.Config.config["helper_lounge"]),
+                f"There is no potd for day {number}. ",
+            )
+            return
+        print(to_tex)
+
+        # Finish up
+        self.requested_number = int(potd_row[0])
+        self.latest_potd = int(potd_row[0])
+        self.prepare_dms(potd_row)
+        self.to_send = potd_utils.generate_source(potd_row)
+        self.listening_in_channel = ctx.channel.id
+        self.late = True
+        self.ping_daily = False
+        await ctx.send(to_tex, delete_after=20)
+        # In case Paradox unresponsive
+        self.timer = threading.Timer(20, self.reset_if_necessary)
+        self.timer.start()
+
+    @commands.command(
+        aliases=["remove_potd"], brief="Deletes the potd with the provided number. "
+    )
+    @commands.check(potd_utils.is_pc)
+    async def delete_potd(self, ctx, number: int):
+        # It can only handle one at a time!
+        if self.listening_in_channel not in [-1, -2]:
+            await potd_utils.dm_or_channel(
+                ctx.author,
+                self.bot.get_channel(cfg.Config.config["helper_lounge"]),
+                "Please wait until the previous call has finished!",
+            )
+            return
+        self.listening_in_channel = 0
+
+        # Delete old POTD
+        cursor = cfg.db.cursor()
+        cursor.execute(
+            f"SELECT problem_msg_id, source_msg_id, ping_msg_id FROM potd_info "
+            f"WHERE potd_id = '{number}'"
+        )
+        result = cursor.fetchall()
+        cursor.execute(f"DELETE FROM potd_info WHERE potd_id = '{number}'")
+        cfg.db.commit()
+        for i in result:
+            for j in i:
+                with contextlib.suppress(Exception):
+                    await self.bot.get_channel(
+                        cfg.Config.config["potd_channel"]
+                    ).get_partial_message(int(j)).delete()
+        self.listening_in_channel = -1
+
+    @commands.command(
+        aliases=["update_potd"], brief="Replaces the potd with the provided number. "
+    )
+    @commands.check(potd_utils.is_pc)
+    async def replace_potd(self, ctx, number: int):
+        # It can only handle one at a time!
+        if self.listening_in_channel != -1:
+            await potd_utils.dm_or_channel(
+                ctx.author,
+                self.bot.get_channel(cfg.Config.config["helper_lounge"]),
+                "Please wait until the previous call has finished!",
+            )
+            return
+
+        await self.delete_potd(ctx, number)
+        await self.potd_display(ctx, number)
+
 
 async def setup(bot):
     await bot.add_cog(Daily(bot))

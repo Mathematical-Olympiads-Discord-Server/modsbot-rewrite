@@ -1,6 +1,5 @@
 import contextlib
 import random
-import threading
 from datetime import datetime, timedelta
 
 import discord
@@ -21,69 +20,6 @@ class Potd(Cog):
         self.bot = bot
 
     @commands.command(
-        aliases=["potd"], brief="Displays the potd with the provided number. "
-    )
-    @commands.check(potd_utils.is_pc)
-    async def potd_display(self, ctx, number: int):
-        # It can only handle one at a time!
-        if self.listening_in_channel != -1:
-            await potd_utils.dm_or_channel(
-                ctx.author,
-                self.bot.get_channel(cfg.Config.config["helper_lounge"]),
-                "Please wait until the previous call has finished!",
-            )
-            return
-
-        # Read from the spreadsheet
-        reply = (
-            cfg.Config.service.spreadsheets()
-            .values()
-            .get(spreadsheetId=cfg.Config.config["potd_sheet"], range=POTD_RANGE)
-            .execute()
-        )
-        values = reply.get("values", [])
-        current_potd = int(
-            values[0][0]
-        )  # this will be the top left cell which indicates the latest added potd
-        potd_row = values[current_potd - number]  # this gets the row requested
-
-        # Create the message to send
-        to_tex = ""
-        try:
-            to_tex = (
-                "<@419356082981568522>\n```tex\n\\textbf{Day "
-                + str(potd_row[0])
-                + "} --- "
-                + str(potd_row[2])
-                + " "
-                + str(potd_row[1])
-                + "\\vspace{11pt}\\\\\\setlength\\parindent{1.5em}"
-                + str(potd_row[8])
-                + "```"
-            )
-        except IndexError:
-            await potd_utils.dm_or_channel(
-                ctx.author,
-                self.bot.get_channel(cfg.Config.config["helper_lounge"]),
-                f"There is no potd for day {number}. ",
-            )
-            return
-        print(to_tex)
-
-        # Finish up
-        self.requested_number = int(potd_row[0])
-        self.latest_potd = int(potd_row[0])
-        self.prepare_dms(potd_row)
-        self.to_send = potd_utils.generate_source(potd_row)
-        self.listening_in_channel = ctx.channel.id
-        self.late = True
-        self.ping_daily = False
-        await ctx.send(to_tex, delete_after=20)
-        # In case Paradox unresponsive
-        self.timer = threading.Timer(20, self.reset_if_necessary)
-        self.timer.start()
-
-    @commands.command(
         aliases=["fetch"],
         brief="Fetch a potd by id.",
         help="`-fetch 1`: Fetch POTD Day 1.\n"
@@ -94,7 +30,11 @@ class Potd(Cog):
     async def potd_fetch(self, ctx, number: int, flag: str = ""):
         await potd_utils.fetch(ctx, number, flag)
 
-    @commands.command(aliases=["source"], brief="Get the source of a potd by id.")
+    @commands.command(
+        aliases=["source"],
+        brief="Get the source of a potd by id.",
+        cooldown_after_parsing=True,
+    )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_source(self, ctx, number: int):
         sheet = potd_utils.get_potd_sheet()
@@ -128,6 +68,7 @@ class Potd(Cog):
         "including (algebra OR (combinatorics AND geometry) OR number theory).\n"
         "`-search 4 6 ACGN false`: Search for a POTD with difficulty d4 to d6. "
         "Allow getting problems marked in the `-solved` list.",
+        cooldown_after_parsing=True,
     )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_search(
@@ -229,7 +170,9 @@ class Potd(Cog):
         else:
             await interaction.response.send_message("No POTD found!", ephemeral=True)
 
-    @commands.command(aliases=["hint"], brief="Get hint for the POTD.")
+    @commands.command(
+        aliases=["hint"], brief="Get hint for the POTD.", cooldown_after_parsing=True
+    )
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_hint(self, ctx, number: int, hint_number: int = 1):
         sheet = potd_utils.get_potd_sheet()
@@ -321,7 +264,11 @@ class Potd(Cog):
             else:
                 await ctx.send("Hint number should be from 1 to 3.")
 
-    @commands.command(aliases=["answer"], brief="Get answer for the POTD.")
+    @commands.command(
+        aliases=["answer"],
+        brief="Get answer for the POTD.",
+        cooldown_after_parsing=True,
+    )
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_answer(self, ctx, number: int):
         sheet = potd_utils.get_potd_sheet()
@@ -350,7 +297,11 @@ class Potd(Cog):
                     f"||```latex\n{latex}```||"
                 )
 
-    @commands.command(aliases=["discussion"], brief="Get discussion for the POTD.")
+    @commands.command(
+        aliases=["discussion"],
+        brief="Get discussion for the POTD.",
+        cooldown_after_parsing=True,
+    )
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_discussion(self, ctx, number: int):
         sheet = potd_utils.get_potd_sheet()
@@ -374,7 +325,11 @@ class Potd(Cog):
                     f"||```latex\n{latex}```||"
                 )
 
-    @commands.command(aliases=["solution"], brief="Get solution for the POTD.")
+    @commands.command(
+        aliases=["solution"],
+        brief="Get solution for the POTD.",
+        cooldown_after_parsing=True,
+    )
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_solution(self, ctx, number: int):
         sheet = potd_utils.get_potd_sheet()
@@ -421,55 +376,6 @@ class Potd(Cog):
                     f"Solution Link for POTD {number}:\n"
                     f"{potd_row[cfg.Config.config['potd_sheet_solution_link_col']]}"
                 )
-
-    @commands.command(
-        aliases=["remove_potd"], brief="Deletes the potd with the provided number. "
-    )
-    @commands.check(potd_utils.is_pc)
-    async def delete_potd(self, ctx, number: int):
-        # It can only handle one at a time!
-        if self.listening_in_channel not in [-1, -2]:
-            await potd_utils.dm_or_channel(
-                ctx.author,
-                self.bot.get_channel(cfg.Config.config["helper_lounge"]),
-                "Please wait until the previous call has finished!",
-            )
-            return
-        self.listening_in_channel = 0
-
-        # Delete old POTD
-        cursor = cfg.db.cursor()
-        cursor.execute(
-            f"SELECT problem_msg_id, source_msg_id, ping_msg_id FROM potd_info "
-            f"WHERE potd_id = '{number}'"
-        )
-        result = cursor.fetchall()
-        cursor.execute(f"DELETE FROM potd_info WHERE potd_id = '{number}'")
-        cfg.db.commit()
-        for i in result:
-            for j in i:
-                with contextlib.suppress(Exception):
-                    await self.bot.get_channel(
-                        cfg.Config.config["potd_channel"]
-                    ).get_partial_message(int(j)).delete()
-        self.listening_in_channel = -1
-
-    @commands.command(
-        aliases=["update_potd"], brief="Replaces the potd with the provided number. "
-    )
-    @commands.check(potd_utils.is_pc)
-    async def replace_potd(self, ctx, number: int):
-        # It can only handle one at a time!
-        if self.listening_in_channel != -1:
-            await potd_utils.dm_or_channel(
-                ctx.author,
-                self.bot.get_channel(cfg.Config.config["helper_lounge"]),
-                "Please wait until the previous call has finished!",
-            )
-            return
-
-        await self.delete_potd(ctx, number)
-        await self.potd_display(ctx, number)
 
     def format(self, rating):
         return f"d||`{rating}`||" if rating >= 10 else f"d||`{rating} `||"

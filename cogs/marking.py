@@ -17,7 +17,11 @@ class Marking(Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(aliases=["mark"], brief="Mark the POTD you have solved")
+    @commands.command(
+        aliases=["mark"],
+        brief="Mark the POTD you have solved",
+        cooldown_after_parsing=True,
+    )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_mark(self, ctx, *, user_input: str):
         # parse input
@@ -147,7 +151,11 @@ class Marking(Cog):
         message = "\n".join(messages)
         await ctx.send(message)
 
-    @commands.command(aliases=["unmark"], brief="Unmark the POTD from your solved list")
+    @commands.command(
+        aliases=["unmark"],
+        brief="Unmark the POTD from your solved list",
+        cooldown_after_parsing=True,
+    )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_unmark(self, ctx, *, user_input: str):
         # parse input
@@ -178,7 +186,11 @@ class Marking(Cog):
                 "solved list. "
             )
 
-    @commands.command(aliases=["read"], brief="Mark the POTD you have read")
+    @commands.command(
+        aliases=["read"],
+        brief="Mark the POTD you have read",
+        cooldown_after_parsing=True,
+    )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_read(self, ctx, *, user_input: str):
         # parse input
@@ -300,7 +312,11 @@ class Marking(Cog):
         message = "\n".join(messages)
         await ctx.send(message)
 
-    @commands.command(aliases=["unread"], brief="Unmark the POTD from your read list")
+    @commands.command(
+        aliases=["unread"],
+        brief="Unmark the POTD from your read list",
+        cooldown_after_parsing=True,
+    )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_unread(self, ctx, *, user_input: str):
         # parse input
@@ -339,6 +355,7 @@ class Marking(Cog):
         "difficulties.\n"
         "`-solved s`: Show the POTDs you have solved or read, divided into the four "
         "subjects.\n",
+        cooldown_after_parsing=True,
     )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_solved(self, ctx, flag=None):
@@ -365,7 +382,11 @@ class Marking(Cog):
         if len(solved) == 0 and len(read) == 0:
             await ctx.send("Your solved list and read list are empty.")
 
-    @commands.command(aliases=["todo"], brief="Mark the POTD into your TODO list")
+    @commands.command(
+        aliases=["todo"],
+        brief="Mark the POTD into your TODO list",
+        cooldown_after_parsing=True,
+    )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_todo(self, ctx, *, user_input: str):
         # parse input
@@ -416,7 +437,11 @@ class Marking(Cog):
         message = "\n".join(messages)
         await ctx.send(message)
 
-    @commands.command(aliases=["untodo"], brief="Unmark the POTD from your TODO list")
+    @commands.command(
+        aliases=["untodo"],
+        brief="Unmark the POTD from your TODO list",
+        cooldown_after_parsing=True,
+    )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_untodo(self, ctx, *, user_input: str):
         # parse input
@@ -454,6 +479,7 @@ class Marking(Cog):
         "`-mytodo d`: Show the POTDs in your TODO list, ordered by difficulties.\n"
         "`-mytodo s`: Show the POTDs in your TODO list, divided into the four "
         "subjects.\n",
+        cooldown_after_parsing=True,
     )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_mytodo(self, ctx, flag=None):
@@ -480,6 +506,7 @@ class Marking(Cog):
         brief="Fetch a random POTD that you have solved/read but not yet rated",
         help="`-unrated`: Fetch a random POTD that you have solved/read but not yet "
         "rated.\n",
+        cooldown_after_parsing=True,
     )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_unrated(self, ctx, flag=None):
@@ -501,6 +528,7 @@ class Marking(Cog):
         "rated, ordered by difficulties.\n"
         "`-unrated_list s`: Get the list of POTD that you have solved/read but not yet "
         "rated, divided into the four subjects.\n",
+        cooldown_after_parsing=True,
     )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_unrated_list(self, ctx, flag=None):
