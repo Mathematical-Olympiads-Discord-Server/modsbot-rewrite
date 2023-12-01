@@ -602,5 +602,6 @@ class Daily(Cog):
         await self.delete_potd(ctx, number)
         await self.potd_display(ctx, number)
 
+
 async def setup(bot):
     await bot.add_cog(Daily(bot))

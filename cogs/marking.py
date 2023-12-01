@@ -18,7 +18,7 @@ class Marking(Cog):
         self.bot = bot
 
     @commands.command(aliases=["mark"], brief="Mark the POTD you have solved",
-        cooldown_after_parsing=True)
+                      cooldown_after_parsing=True)
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_mark(self, ctx, *, user_input: str):
         # parse input
@@ -149,7 +149,7 @@ class Marking(Cog):
         await ctx.send(message)
 
     @commands.command(aliases=["unmark"], brief="Unmark the POTD from your solved list",
-        cooldown_after_parsing=True)
+                      cooldown_after_parsing=True)
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_unmark(self, ctx, *, user_input: str):
         # parse input
@@ -181,7 +181,7 @@ class Marking(Cog):
             )
 
     @commands.command(aliases=["read"], brief="Mark the POTD you have read",
-        cooldown_after_parsing=True)
+                      cooldown_after_parsing=True)
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_read(self, ctx, *, user_input: str):
         # parse input
@@ -304,7 +304,7 @@ class Marking(Cog):
         await ctx.send(message)
 
     @commands.command(aliases=["unread"], brief="Unmark the POTD from your read list",
-        cooldown_after_parsing=True)
+                      cooldown_after_parsing=True)
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_unread(self, ctx, *, user_input: str):
         # parse input
@@ -371,7 +371,7 @@ class Marking(Cog):
             await ctx.send("Your solved list and read list are empty.")
 
     @commands.command(aliases=["todo"], brief="Mark the POTD into your TODO list",
-        cooldown_after_parsing=True)
+                      cooldown_after_parsing=True)
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_todo(self, ctx, *, user_input: str):
         # parse input
@@ -423,7 +423,7 @@ class Marking(Cog):
         await ctx.send(message)
 
     @commands.command(aliases=["untodo"], brief="Unmark the POTD from your TODO list",
-        cooldown_after_parsing=True)
+                      cooldown_after_parsing=True)
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_untodo(self, ctx, *, user_input: str):
         # parse input

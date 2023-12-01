@@ -1,6 +1,5 @@
 import contextlib
 import random
-import threading
 from datetime import datetime, timedelta
 
 import discord
@@ -32,7 +31,7 @@ class Potd(Cog):
         await potd_utils.fetch(ctx, number, flag)
 
     @commands.command(aliases=["source"], brief="Get the source of a potd by id.",
-        cooldown_after_parsing=True)
+                      cooldown_after_parsing=True)
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_source(self, ctx, number: int):
         sheet = potd_utils.get_potd_sheet()
@@ -169,7 +168,7 @@ class Potd(Cog):
             await interaction.response.send_message("No POTD found!", ephemeral=True)
 
     @commands.command(aliases=["hint"], brief="Get hint for the POTD.",
-                        cooldown_after_parsing=True)
+                      cooldown_after_parsing=True)
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_hint(self, ctx, number: int, hint_number: int = 1):
         sheet = potd_utils.get_potd_sheet()
@@ -262,7 +261,7 @@ class Potd(Cog):
                 await ctx.send("Hint number should be from 1 to 3.")
 
     @commands.command(aliases=["answer"], brief="Get answer for the POTD.",
-                            cooldown_after_parsing=True)
+                      cooldown_after_parsing=True)
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_answer(self, ctx, number: int):
         sheet = potd_utils.get_potd_sheet()
@@ -292,7 +291,7 @@ class Potd(Cog):
                 )
 
     @commands.command(aliases=["discussion"], brief="Get discussion for the POTD.",
-                            cooldown_after_parsing=True)
+                      cooldown_after_parsing=True)
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_discussion(self, ctx, number: int):
         sheet = potd_utils.get_potd_sheet()
@@ -317,7 +316,7 @@ class Potd(Cog):
                 )
 
     @commands.command(aliases=["solution"], brief="Get solution for the POTD.",
-                            cooldown_after_parsing=True)
+                      cooldown_after_parsing=True)
     @commands.cooldown(1, 10, BucketType.user)
     async def potd_solution(self, ctx, number: int):
         sheet = potd_utils.get_potd_sheet()

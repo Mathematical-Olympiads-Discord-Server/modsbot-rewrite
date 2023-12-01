@@ -123,9 +123,9 @@ class MODSBot(commands.Bot):
         if re.search(r"http://|https://", message.content):
             search_str = message.content
             for i in message.embeds:
-                if i.title != None:
+                if i.title is not None:
                     search_str += f" {i.title}"
-                if i.description != None:
+                if i.description is not None:
                     search_str += f" {i.description}"
             if re.search("discord", search_str, re.I) and re.search(
                 "nitro", search_str, re.I
