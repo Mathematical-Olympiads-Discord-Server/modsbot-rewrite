@@ -85,14 +85,16 @@ class Ratings(Cog):
                 f"Median community rating for POTD {potd} is {self.format(median)}. "
             )
             if full:
-                embed = discord.Embed()
-                embed.add_field(
-                    name=f"Full list of community rating for POTD {potd}",
-                    value="\n".join(
-                        f"<@!{row[2]}>: {self.format(row[3])}" for row in result
-                    ),
-                )
-                await ctx.send(embed=embed)
+                result_chunks = [result[i:i+25] for i in range(0, len(result), 25)]
+                for chunk in result_chunks:
+                    embed = discord.Embed()
+                    embed.add_field(
+                        name=f"Full list of community rating for POTD {potd}",
+                        value="\n".join(
+                            f"<@!{row[2]}>: {self.format(row[3])}" for row in chunk
+                        ),
+                    )
+                    await ctx.send(embed=embed)
 
         else:
             await ctx.send(f"No ratings for POTD {potd} yet. ")
