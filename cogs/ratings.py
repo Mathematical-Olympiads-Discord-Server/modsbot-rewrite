@@ -128,7 +128,7 @@ class Ratings(Cog):
             rating_msg = []
             for rating in ratings:
                 rating_msg.append(rating)
-                if sum([len(rating_str) + 1 for rating_str in rating_msg]) >= 1900:
+                if sum(len(rating_str) + 1 for rating_str in rating_msg) >= 1900:
                     rating_msgs.append("\n".join(rating_msg))
                     rating_msg = []
             if len(rating_msg) != 0:
