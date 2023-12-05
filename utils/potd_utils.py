@@ -54,6 +54,11 @@ def generate_source(potd_row, display=True, caller_id=0):
     # TODO: investigate this
     difficulty_length = len(potd_row[5]) + len(potd_row[6])  # noqa: F841
     padding = " " * (max(35 - len(potd_row[4]), 1))
+    has_hint = "✅" if (potd_row[9].strip() != "") else "❌"
+    has_answer = "✅" if (potd_row[12].strip() != "") else "❌"
+    has_solution = (
+        "✅" if (potd_row[14].strip() != "" or potd_row[15].strip() != "") else "❌"
+    )
 
     source = discord.Embed()
     source.add_field(name="Curator", value=curator)
@@ -66,6 +71,10 @@ def generate_source(potd_row, display=True, caller_id=0):
         source.add_field(name="Source", value="(To be revealed)")
         source.add_field(name="Difficulty", value="(To be revealed)")
         source.add_field(name="Genre", value="(To be revealed)")
+
+    source.add_field(name="Hint", value=has_hint)
+    source.add_field(name="Answer", value=has_answer)
+    source.add_field(name="Solution", value=has_solution)
 
     # Community Rating footer
     cursor = cfg.db.cursor()
