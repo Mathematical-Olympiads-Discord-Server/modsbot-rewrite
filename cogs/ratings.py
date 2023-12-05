@@ -85,7 +85,7 @@ class Ratings(Cog):
                 f"Median community rating for POTD {potd} is {self.format(median)}. "
             )
             if full:
-                result_chunks = [result[i:i+25] for i in range(0, len(result), 25)]
+                result_chunks = [result[i : i + 25] for i in range(0, len(result), 25)]
                 for chunk in result_chunks:
                     embed = discord.Embed()
                     embed.add_field(
