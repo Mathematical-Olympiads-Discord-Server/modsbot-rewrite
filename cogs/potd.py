@@ -199,7 +199,8 @@ class Potd(Cog):
                     latex = potd_row[cfg.Config.config["potd_sheet_hint1_col"]]
                     await ctx.send(
                         f"<@{cfg.Config.config['paradox_id']}> texsp \n"
-                        f"||```latex\n{latex}```||"
+                        f"||```latex\n{latex}```||",
+                        delete_after=5,
                     )
                     if (
                         len(potd_row) > cfg.Config.config["potd_sheet_hint2_col"]
@@ -229,7 +230,8 @@ class Potd(Cog):
                     latex = potd_row[cfg.Config.config["potd_sheet_hint2_col"]]
                     await ctx.send(
                         f"<@{cfg.Config.config['paradox_id']}> texsp \n"
-                        f"||```latex\n{latex}```||"
+                        f"||```latex\n{latex}```||",
+                        delete_after=5,
                     )
                     if (
                         len(potd_row) > cfg.Config.config["potd_sheet_hint3_col"]
@@ -259,7 +261,8 @@ class Potd(Cog):
                     latex = potd_row[cfg.Config.config["potd_sheet_hint3_col"]]
                     await ctx.send(
                         f"<@{cfg.Config.config['paradox_id']}> texsp \n"
-                        f"||```latex\n{latex}```||"
+                        f"||```latex\n{latex}```||",
+                        delete_after=5,
                     )
             else:
                 await ctx.send("Hint number should be from 1 to 3.")
