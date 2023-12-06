@@ -297,7 +297,8 @@ class Potd(Cog):
                 latex = potd_row[cfg.Config.config["potd_sheet_answer_col"]]
                 await ctx.send(
                     f"<@{cfg.Config.config['paradox_id']}> texsp \n"
-                    f"||```latex\n{latex}```||"
+                    f"||```latex\n{latex}```||",
+                    delete_after=5,
                 )
 
     @commands.command(
@@ -325,7 +326,8 @@ class Potd(Cog):
                 latex = potd_row[cfg.Config.config["potd_sheet_discussion_col"]]
                 await ctx.send(
                     f"<@{cfg.Config.config['paradox_id']}> texsp \n"
-                    f"||```latex\n{latex}```||"
+                    f"||```latex\n{latex}```||",
+                    delete_after=5,
                 )
 
     @commands.command(
@@ -372,7 +374,8 @@ class Potd(Cog):
                 await ctx.send(f"Solution for POTD {number}:\n")
                 await ctx.send(
                     f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n"
-                    f"{potd_row[cfg.Config.config['potd_sheet_solution_col']]}```||"
+                    f"{potd_row[cfg.Config.config['potd_sheet_solution_col']]}```||",
+                    delete_after=5,
                 )
             if solution_link is not None:
                 await ctx.send(
