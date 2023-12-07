@@ -219,6 +219,7 @@ def pick_potd(
     already_picked,
     ctx,
     search_unsolved: bool,
+    tag_filter="",
 ):
     solved_potd = []
     if search_unsolved:
@@ -227,12 +228,29 @@ def pick_potd(
         solved_potd = get_solved_potd + get_read_potd
 
     def match_genre(x, genre_filter):
+        if len(genre_filter) == 0:
+            return True
         for genre in genre_filter:
             if len(
                 set(x[cfg.Config.config["potd_sheet_genre_col"]]).intersection(genre)
             ) == len(genre):
                 return True
         return False
+
+    def match_tag(x, tag_filter):
+        if tag_filter == "":
+            return True
+        else:
+            tags = list(
+                map(
+                    lambda y: y.strip(),
+                    x[cfg.Config.config["potd_sheet_tags_col"]].split(","),
+                )
+            )
+            if tag_filter in tags:
+                return True
+            else:
+                return False
 
     today = datetime.strptime(datetime.now().strftime("%d %b %Y"), "%d %b %Y")
 
@@ -252,6 +270,7 @@ def pick_potd(
             and int(x[cfg.Config.config["potd_sheet_difficulty_col"]])
             <= diff_upper_bound_filter
             and match_genre(x, genre_filter)
+            and match_tag(x, tag_filter)
             and datetime.strptime(
                 x[cfg.Config.config["potd_sheet_date_col"]], "%d %b %Y"
             )
@@ -275,6 +294,7 @@ def pick_potd(
                 or not x[cfg.Config.config["potd_sheet_difficulty_col"]].isnumeric()
             )
             and match_genre(x, genre_filter)
+            and match_tag(x, tag_filter)
             and datetime.strptime(
                 x[cfg.Config.config["potd_sheet_date_col"]], "%d %b %Y"
             )

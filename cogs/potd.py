@@ -86,6 +86,13 @@ class Potd(Cog):
         # Set up the genre filter
         genre_filter = self.parse_genre_input(genre)
 
+        if "F" in genre.upper():
+            tag_filter = "FE"
+        elif "I" in genre.upper():
+            tag_filter = "IN"
+        else:
+            tag_filter = ""
+
         # set up the difficulty filter
         diff_lower_bound_filter = max(0, diff_lower_bound)
         diff_upper_bound_filter = max(
@@ -107,6 +114,7 @@ class Potd(Cog):
             [],
             ctx,
             search_unsolved,
+            tag_filter,
         )
         if picked_potd is not None:
             # fetch the picked POTD
