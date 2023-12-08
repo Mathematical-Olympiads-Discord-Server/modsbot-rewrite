@@ -433,7 +433,7 @@ class Potd(Cog):
             if solution_link is not None:
                 await ctx.send(
                     f"Solution Link for POTD {number}:\n"
-                    f"{potd_row[cfg.Config.config['potd_sheet_solution_link_col']]}"
+                    f"||{potd_row[cfg.Config.config['potd_sheet_solution_link_col']]}||"
                 )
 
     def format(self, rating):
