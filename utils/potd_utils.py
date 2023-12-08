@@ -240,9 +240,10 @@ def pick_potd(
     def match_tag(x, tag_filter):
         if tag_filter == "":
             return True
-        tags = [y.strip() for y in tag_filter.split(",")]
+        tags = [y.strip() for y in tag_filter.upper().split(",")]
         tags_in_problem = [
-            y.strip() for y in x[cfg.Config.config["potd_sheet_tags_col"]].split(",")
+            y.strip()
+            for y in x[cfg.Config.config["potd_sheet_tags_col"]].upper().split(",")
         ]
         for tag in tags:
             if tag not in tags_in_problem:
