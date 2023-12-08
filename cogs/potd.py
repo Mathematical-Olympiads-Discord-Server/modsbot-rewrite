@@ -125,7 +125,8 @@ class Potd(Cog):
         "including both functional equation and inequality.\n"
         "`-search 4 6 FE false`: Search for a FE POTD with difficulty d4 to d6. "
         "Allow getting problems marked in the `-solved` list.\n"
-        '(See the "Tags and Difficulty" sheet in the POTD spreadsheet for a full list of tags) ',
+        '(See the "Tags and Difficulty" sheet in the POTD spreadsheet for a full '
+        "list of tags) ",
         cooldown_after_parsing=True,
     )
     @commands.cooldown(1, 5, BucketType.user)
