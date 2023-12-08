@@ -54,10 +54,15 @@ def generate_source(potd_row, display=True, caller_id=0):
     # TODO: investigate this
     difficulty_length = len(potd_row[5]) + len(potd_row[6])  # noqa: F841
     padding = " " * (max(35 - len(potd_row[4]), 1))
-    has_hint = "✅" if (potd_row[9].strip() != "") else "❌"
-    has_answer = "✅" if (potd_row[12].strip() != "") else "❌"
+    has_hint = "✅" if (len(potd_row) > 9 and potd_row[9].strip() != "") else "❌"
+    has_answer = "✅" if (len(potd_row) > 12 and potd_row[12].strip() != "") else "❌"
     has_solution = (
-        "✅" if (potd_row[14].strip() != "" or potd_row[15].strip() != "") else "❌"
+        "✅"
+        if (
+            (len(potd_row) > 14 and potd_row[14].strip() != "")
+            or (len(potd_row) > 15 and potd_row[15].strip() != "")
+        )
+        else "❌"
     )
 
     source = discord.Embed()
@@ -240,9 +245,10 @@ def pick_potd(
     def match_tag(x, tag_filter):
         if tag_filter == "":
             return True
-        tags = [y.strip() for y in tag_filter.split(",")]
+        tags = [y.strip() for y in tag_filter.upper().split(",")]
         tags_in_problem = [
-            y.strip() for y in x[cfg.Config.config["potd_sheet_tags_col"]].split(",")
+            y.strip()
+            for y in x[cfg.Config.config["potd_sheet_tags_col"]].upper().split(",")
         ]
         for tag in tags:
             if tag not in tags_in_problem:
