@@ -85,14 +85,16 @@ class Ratings(Cog):
                 f"Median community rating for POTD {potd} is {self.format(median)}. "
             )
             if full:
-                embed = discord.Embed()
-                embed.add_field(
-                    name=f"Full list of community rating for POTD {potd}",
-                    value="\n".join(
-                        f"<@!{row[2]}>: {self.format(row[3])}" for row in result
-                    ),
-                )
-                await ctx.send(embed=embed)
+                result_chunks = [result[i : i + 25] for i in range(0, len(result), 25)]
+                for chunk in result_chunks:
+                    embed = discord.Embed()
+                    embed.add_field(
+                        name=f"Full list of community rating for POTD {potd}",
+                        value="\n".join(
+                            f"<@!{row[2]}>: {self.format(row[3])}" for row in chunk
+                        ),
+                    )
+                    await ctx.send(embed=embed)
 
         else:
             await ctx.send(f"No ratings for POTD {potd} yet. ")
@@ -119,13 +121,22 @@ class Ratings(Cog):
         if len(result) == 0:
             await ctx.author.send("You have not rated any problems!")
         else:
-            ratings = "\n".join([f"{i[1]:<6}{i[3]}" for i in result])
-            await ctx.author.send(
-                f"Your ratings: \n"
-                "```Potd  Rating\n"
-                f"{ratings}```\n"
-                f"You have rated {len(result)} potds. "
-            )
+            ratings = [f"{i[0]:<6}{i[3]}" for i in result]
+
+            # Ensure that sent messages do not exceed character length
+            rating_msgs = []
+            rating_msg = []
+            for rating in ratings:
+                rating_msg.append(rating)
+                if sum(len(rating_str) + 1 for rating_str in rating_msg) >= 1900:
+                    rating_msgs.append("\n".join(rating_msg))
+                    rating_msg = []
+            if len(rating_msg) != 0:
+                rating_msgs.append("\n".join(rating_msg))
+            await ctx.author.send("Your ratings:")
+            for msg in rating_msgs:
+                await ctx.author.send(f"```Potd  Rating\n{msg}\n```")
+            await ctx.author.send(f"You have rated {len(result)} potds.")
 
     @commands.command(
         aliases=["rmrating", "unrate"], brief="Removes your rating for a potd. "

@@ -54,6 +54,11 @@ def generate_source(potd_row, display=True, caller_id=0):
     # TODO: investigate this
     difficulty_length = len(potd_row[5]) + len(potd_row[6])  # noqa: F841
     padding = " " * (max(35 - len(potd_row[4]), 1))
+    has_hint = "✅" if (potd_row[9].strip() != "") else "❌"
+    has_answer = "✅" if (potd_row[12].strip() != "") else "❌"
+    has_solution = (
+        "✅" if (potd_row[14].strip() != "" or potd_row[15].strip() != "") else "❌"
+    )
 
     source = discord.Embed()
     source.add_field(name="Curator", value=curator)
@@ -66,6 +71,10 @@ def generate_source(potd_row, display=True, caller_id=0):
         source.add_field(name="Source", value="(To be revealed)")
         source.add_field(name="Difficulty", value="(To be revealed)")
         source.add_field(name="Genre", value="(To be revealed)")
+
+    source.add_field(name="Hint", value=has_hint)
+    source.add_field(name="Answer", value=has_answer)
+    source.add_field(name="Solution", value=has_solution)
 
     # Community Rating footer
     cursor = cfg.db.cursor()
@@ -210,6 +219,7 @@ def pick_potd(
     already_picked,
     ctx,
     search_unsolved: bool,
+    tag_filter="",
 ):
     solved_potd = []
     if search_unsolved:
@@ -218,12 +228,26 @@ def pick_potd(
         solved_potd = get_solved_potd + get_read_potd
 
     def match_genre(x, genre_filter):
+        if len(genre_filter) == 0:
+            return True
         for genre in genre_filter:
             if len(
                 set(x[cfg.Config.config["potd_sheet_genre_col"]]).intersection(genre)
             ) == len(genre):
                 return True
         return False
+
+    def match_tag(x, tag_filter):
+        if tag_filter == "":
+            return True
+        tags = [y.strip() for y in tag_filter.split(",")]
+        tags_in_problem = [
+            y.strip() for y in x[cfg.Config.config["potd_sheet_tags_col"]].split(",")
+        ]
+        for tag in tags:
+            if tag not in tags_in_problem:
+                return False
+        return True
 
     today = datetime.strptime(datetime.now().strftime("%d %b %Y"), "%d %b %Y")
 
@@ -243,6 +267,7 @@ def pick_potd(
             and int(x[cfg.Config.config["potd_sheet_difficulty_col"]])
             <= diff_upper_bound_filter
             and match_genre(x, genre_filter)
+            and match_tag(x, tag_filter)
             and datetime.strptime(
                 x[cfg.Config.config["potd_sheet_date_col"]], "%d %b %Y"
             )
@@ -266,6 +291,7 @@ def pick_potd(
                 or not x[cfg.Config.config["potd_sheet_difficulty_col"]].isnumeric()
             )
             and match_genre(x, genre_filter)
+            and match_tag(x, tag_filter)
             and datetime.strptime(
                 x[cfg.Config.config["potd_sheet_date_col"]], "%d %b %Y"
             )
