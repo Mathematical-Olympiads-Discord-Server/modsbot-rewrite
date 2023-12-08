@@ -121,7 +121,7 @@ class Ratings(Cog):
         if len(result) == 0:
             await ctx.author.send("You have not rated any problems!")
         else:
-            ratings = [f"{i[0]:<6}{i[3]}" for i in result]
+            ratings = [f"{i[1]:<6}{i[3]}" for i in result]
 
             # Ensure that sent messages do not exceed character length
             rating_msgs = []
