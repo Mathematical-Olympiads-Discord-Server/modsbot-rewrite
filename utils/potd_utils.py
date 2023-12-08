@@ -57,8 +57,12 @@ def generate_source(potd_row, display=True, caller_id=0):
     has_hint = "✅" if (len(potd_row) > 9 and potd_row[9].strip() != "") else "❌"
     has_answer = "✅" if (len(potd_row) > 12 and potd_row[12].strip() != "") else "❌"
     has_solution = (
-        "✅" if ((len(potd_row) > 14 and potd_row[14].strip() != "") or 
-                (len(potd_row) > 15 and potd_row[15].strip() != "")) else "❌"
+        "✅"
+        if (
+            (len(potd_row) > 14 and potd_row[14].strip() != "")
+            or (len(potd_row) > 15 and potd_row[15].strip() != "")
+        )
+        else "❌"
     )
 
     source = discord.Embed()
