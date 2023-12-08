@@ -240,10 +240,14 @@ def pick_potd(
     def match_tag(x, tag_filter):
         if tag_filter == "":
             return True
-        tags = [
+        tags = [y.strip() for y in tag_filter.split(",")]
+        tags_in_problem = [
             y.strip() for y in x[cfg.Config.config["potd_sheet_tags_col"]].split(",")
         ]
-        return tag_filter in tags
+        for tag in tags:
+            if tag not in tags_in_problem:
+                return False
+        return True
 
     today = datetime.strptime(datetime.now().strftime("%d %b %Y"), "%d %b %Y")
 

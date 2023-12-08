@@ -86,13 +86,6 @@ class Potd(Cog):
         # Set up the genre filter
         genre_filter = self.parse_genre_input(genre)
 
-        if "F" in genre.upper():
-            tag_filter = "FE"
-        elif "I" in genre.upper():
-            tag_filter = "IN"
-        else:
-            tag_filter = ""
-
         # set up the difficulty filter
         diff_lower_bound_filter = max(0, diff_lower_bound)
         diff_upper_bound_filter = max(
@@ -114,7 +107,62 @@ class Potd(Cog):
             [],
             ctx,
             search_unsolved,
-            tag_filter,
+            "",
+        )
+        if picked_potd is not None:
+            # fetch the picked POTD
+            await potd_utils.fetch(ctx, int(picked_potd))
+        else:
+            await ctx.send("No POTD found!")
+
+    @commands.command(
+        aliases=["search_tag"],
+        brief="Search for a POTD by tag and difficulty.",
+        help="`-search 4 6`: Search for a POTD with difficulty d4 to d6 (inclusive).\n"
+        "`-search 4 6 FE`: Search for a POTD with difficulty d4 to d6 and tags "
+        "including functional equation.\n"
+        "`-search 4 6 FE,IN`: Search for a POTD with difficulty d4 to d6 and tags "
+        "including both functional equation and inequality.\n"
+        "`-search 4 6 FE false`: Search for a FE POTD with difficulty d4 to d6. "
+        "Allow getting problems marked in the `-solved` list.\n"
+        '(See the "Tags and Difficulty" sheet in the POTD spreadsheet for a full list of tags) ',
+        cooldown_after_parsing=True,
+    )
+    @commands.cooldown(1, 5, BucketType.user)
+    async def potd_search_tag(
+        self,
+        ctx,
+        diff_lower_bound: int,
+        diff_upper_bound: int,
+        tags: str = "",
+        search_unsolved: bool = True,
+    ):
+        if diff_lower_bound > diff_upper_bound:
+            await ctx.send("Difficulty lower bound cannot be higher than upper bound.")
+            return
+
+        # set up the difficulty filter
+        diff_lower_bound_filter = max(0, diff_lower_bound)
+        diff_upper_bound_filter = max(
+            min(99, diff_upper_bound), diff_lower_bound_filter
+        )
+
+        potds = (
+            cfg.Config.service.spreadsheets()
+            .values()
+            .get(spreadsheetId=cfg.Config.config["potd_sheet"], range=POTD_RANGE)
+            .execute()
+            .get("values", [])
+        )
+        picked_potd = potd_utils.pick_potd(
+            diff_lower_bound_filter,
+            diff_upper_bound_filter,
+            "",
+            potds,
+            [],
+            ctx,
+            search_unsolved,
+            tags,
         )
         if picked_potd is not None:
             # fetch the picked POTD
