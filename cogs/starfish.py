@@ -1,14 +1,12 @@
 import asyncio
-import unicodedata
 
 import discord
 from discord.ext import commands
 from discord.utils import get
 
-Cog = commands.Cog
-from datetime import datetime, timedelta
-
 from cogs import config as cfg
+
+Cog = commands.Cog
 
 
 class Starfish(Cog):
