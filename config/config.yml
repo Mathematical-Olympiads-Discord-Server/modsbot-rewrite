@@ -19,6 +19,7 @@ cogs:
   - cogs.well
   - cogs.menus
   - cogs.suggest-confirm
+  - cogs.starfish
 potd_sheet: '10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA'
 potd_sheet_id_col: 0
 potd_sheet_date_col: 1
