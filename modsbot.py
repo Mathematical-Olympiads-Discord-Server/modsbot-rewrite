@@ -242,20 +242,6 @@ class MODSBot(commands.Bot):
                 with contextlib.suppress(Exception):
                     await log_channel.send("Failed to send error message.")
 
-    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        message = (
-            await self.get_guild(self.config["mods_guild"])
-            .get_channel(payload.channel_id)
-            .fetch_message(payload.message_id)
-        )
-        stars = discord.utils.get(message.reactions, emoji="⭐")
-        if (
-            payload.user_id == message.author.id
-            and payload.emoji.name == "⭐"
-            and stars.count == 1
-        ):
-            await message.add_reaction(self.config["starfishing_emoji"])
-
 
 def executor():
     while True:
