@@ -427,13 +427,13 @@ class Potd(Cog):
                 await ctx.send(f"Solution for POTD {number}:\n")
                 await ctx.send(
                     f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n"
-                    f"{potd_row[cfg.Config.config['potd_sheet_solution_col']]}```||",
+                    f"{potd_row[cfg.Config.config['potd_sheet_solution_col']]}``` ||",
                     delete_after=5,
                 )
             if solution_link is not None:
                 await ctx.send(
                     f"Solution Link for POTD {number}:\n"
-                    f"||{potd_row[cfg.Config.config['potd_sheet_solution_link_col']]}||"
+                    f"||{potd_row[cfg.Config.config['potd_sheet_solution_link_col']]} ||"
                 )
 
     def format(self, rating):
