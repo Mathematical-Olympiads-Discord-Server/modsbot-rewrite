@@ -129,13 +129,13 @@ class Marking(Cog):
                 messages.append(
                     f"There is no hint for POTD {no_hint[0]}. "
                     "Would you like to contribute one? "
-                    f"Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!"
+                    f"Contribute by commenting in <https://docs.google.com/spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
                 )
             else:
                 messages.append(
                     f"There are no hint for POTD {','.join(no_hint)}. "
                     "Would you like to contribute one? "
-                    f"Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!"
+                    f"Contribute by commenting in <https://docs.google.com/spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
                 )
         if has_discussion:
             if len(has_discussion) == 1:
@@ -290,13 +290,13 @@ class Marking(Cog):
                 messages.append(
                     f"There is no hint for POTD {no_hint[0]}. "
                     "Would you like to contribute one? "
-                    f"Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!"
+                    f"Contribute by commenting in <https://docs.google.com/spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
                 )
             else:
                 messages.append(
                     f"There are no hint for POTD {','.join(no_hint)}. "
                     "Would you like to contribute one? "
-                    f"Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!"
+                    f"Contribute by commenting in <https://docs.google.com/spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
                 )
         if has_discussion:
             if len(has_discussion) == 1:
