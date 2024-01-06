@@ -248,7 +248,7 @@ class Potd(Cog):
                         f"There is no hint for POTD {number}. "
                         "Would you like to contribute one? "
                         f"Contribute by commenting in <https://docs.google.com/"
-                        "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                        f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                     )
                     return
                 else:
@@ -278,7 +278,7 @@ class Potd(Cog):
                         f"There is no hint 2 for POTD {number}. "
                         "Would you like to contribute one? "
                         f"Contribute by commenting in <https://docs.google.com/"
-                        "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                        f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                     )
                     return
                 else:
@@ -308,7 +308,7 @@ class Potd(Cog):
                         f"There is no hint 3 for POTD {number}. "
                         "Would you like to contribute one? "
                         f"Contribute by commenting in <https://docs.google.com/"
-                        "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                        f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                     )
                     return
                 else:
@@ -343,7 +343,7 @@ class Potd(Cog):
                     f"There is no answer provided for POTD {number}. "
                     "Would you like to contribute one? "
                     f"Contribute by commenting in <https://docs.google.com/"
-                    "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                    f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                 )
                 return
             else:
@@ -420,7 +420,7 @@ class Potd(Cog):
                     f"There is no solution provided for POTD {number}. "
                     "Would you like to contribute one? "
                     f"Contribute by commenting in <https://docs.google.com/"
-                    "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                    f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                 )
                 return
             if solution is not None:

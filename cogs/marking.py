@@ -130,14 +130,14 @@ class Marking(Cog):
                     f"There is no hint for POTD {no_hint[0]}. "
                     "Would you like to contribute one? "
                     f"Contribute by commenting in <https://docs.google.com/"
-                    "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                    f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                 )
             else:
                 messages.append(
                     f"There are no hint for POTD {','.join(no_hint)}. "
                     "Would you like to contribute one? "
                     f"Contribute by commenting in <https://docs.google.com/"
-                    "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                    f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                 )
         if has_discussion:
             if len(has_discussion) == 1:
@@ -293,14 +293,14 @@ class Marking(Cog):
                     f"There is no hint for POTD {no_hint[0]}. "
                     "Would you like to contribute one? "
                     f"Contribute by commenting in <https://docs.google.com/"
-                    "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                    f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                 )
             else:
                 messages.append(
                     f"There are no hint for POTD {','.join(no_hint)}. "
                     "Would you like to contribute one? "
                     f"Contribute by commenting in <https://docs.google.com/"
-                    "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                    f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                 )
         if has_discussion:
             if len(has_discussion) == 1:
