@@ -141,11 +141,11 @@ class Marking(Cog):
             if len(has_discussion) == 1:
                 messages.append(
                     f"There is discussion for POTD {has_discussion[0]}. "
-                    "Use `-discussion {has_discussion[0]}` to see the discussion."
+                    f"Use `-discussion {has_discussion[0]}` to see the discussion."
                 )
             else:
                 messages.append(
-                    f"Ther are discussions for POTD {','.join(has_discussion)}."
+                    f"There are discussions for POTD {','.join(has_discussion)}."
                     "Use `-discussion <number>` to see the discussions."
                 )
         message = "\n".join(messages)
