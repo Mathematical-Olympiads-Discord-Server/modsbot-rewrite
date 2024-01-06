@@ -247,7 +247,8 @@ class Potd(Cog):
                     await ctx.send(
                         f"There is no hint for POTD {number}. "
                         "Would you like to contribute one? "
-                        f"Contribute by commenting in <https://docs.google.com/spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                        f"Contribute by commenting in <https://docs.google.com/"
+                        "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
                     )
                     return
                 else:
@@ -276,7 +277,8 @@ class Potd(Cog):
                     await ctx.send(
                         f"There is no hint 2 for POTD {number}. "
                         "Would you like to contribute one? "
-                        f"Contribute by commenting in <https://docs.google.com/spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                        f"Contribute by commenting in <https://docs.google.com/"
+                        "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
                     )
                     return
                 else:
@@ -305,7 +307,8 @@ class Potd(Cog):
                     await ctx.send(
                         f"There is no hint 3 for POTD {number}. "
                         "Would you like to contribute one? "
-                        f"Contribute by commenting in <https://docs.google.com/spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                        f"Contribute by commenting in <https://docs.google.com/"
+                        "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
                     )
                     return
                 else:
@@ -339,7 +342,8 @@ class Potd(Cog):
                 await ctx.send(
                     f"There is no answer provided for POTD {number}. "
                     "Would you like to contribute one? "
-                    f"Contribute by commenting in <https://docs.google.com/spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                    f"Contribute by commenting in <https://docs.google.com/"
+                    "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
                 )
                 return
             else:
@@ -415,7 +419,8 @@ class Potd(Cog):
                 await ctx.send(
                     f"There is no solution provided for POTD {number}. "
                     "Would you like to contribute one? "
-                    f"Contribute by commenting in <https://docs.google.com/spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                    f"Contribute by commenting in <https://docs.google.com/"
+                    "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
                 )
                 return
             if solution is not None:
@@ -428,7 +433,8 @@ class Potd(Cog):
             if solution_link is not None:
                 await ctx.send(
                     f"Solution Link for POTD {number}:\n"
-                    f"||{potd_row[cfg.Config.config['potd_sheet_solution_link_col']]} ||"
+                    f"||{potd_row[cfg.Config.config['potd_sheet_solution_link_col']]}"
+                    " ||"
                 )
 
     def format(self, rating):

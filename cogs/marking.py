@@ -129,13 +129,15 @@ class Marking(Cog):
                 messages.append(
                     f"There is no hint for POTD {no_hint[0]}. "
                     "Would you like to contribute one? "
-                    f"Contribute by commenting in <https://docs.google.com/spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                    f"Contribute by commenting in <https://docs.google.com/"
+                    "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
                 )
             else:
                 messages.append(
                     f"There are no hint for POTD {','.join(no_hint)}. "
                     "Would you like to contribute one? "
-                    f"Contribute by commenting in <https://docs.google.com/spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                    f"Contribute by commenting in <https://docs.google.com/"
+                    "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
                 )
         if has_discussion:
             if len(has_discussion) == 1:
@@ -290,13 +292,15 @@ class Marking(Cog):
                 messages.append(
                     f"There is no hint for POTD {no_hint[0]}. "
                     "Would you like to contribute one? "
-                    f"Contribute by commenting in <https://docs.google.com/spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                    f"Contribute by commenting in <https://docs.google.com/"
+                    "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
                 )
             else:
                 messages.append(
                     f"There are no hint for POTD {','.join(no_hint)}. "
                     "Would you like to contribute one? "
-                    f"Contribute by commenting in <https://docs.google.com/spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
+                    f"Contribute by commenting in <https://docs.google.com/"
+                    "spreadsheets/d/10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA>"
                 )
         if has_discussion:
             if len(has_discussion) == 1:
@@ -570,16 +574,16 @@ class Marking(Cog):
     ):
         today = datetime.strptime(datetime.now().strftime("%d %b %Y"), "%d %b %Y")
         total = len(
-                        [
-                            potd
-                            for potd in potd_rows
-                            if datetime.strptime(
-                                potd[cfg.Config.config["potd_sheet_date_col"]], "%d %b %Y"
-                            )
-                            <= today
-                        ]
-                    )
-        
+            [
+                potd
+                for potd in potd_rows
+                if datetime.strptime(
+                    potd[cfg.Config.config["potd_sheet_date_col"]], "%d %b %Y"
+                )
+                <= today
+            ]
+        )
+
         if flag == "d":
             solved_by_difficulty = {}
             for number in potd_list:
@@ -619,7 +623,8 @@ class Marking(Cog):
                             and potd[cfg.Config.config["potd_sheet_difficulty_col"]]
                             == key
                             and datetime.strptime(
-                                potd[cfg.Config.config["potd_sheet_date_col"]], "%d %b %Y"
+                                potd[cfg.Config.config["potd_sheet_date_col"]],
+                                "%d %b %Y",
                             )
                             <= today
                         ]
@@ -667,7 +672,8 @@ class Marking(Cog):
                             > cfg.Config.config["potd_sheet_difficulty_col"]
                             and key in potd[cfg.Config.config["potd_sheet_genre_col"]]
                             and datetime.strptime(
-                                potd[cfg.Config.config["potd_sheet_date_col"]], "%d %b %Y"
+                                potd[cfg.Config.config["potd_sheet_date_col"]],
+                                "%d %b %Y",
                             )
                             <= today
                         ]
@@ -734,7 +740,8 @@ class Marking(Cog):
                                 and potd[cfg.Config.config["potd_sheet_difficulty_col"]]
                                 == diff
                                 and datetime.strptime(
-                                    potd[cfg.Config.config["potd_sheet_date_col"]], "%d %b %Y"
+                                    potd[cfg.Config.config["potd_sheet_date_col"]],
+                                    "%d %b %Y",
                                 )
                                 <= today
                             ]
@@ -756,9 +763,10 @@ class Marking(Cog):
                             potd
                             for potd in potd_rows
                             if len(potd) > cfg.Config.config["potd_sheet_genre_col"]
-                            and subj in potd[cfg.Config.config["potd_sheet_genre_col"]]                            
+                            and subj in potd[cfg.Config.config["potd_sheet_genre_col"]]
                             and datetime.strptime(
-                                potd[cfg.Config.config["potd_sheet_date_col"]], "%d %b %Y"
+                                potd[cfg.Config.config["potd_sheet_date_col"]],
+                                "%d %b %Y",
                             )
                             <= today
                         ]
