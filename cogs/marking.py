@@ -129,23 +129,25 @@ class Marking(Cog):
                 messages.append(
                     f"There is no hint for POTD {no_hint[0]}. "
                     "Would you like to contribute one? "
-                    f"Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!"
+                    f"Contribute by commenting in <https://docs.google.com/"
+                    f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                 )
             else:
                 messages.append(
                     f"There are no hint for POTD {','.join(no_hint)}. "
                     "Would you like to contribute one? "
-                    f"Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!"
+                    f"Contribute by commenting in <https://docs.google.com/"
+                    f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                 )
         if has_discussion:
             if len(has_discussion) == 1:
                 messages.append(
                     f"There is discussion for POTD {has_discussion[0]}. "
-                    "Use `-discussion {has_discussion[0]}` to see the discussion."
+                    f"Use `-discussion {has_discussion[0]}` to see the discussion."
                 )
             else:
                 messages.append(
-                    f"Ther are discussions for POTD {','.join(has_discussion)}."
+                    f"There are discussions for POTD {','.join(has_discussion)}."
                     "Use `-discussion <number>` to see the discussions."
                 )
         message = "\n".join(messages)
@@ -290,13 +292,15 @@ class Marking(Cog):
                 messages.append(
                     f"There is no hint for POTD {no_hint[0]}. "
                     "Would you like to contribute one? "
-                    f"Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!"
+                    f"Contribute by commenting in <https://docs.google.com/"
+                    f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                 )
             else:
                 messages.append(
                     f"There are no hint for POTD {','.join(no_hint)}. "
                     "Would you like to contribute one? "
-                    f"Contact <@{cfg.Config.config['staffmail_id']}> to submit a hint!"
+                    f"Contribute by commenting in <https://docs.google.com/"
+                    f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                 )
         if has_discussion:
             if len(has_discussion) == 1:
@@ -568,6 +572,18 @@ class Marking(Cog):
     async def generate_potd_list_output_string(
         self, potd_list, potd_rows, current_potd, flag, adjective, ctx, show_total=True
     ):
+        today = datetime.strptime(datetime.now().strftime("%d %b %Y"), "%d %b %Y")
+        total = len(
+            [
+                potd
+                for potd in potd_rows
+                if datetime.strptime(
+                    potd[cfg.Config.config["potd_sheet_date_col"]], "%d %b %Y"
+                )
+                <= today
+            ]
+        )
+
         if flag == "d":
             solved_by_difficulty = {}
             for number in potd_list:
@@ -598,7 +614,7 @@ class Marking(Cog):
             output_string = f"# __Your {adjective} POTD__ \n"
             for key in solved_by_difficulty:
                 if show_total is True:
-                    total = len(
+                    total_by_d = len(
                         [
                             potd
                             for potd in potd_rows
@@ -606,6 +622,11 @@ class Marking(Cog):
                             > cfg.Config.config["potd_sheet_difficulty_col"]
                             and potd[cfg.Config.config["potd_sheet_difficulty_col"]]
                             == key
+                            and datetime.strptime(
+                                potd[cfg.Config.config["potd_sheet_date_col"]],
+                                "%d %b %Y",
+                            )
+                            <= today
                         ]
                     )
                     output_string += (
@@ -613,12 +634,12 @@ class Marking(Cog):
                         + key
                         + ":** "
                         + f"{solved_by_difficulty[key]} "
-                        + f"({len(solved_by_difficulty[key])}/{total})\n"
+                        + f"({len(solved_by_difficulty[key])}/{total_by_d})\n"
                     )
                 else:
                     output_string += f"**D{key}:** {solved_by_difficulty[key]} \n"
             if show_total:
-                output_string += f"(Total: {len(potd_list)}/{len(potd_rows)})"
+                output_string += f"(Total: {len(potd_list)}/{total})"
         elif flag == "s":
             solved_by_genre = {"A": [], "C": [], "G": [], "N": []}
             for number in potd_list:
@@ -643,13 +664,18 @@ class Marking(Cog):
             output_string = f"# __Your {adjective} POTD__ \n"
             for key in solved_by_genre:
                 if show_total is True:
-                    total = len(
+                    total_by_genre = len(
                         [
                             potd
                             for potd in potd_rows
                             if len(potd)
                             > cfg.Config.config["potd_sheet_difficulty_col"]
                             and key in potd[cfg.Config.config["potd_sheet_genre_col"]]
+                            and datetime.strptime(
+                                potd[cfg.Config.config["potd_sheet_date_col"]],
+                                "%d %b %Y",
+                            )
+                            <= today
                         ]
                     )
                     output_string += (
@@ -657,12 +683,12 @@ class Marking(Cog):
                         + key
                         + ":** "
                         + f"{solved_by_genre[key]} "
-                        + f"({len(solved_by_genre[key])}/{total})\n"
+                        + f"({len(solved_by_genre[key])}/{total_by_genre})\n"
                     )
                 else:
                     output_string += f"**{key}:** {solved_by_genre[key]} \n"
             if show_total is True:
-                output_string += f"(Total: {len(potd_list)}/{len(potd_rows)})"
+                output_string += f"(Total: {len(potd_list)}/{total})"
         elif flag == "sd":
             solved_ordered = {
                 "A": defaultdict(list),
@@ -701,7 +727,7 @@ class Marking(Cog):
                 )
                 for diff in sorted_keys:
                     if show_total:
-                        total = len(
+                        total_by_sd = len(
                             [
                                 potd
                                 for potd in potd_rows
@@ -713,6 +739,11 @@ class Marking(Cog):
                                 in potd[cfg.Config.config["potd_sheet_genre_col"]]
                                 and potd[cfg.Config.config["potd_sheet_difficulty_col"]]
                                 == diff
+                                and datetime.strptime(
+                                    potd[cfg.Config.config["potd_sheet_date_col"]],
+                                    "%d %b %Y",
+                                )
+                                <= today
                             ]
                         )
                         output_string += (
@@ -720,7 +751,7 @@ class Marking(Cog):
                             + diff
                             + ":** "
                             + f"{solved_ordered[subj][diff]} "
-                            + f"({len(solved_ordered[subj][diff])}/{total})"
+                            + f"({len(solved_ordered[subj][diff])}/{total_by_sd})"
                             + "\n"
                         )
                     else:
@@ -733,13 +764,18 @@ class Marking(Cog):
                             for potd in potd_rows
                             if len(potd) > cfg.Config.config["potd_sheet_genre_col"]
                             and subj in potd[cfg.Config.config["potd_sheet_genre_col"]]
+                            and datetime.strptime(
+                                potd[cfg.Config.config["potd_sheet_date_col"]],
+                                "%d %b %Y",
+                            )
+                            <= today
                         ]
                     )
                     output_string += f"(Total: {len(probs)}/{total_subj}) \n"
         else:
             output_string = f"# __Your {adjective} POTD__ \n{potd_list}" + "\n"
             if show_total is True:
-                output_string += f"(Total: {len(potd_list)}/{len(potd_rows)})"
+                output_string += f"(Total: {len(potd_list)}/{total})"
 
         await self.send_potd_solved(ctx, output_string)
 

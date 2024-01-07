@@ -247,8 +247,8 @@ class Potd(Cog):
                     await ctx.send(
                         f"There is no hint for POTD {number}. "
                         "Would you like to contribute one? "
-                        f"Contact <@{cfg.Config.config['staffmail_id']}> to submit a "
-                        "hint!"
+                        f"Contribute by commenting in <https://docs.google.com/"
+                        f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                     )
                     return
                 else:
@@ -277,8 +277,8 @@ class Potd(Cog):
                     await ctx.send(
                         f"There is no hint 2 for POTD {number}. "
                         "Would you like to contribute one? "
-                        f"Contact <@{cfg.Config.config['staffmail_id']}> to submit a "
-                        "hint!"
+                        f"Contribute by commenting in <https://docs.google.com/"
+                        f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                     )
                     return
                 else:
@@ -307,8 +307,8 @@ class Potd(Cog):
                     await ctx.send(
                         f"There is no hint 3 for POTD {number}. "
                         "Would you like to contribute one? "
-                        f"Contact <@{cfg.Config.config['staffmail_id']}> to submit a "
-                        f"hint!"
+                        f"Contribute by commenting in <https://docs.google.com/"
+                        f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                     )
                     return
                 else:
@@ -342,8 +342,8 @@ class Potd(Cog):
                 await ctx.send(
                     f"There is no answer provided for POTD {number}. "
                     "Would you like to contribute one? "
-                    f"Contact <@{cfg.Config.config['staffmail_id']}> to submit your "
-                    "answer!"
+                    f"Contribute by commenting in <https://docs.google.com/"
+                    f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                 )
                 return
             else:
@@ -419,21 +419,22 @@ class Potd(Cog):
                 await ctx.send(
                     f"There is no solution provided for POTD {number}. "
                     "Would you like to contribute one? "
-                    f"Contact <@{cfg.Config.config['staffmail_id']}> to submit your "
-                    "solution!"
+                    f"Contribute by commenting in <https://docs.google.com/"
+                    f"spreadsheets/d/{cfg.Config.config['potd_sheet']}>"
                 )
                 return
             if solution is not None:
                 await ctx.send(f"Solution for POTD {number}:\n")
                 await ctx.send(
                     f"<@{cfg.Config.config['paradox_id']}> texsp \n||```latex\n"
-                    f"{potd_row[cfg.Config.config['potd_sheet_solution_col']]}```||",
+                    f"{potd_row[cfg.Config.config['potd_sheet_solution_col']]}``` ||",
                     delete_after=5,
                 )
             if solution_link is not None:
                 await ctx.send(
                     f"Solution Link for POTD {number}:\n"
-                    f"||{potd_row[cfg.Config.config['potd_sheet_solution_link_col']]}||"
+                    f"||{potd_row[cfg.Config.config['potd_sheet_solution_link_col']]}"
+                    " ||"
                 )
 
     def format(self, rating):
