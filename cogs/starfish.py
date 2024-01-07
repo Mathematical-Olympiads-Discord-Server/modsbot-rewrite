@@ -15,6 +15,9 @@ class Starfish(Cog):
 
     @Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        if payload.guild_id != cfg.Config.config["mods_guild"]:
+            return
+        
         message = (
             await self.bot.get_guild(cfg.Config.config["mods_guild"])
             .get_channel(payload.channel_id)
