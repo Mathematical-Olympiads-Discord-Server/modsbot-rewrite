@@ -96,6 +96,16 @@ class MODSBot(commands.Bot):
             create_date DATE
             )"""
         )
+        cursor.execute(
+            """CREATE TABLE IF NOT EXISTS mods_vote (
+            content TEXT,
+            status INT,
+            msg_id TEXT,
+            create_date DATE,
+            update_date DATE,
+            deadline DATE
+            )"""
+        )
         db.commit()
 
         # Load cogs

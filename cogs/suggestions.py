@@ -469,7 +469,7 @@ class Suggestions(Cog):
         m = await self.bot.get_channel(
             cfg.Config.config["suggestion_channel"]
         ).fetch_message(suggestion.msgid)
-        await self.bot.get_channel(cfg.Config.config["mod_vote_chan"]).send(m.content)
+        await self.bot.get_cog("ModsVote").modsvote(ctx, content=m.content)
 
     # Modify suggestion status
     @commands.command()
