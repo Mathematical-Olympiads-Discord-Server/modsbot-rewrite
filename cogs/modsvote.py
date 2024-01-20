@@ -376,7 +376,7 @@ class ModsVote(Cog):
             ).fetch_message(msg_id)
         except Exception as e:
             if e.code == 10008:
-                raise self.NotFoundException()
+                raise self.NotFoundException() from e
         else:
             for reaction in message.reactions:
                 if reaction.emoji in ["👍", "🤷", "👎"]:
@@ -393,8 +393,6 @@ class ModsVote(Cog):
                             modsvote_result.mods_against.append(reactor.id)
                         elif reaction.emoji == "👎" and reactor.id in advisors_list:
                             modsvote_result.advisors_against.append(reactor.id)
-                else:
-                    continue
 
             return modsvote_result
 
