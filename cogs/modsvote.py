@@ -1,14 +1,10 @@
-import asyncio
-
-import bidict
 from datetime import datetime, timedelta
 
-import discord
+import bidict
+import schedule
 from discord.ext import commands
-from discord.utils import get
 
 from cogs import config as cfg
-import schedule
 
 Cog = commands.Cog
 
@@ -16,7 +12,6 @@ Cog = commands.Cog
 class ModsVote(Cog):
     def __init__(self, bot):
         self.bot = bot
-        #schedule.every().minute.at(":00").do(self.ping_mods).tag("cogs.modsvote") # testing
         schedule.every().day.at("10:00").do(self.ping_mods).tag("cogs.modsvote")
 
     status_aliases = bidict.bidict(
@@ -30,20 +25,44 @@ class ModsVote(Cog):
         }
     )
 
-    @commands.command(brief="Post a new mods vote",
-        help="`-modsvote <content>`: Post a new mods vote with <content> in the mods announcement channel.",)
+    @commands.command(
+        brief="Post a new mods vote",
+        help="`-modsvote <content>`: Post a new mods vote with <content> in the mods "
+             "announcement channel.",
+    )
     @commands.check(cfg.is_staff)
     async def modsvote(self, ctx, *, content):
         # add the item to db
         cursor = cfg.db.cursor()
-        insert_sql = "INSERT INTO mods_vote (content, status, create_date, update_date, deadline) VALUES (?, ?, ?, ?, ?)"
-        cursor.execute(insert_sql, (content, 1, datetime.now(), datetime.now(), datetime.now() + timedelta(days=cfg.Config.config["modsvote_default_days"])))
+        insert_sql = "INSERT INTO mods_vote (content, status, create_date, " \
+                     "update_date, deadline) VALUES (?, ?, ?, ?, ?)"
+        cursor.execute(
+            insert_sql,
+            (
+                content,
+                1,
+                datetime.now(),
+                datetime.now(),
+                datetime.now()
+                + timedelta(days=cfg.Config.config["modsvote_default_days"]),
+            ),
+        )
         vote_item_id = cursor.lastrowid
 
         try:
+            deadline = self.get_timestamp(
+                datetime.now() +
+                timedelta(days=cfg.Config.config['modsvote_default_days'])
+            )
             # post the content to mods-announcement
-            output = f"**Mods Vote `#{vote_item_id}` (Deadline: {self.get_timestamp(datetime.now() + timedelta(days=cfg.Config.config['modsvote_default_days']))})**\n{content}"
-            m = await self.bot.get_channel(cfg.Config.config["mod_vote_chan"]).send(output)     
+            output = (
+                f"**Mods Vote `#{vote_item_id}` "
+                f"(Deadline: {deadline})**\n"
+                f"{content}"
+            )
+            m = await self.bot.get_channel(cfg.Config.config["mod_vote_chan"]).send(
+                output
+            )
             await m.add_reaction("👍")
             await m.add_reaction("🤷")
             await m.add_reaction("👎")
@@ -61,10 +80,13 @@ class ModsVote(Cog):
         finally:
             cfg.db.commit()
 
-    @commands.command(brief="Edit a mods vote and reset the vote",
-        help="`-modsvote_edit <number> <content>`: Replace the content of mods vote #<number> with <content>, reset the votes.",)
+    @commands.command(
+        brief="Edit a mods vote and reset the vote",
+        help="`-modsvote_edit <number> <content>`: Replace the content of mods vote"
+             " #<number> with <content>, reset the votes.",
+    )
     @commands.check(cfg.is_staff)
-    async def modsvote_edit(self, ctx, number:int, *, content):
+    async def modsvote_edit(self, ctx, number: int, *, content):
         cursor = cfg.db.cursor()
         try:
             # get the item from db
@@ -76,8 +98,9 @@ class ModsVote(Cog):
             message = await self.bot.get_channel(
                 cfg.Config.config["mod_vote_chan"]
             ).fetch_message(vote_item[2])
-            output = f"**Mods Vote `#{number}` (Deadline: {self.get_timestamp(vote_item[5])})**\n{content}"
-            await message.edit(content = output)
+            output = f"**Mods Vote `#{number}` " \
+                     f"(Deadline: {self.get_timestamp(vote_item[5])})**\n{content}"
+            await message.edit(content=output)
             await message.clear_reactions()
             await message.add_reaction("👍")
             await message.add_reaction("🤷")
@@ -87,16 +110,20 @@ class ModsVote(Cog):
             self.bot.logger.exception(e)
         else:
             # edit the content in db
-            edit_sql = "UPDATE mods_vote SET content = ?, status = ?, update_date = ? WHERE rowid = ?"
+            edit_sql = "UPDATE mods_vote SET content = ?, status = ?, " \
+                       "update_date = ? WHERE rowid = ?"
             cursor.execute(edit_sql, (content, 1, datetime.now(), number))
             await ctx.send(f"Mods Vote #{number} is edited and votes are reset.")
         finally:
             cfg.db.commit()
 
-    @commands.command(brief="Mark a mods vote as pending",
-        help="`-modsvote_pending <number>`: Mark the status of mods vote #<number> as pending",)
+    @commands.command(
+        brief="Mark a mods vote as pending",
+        help="`-modsvote_pending <number>`: Mark the status of mods vote "
+             "#<number> as pending",
+    )
     @commands.check(cfg.is_staff)
-    async def modsvote_pending(self, ctx, number:int):
+    async def modsvote_pending(self, ctx, number: int):
         cursor = cfg.db.cursor()
         try:
             # get the item from db
@@ -110,24 +137,30 @@ class ModsVote(Cog):
             message = await self.bot.get_channel(
                 cfg.Config.config["mod_vote_chan"]
             ).fetch_message(msg_id)
-            output = f"**Mods Vote `#{number}` (Deadline: {self.get_timestamp(vote_item[5])})**\n{content}"
-            await message.edit(content = output)
+            output = f"**Mods Vote `#{number}` "\
+                     f"(Deadline: {self.get_timestamp(vote_item[5])})**\n{content}"
+            await message.edit(content=output)
         except Exception as e:
             await ctx.send("Error occured! Please try again.")
             self.bot.logger.exception(e)
         else:
             # edit the content in db
-            edit_sql = "UPDATE mods_vote SET status = ?, update_date = ? WHERE rowid = ?"
+            edit_sql = (
+                "UPDATE mods_vote SET status = ?, update_date = ? WHERE rowid = ?"
+            )
             cursor.execute(edit_sql, (1, datetime.now(), number))
             await ctx.send(f"Mods Vote #{number} marked as pending.")
         finally:
             cfg.db.commit()
 
-    @commands.command(aliases=["modsvote_approve", "modsvote_accept"],
-                      brief="Mark a mods vote as passed",
-                      help="`-modsvote_pass <number>`: Mark the status of mods vote #<number> as passed",)
+    @commands.command(
+        aliases=["modsvote_approve", "modsvote_accept"],
+        brief="Mark a mods vote as passed",
+        help="`-modsvote_pass <number>`: Mark the status of mods vote "
+             "#<number> as passed",
+    )
     @commands.check(cfg.is_staff)
-    async def modsvote_pass(self, ctx, number:int):
+    async def modsvote_pass(self, ctx, number: int):
         cursor = cfg.db.cursor()
         try:
             # get the item from db
@@ -142,24 +175,31 @@ class ModsVote(Cog):
                 cfg.Config.config["mod_vote_chan"]
             ).fetch_message(msg_id)
             mods_vote_result = await self.get_mods_vote_result(msg_id)
-            output = f"{cfg.Config.config['check_emoji']} **Passed {mods_vote_result.result_string} Mods Vote `#{number}`**\n{content}"
-            await message.edit(content = output)
+            output = f"{cfg.Config.config['check_emoji']} **Passed"\
+                     f" {mods_vote_result.result_string}"\
+                     f" Mods Vote `#{number}`**\n{content}"
+            await message.edit(content=output)
         except Exception as e:
             await ctx.send("Error occured! Please try again.")
             self.bot.logger.exception(e)
         else:
             # edit the content in db
-            edit_sql = "UPDATE mods_vote SET status = ?, update_date = ? WHERE rowid = ?"
+            edit_sql = (
+                "UPDATE mods_vote SET status = ?, update_date = ? WHERE rowid = ?"
+            )
             cursor.execute(edit_sql, (2, datetime.now(), number))
             await ctx.send(f"Mods Vote #{number} marked as passed.")
         finally:
             cfg.db.commit()
 
-    @commands.command(aliases=["modsvote_reject"],
-                      brief="Mark a mods vote as reject",
-                      help="`-modsvote_deny <number>`: Mark the status of mods vote #<number> as rejected",)
+    @commands.command(
+        aliases=["modsvote_reject"],
+        brief="Mark a mods vote as reject",
+        help="`-modsvote_deny <number>`: Mark the status of mods vote #<number> "
+             "as rejected",
+    )
     @commands.check(cfg.is_staff)
-    async def modsvote_deny(self, ctx, number:int):
+    async def modsvote_deny(self, ctx, number: int):
         cursor = cfg.db.cursor()
         try:
             # get the item from db
@@ -174,23 +214,29 @@ class ModsVote(Cog):
                 cfg.Config.config["mod_vote_chan"]
             ).fetch_message(msg_id)
             mods_vote_result = await self.get_mods_vote_result(msg_id)
-            output = f"🚫 **Rejected {mods_vote_result.result_string} Mods Vote `#{number}`**\n{content}"
-            await message.edit(content = output)
+            output = f"🚫 **Rejected {mods_vote_result.result_string} Mods Vote "\
+                     f"`#{number}`**\n{content}"
+            await message.edit(content=output)
         except Exception as e:
             await ctx.send("Error occured! Please try again.")
             self.bot.logger.exception(e)
         else:
             # edit the content in db
-            edit_sql = "UPDATE mods_vote SET status = ?, update_date = ? WHERE rowid = ?"
+            edit_sql = (
+                "UPDATE mods_vote SET status = ?, update_date = ? WHERE rowid = ?"
+            )
             cursor.execute(edit_sql, (3, datetime.now(), number))
             await ctx.send(f"Mods Vote #{number} marked as denied.")
         finally:
             cfg.db.commit()
 
-    @commands.command(brief="Mark a mods vote as implemented",
-                      help="`-modsvote_implemented <number>`: Mark the status of mods vote #<number> as implemented",)
+    @commands.command(
+        brief="Mark a mods vote as implemented",
+        help="`-modsvote_implemented <number>`: Mark the status of mods vote "
+             "#<number> as implemented",
+    )
     @commands.check(cfg.is_staff)
-    async def modsvote_implemented(self, ctx, number:int):
+    async def modsvote_implemented(self, ctx, number: int):
         cursor = cfg.db.cursor()
         try:
             # get the item from db
@@ -205,23 +251,30 @@ class ModsVote(Cog):
                 cfg.Config.config["mod_vote_chan"]
             ).fetch_message(msg_id)
             mods_vote_result = await self.get_mods_vote_result(msg_id)
-            output = f"{cfg.Config.config['check_emoji']} **Implemented {mods_vote_result.result_string} Mods Vote `#{number}`**\n{content}"
-            await message.edit(content = output)
+            output = f"{cfg.Config.config['check_emoji']} **Implemented "\
+                     f"{mods_vote_result.result_string} "\
+                     f"Mods Vote `#{number}`**\n{content}"
+            await message.edit(content=output)
         except Exception as e:
             await ctx.send("Error occured! Please try again.")
             self.bot.logger.exception(e)
         else:
             # edit the content in db
-            edit_sql = "UPDATE mods_vote SET status = ?, update_date = ? WHERE rowid = ?"
+            edit_sql = (
+                "UPDATE mods_vote SET status = ?, update_date = ? WHERE rowid = ?"
+            )
             cursor.execute(edit_sql, (5, datetime.now(), number))
             await ctx.send(f"Mods Vote #{number} marked as implemented.")
         finally:
             cfg.db.commit()
 
-    @commands.command(brief="Change the deadline of a mods vote",
-                      help="`-modsvote_deadline <number> <days>`: Change the deadline of mods vote #<number> to <days> days after now.",)
+    @commands.command(
+        brief="Change the deadline of a mods vote",
+        help="`-modsvote_deadline <number> <days>`: Change the deadline of mods "
+             "vote #<number> to <days> days after now.",
+    )
     @commands.check(cfg.is_staff)
-    async def modsvote_deadline(self, ctx, number:int, days:int):
+    async def modsvote_deadline(self, ctx, number: int, days: int):
         cursor = cfg.db.cursor()
         try:
             # get the item from db
@@ -235,8 +288,12 @@ class ModsVote(Cog):
             message = await self.bot.get_channel(
                 cfg.Config.config["mod_vote_chan"]
             ).fetch_message(msg_id)
-            output = f"**Mods Vote `#{number}` (Deadline: {self.get_timestamp(datetime.now() + timedelta(days=days))})**\n{content}"
-            await message.edit(content = output)
+            deadline = self.get_timestamp(
+                datetime.now() +
+                timedelta(days=days)
+            )
+            output = f"**Mods Vote `#{number}` (Deadline: {deadline})**\n{content}"
+            await message.edit(content=output)
         except Exception as e:
             await ctx.send("Error occured! Please try again.")
             self.bot.logger.exception(e)
@@ -244,19 +301,14 @@ class ModsVote(Cog):
             # edit the content in db
             edit_sql = "UPDATE mods_vote SET deadline = ? WHERE rowid = ?"
             cursor.execute(edit_sql, (datetime.now() + timedelta(days=days), number))
-            await ctx.send(f"Mods Vote #{number} deadline set to {self.get_timestamp(datetime.now() + timedelta(days=days))}.")
+            await ctx.send(
+                f"Mods Vote #{number} deadline set to {deadline}."
+            )
         finally:
             cfg.db.commit()
 
     def ping_mods(self, mode=None):
         self.bot.loop.create_task(self.check_modsvote())
-
-
-    # for testing
-    @commands.command()
-    @commands.check(cfg.is_staff)
-    async def ping_mods_test(self, ctx):
-        await self.check_modsvote()
 
     async def check_modsvote(self):
         cursor = cfg.db.cursor()
@@ -270,16 +322,22 @@ class ModsVote(Cog):
             try:
                 msg_id = vote_item[2]
                 mods_vote_result = await self.get_mods_vote_result(msg_id)
-                
+
                 # ping the jackers
-                pings = ', '.join([f"<@!{j}>" for j in mods_vote_result.to_ping])
-                url = f"https://discord.com/channels/{cfg.Config.config['mods_guild']}/{cfg.Config.config['mod_vote_chan']}/{msg_id}"
-                await self.bot.get_channel(cfg.Config.config["mod_chan"]).send(f"{pings} Please vote on {url} `{self.truncate_string(vote_item[0])}`")
+                pings = ", ".join([f"<@!{j}>" for j in mods_vote_result.to_ping])
+                url = f"https://discord.com/channels/{cfg.Config.config['mods_guild']}"\
+                      f"/{cfg.Config.config['mod_vote_chan']}/{msg_id}"
+                await self.bot.get_channel(cfg.Config.config["mod_chan"]).send(
+                    f"{pings} Please vote on {url} "
+                    f"`{self.truncate_string(vote_item[0])}`"
+                )
             except self.NotFoundException:
                 # if the message is deleted, mark the status as removed
                 sql = "UPDATE mods_vote SET status = ? WHERE rowid = ?"
                 cursor.execute(sql, (6, vote_item[6]))
-                await self.bot.get_channel(cfg.Config.config["mod_chan"]).send(f"Mods Vote #{vote_item[6]} status set as removed.")
+                await self.bot.get_channel(cfg.Config.config["mod_chan"]).send(
+                    f"Mods Vote #{vote_item[6]} status set as removed."
+                )
 
     def get_mod_list(self):
         guild = self.bot.get_guild(cfg.Config.config["mods_guild"])
@@ -304,28 +362,28 @@ class ModsVote(Cog):
 
         try:
             message = await self.bot.get_channel(
-                    cfg.Config.config["mod_vote_chan"]
-                ).fetch_message(msg_id)
+                cfg.Config.config["mod_vote_chan"]
+            ).fetch_message(msg_id)
         except Exception as e:
             if e.code == 10008:
                 raise self.NotFoundException()
         else:
             for reaction in message.reactions:
-                if reaction.emoji not in ['👍', '🤷', '👎']:
+                if reaction.emoji not in ["👍", "🤷", "👎"]:
                     continue
                 else:
                     async for reactor in reaction.users():
-                        if reaction.emoji == '👍' and reactor.id in mods_list:
+                        if reaction.emoji == "👍" and reactor.id in mods_list:
                             modsvote_result.mods_for.append(reactor.id)
-                        elif reaction.emoji == '👍' and reactor.id in advisors_list:
+                        elif reaction.emoji == "👍" and reactor.id in advisors_list:
                             modsvote_result.advisors_for.append(reactor.id)
-                        elif reaction.emoji == '🤷' and reactor.id in mods_list:
+                        elif reaction.emoji == "🤷" and reactor.id in mods_list:
                             modsvote_result.mods_abstain.append(reactor.id)
-                        elif reaction.emoji == '🤷' and reactor.id in advisors_list:
+                        elif reaction.emoji == "🤷" and reactor.id in advisors_list:
                             modsvote_result.advisors_abstain.append(reactor.id)
-                        elif reaction.emoji == '👎' and reactor.id in mods_list:
+                        elif reaction.emoji == "👎" and reactor.id in mods_list:
                             modsvote_result.mods_against.append(reactor.id)
-                        elif reaction.emoji == '👎' and reactor.id in advisors_list:
+                        elif reaction.emoji == "👎" and reactor.id in advisors_list:
                             modsvote_result.advisors_against.append(reactor.id)
 
             return modsvote_result
@@ -335,7 +393,7 @@ class ModsVote(Cog):
             return text[:50] + "..."
         else:
             return text
-        
+
     class ModsVoteResult:
         def __init__(self):
             self.mods_list = []
@@ -349,63 +407,86 @@ class ModsVote(Cog):
 
         @property
         def for_count(self):
-            return self.format_vote_count(len(self.mods_for) + len(self.advisors_for) * 0.5)
-        
+            return self.format_vote_count(
+                len(self.mods_for) + len(self.advisors_for) * 0.5
+            )
+
         @property
         def abstain_count(self):
-            return self.format_vote_count(len(self.mods_abstain) + len(self.advisors_abstain) * 0.5)
-        
+            return self.format_vote_count(
+                len(self.mods_abstain) + len(self.advisors_abstain) * 0.5
+            )
+
         @property
         def against_count(self):
-            return self.format_vote_count(len(self.mods_against) + len(self.advisors_against) * 0.5)
-        
+            return self.format_vote_count(
+                len(self.mods_against) + len(self.advisors_against) * 0.5
+            )
+
         @property
         def total(self):
             return len(self.mods_list) + len(self.advisors_list) * 0.5
 
         @property
         def status(self):
-            if (self.for_count > self.total * 0.5) and (self.against_count < self.total * 0.5):
+            if (self.for_count > self.total * 0.5) and (
+                self.against_count < self.total * 0.5
+            ):
                 return "passed"
-            elif (self.against_count > self.total * 0.5) and (self.for_count < self.total * 0.5):
+            elif (self.against_count > self.total * 0.5) and (
+                self.for_count < self.total * 0.5
+            ):
                 return "rejected"
             else:
                 return "pending"
 
-        @property 
+        @property
         def result_string(self):
-            return f"({self.for_count}, {self.abstain_count}, {self.against_count} / {len(self.mods_list)}+{len(self.advisors_list)})"
-        
+            return f"({self.for_count}, {self.abstain_count}, {self.against_count} /" \
+                   f"{len(self.mods_list)}+{len(self.advisors_list)})"
+
         @property
         def to_ping(self):
-            # if result not yet decided, ping all unvoted mods and advisors 
+            # if result not yet decided, ping all unvoted mods and advisors
             if self.status == "pending":
-                exclusion_set = set(self.mods_for + self.mods_abstain + self.mods_against +
-                    self.advisors_for + self.advisors_abstain + self.advisors_against)
-                return [item for item in self.mods_list + self.advisors_list if item not in exclusion_set]
+                exclusion_set = set(
+                    self.mods_for
+                    + self.mods_abstain
+                    + self.mods_against
+                    + self.advisors_for
+                    + self.advisors_abstain
+                    + self.advisors_against
+                )
+                return [
+                    item
+                    for item in self.mods_list + self.advisors_list
+                    if item not in exclusion_set
+                ]
             # if result already decided, ping all unvoted mods
             else:
-                exclusion_set = set(self.mods_for + self.mods_abstain + self.mods_against)
+                exclusion_set = set(
+                    self.mods_for + self.mods_abstain + self.mods_against
+                )
                 return [item for item in self.mods_list if item not in exclusion_set]
-            
+
         def format_vote_count(self, count):
             if int(count) == count:
                 return int(count)
             else:
-                return count            
-    
+                return count
+
     class NotFoundException(Exception):
         pass
 
     def get_timestamp(self, dt):
-        if type(dt) == str:
+        if type(dt) is str:
             dt = datetime.strptime(dt, "%Y-%m-%d %H:%M:%S.%f")
         epoch = int(dt.timestamp())
         return f"<t:{epoch}:R>"
 
-    #TODO
+    # TODO
     # handle lost link (if message get deleted)
-    
-            
+
+
 async def setup(bot):
     await bot.add_cog(ModsVote(bot))
