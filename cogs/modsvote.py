@@ -361,8 +361,7 @@ class ModsVote(Cog):
     def get_advisor_list(self):
         guild = self.bot.get_guild(cfg.Config.config["mods_guild"])
         advisor_role = guild.get_role(cfg.Config.config["advisor_role"])
-        advisors = [x.id for x in advisor_role.members]
-        return advisors
+        return [x.id for x in advisor_role.members]
 
     async def get_mods_vote_result(self, msg_id):
         modsvote_result = self.ModsVoteResult()
@@ -380,9 +379,7 @@ class ModsVote(Cog):
                 raise self.NotFoundException()
         else:
             for reaction in message.reactions:
-                if reaction.emoji not in ["👍", "🤷", "👎"]:
-                    continue
-                else:
+                if reaction.emoji in ["👍", "🤷", "👎"]:
                     async for reactor in reaction.users():
                         if reaction.emoji == "👍" and reactor.id in mods_list:
                             modsvote_result.mods_for.append(reactor.id)
@@ -396,14 +393,13 @@ class ModsVote(Cog):
                             modsvote_result.mods_against.append(reactor.id)
                         elif reaction.emoji == "👎" and reactor.id in advisors_list:
                             modsvote_result.advisors_against.append(reactor.id)
+                else:
+                    continue
 
             return modsvote_result
 
     def truncate_string(self, text):
-        if len(text) > 50:
-            return text[:50] + "..."
-        else:
-            return text
+        return f"{text[:50]}..." if len(text) > 50 else text
 
     class ModsVoteResult:
         def __init__(self):
@@ -483,10 +479,7 @@ class ModsVote(Cog):
                 return [item for item in self.mods_list if item not in exclusion_set]
 
         def format_vote_count(self, count):
-            if int(count) == count:
-                return int(count)
-            else:
-                return count
+            return int(count) if int(count) == count else count
 
     class NotFoundException(Exception):
         pass
