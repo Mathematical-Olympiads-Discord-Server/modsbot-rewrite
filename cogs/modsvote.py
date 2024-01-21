@@ -323,7 +323,7 @@ class ModsVote(Cog):
         cursor = cfg.db.cursor()
         # get items from db
         sql = "SELECT *, rowid FROM mods_vote WHERE status = 1 AND deadline < ?"
-        cursor.execute(sql, (datetime.now() + timedelta(days=7),))
+        cursor.execute(sql, (datetime.now(),))
         vote_items = cursor.fetchall()
 
         # check votes for each vote item
