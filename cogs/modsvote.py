@@ -12,7 +12,7 @@ Cog = commands.Cog
 class ModsVote(Cog):
     def __init__(self, bot):
         self.bot = bot
-        schedule.every().day.at("10:00").do(self.ping_mods).tag("cogs.modsvote")
+        schedule.every().day.at("00:00").do(self.ping_mods).tag("cogs.modsvote")
 
     status_aliases = bidict.bidict(
         {
@@ -323,7 +323,7 @@ class ModsVote(Cog):
         cursor = cfg.db.cursor()
         # get items from db
         sql = "SELECT *, rowid FROM mods_vote WHERE status = 1 AND deadline < ?"
-        cursor.execute(sql, (datetime.now() + timedelta(days=7),))
+        cursor.execute(sql, (datetime.now(),))
         vote_items = cursor.fetchall()
 
         # check votes for each vote item
