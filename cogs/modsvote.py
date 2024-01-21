@@ -353,10 +353,12 @@ class ModsVote(Cog):
     def get_mod_list(self):
         guild = self.bot.get_guild(cfg.Config.config["mods_guild"])
         moderator_role = guild.get_role(cfg.Config.config["moderator_role"])
-        moderators = [x.id for x in moderator_role.members]
+        mods = [x.id for x in moderator_role.members]
         mod_in_training_role = guild.get_role(cfg.Config.config["mod_in_training_role"])
-        moderators += [x.id for x in mod_in_training_role.members]
-        return moderators
+        mods += [x.id for x in mod_in_training_role.members]
+        admin_role = guild.get_role(cfg.Config.config["admin_role"])
+        mods += [x.id for x in admin_role.members]
+        return mods
 
     def get_advisor_list(self):
         guild = self.bot.get_guild(cfg.Config.config["mods_guild"])
