@@ -376,10 +376,7 @@ class ModsVote(Cog):
 
                 # update message if enough for/against votes
                 if mods_vote_result.status in ["passed", "rejected"]:
-                    if mods_vote_result.status == "passed":
-                        emoji = "🚀"
-                    else:
-                        emoji = "🥀"
+                    emoji = "🚀" if mods_vote_result.status == "passed" else "🥀"
                     message = await self.bot.get_channel(
                         cfg.Config.config["mod_vote_chan"]
                     ).fetch_message(msg_id)
