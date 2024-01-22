@@ -12,7 +12,7 @@ Cog = commands.Cog
 class ModsVote(Cog):
     def __init__(self, bot):
         self.bot = bot
-        schedule.every().day.at("00:00").do(self.ping_mods).tag("cogs.modsvote")
+        schedule.every().day.at("01:00").do(self.ping_mods).tag("cogs.modsvote")
 
     status_aliases = bidict.bidict(
         {
