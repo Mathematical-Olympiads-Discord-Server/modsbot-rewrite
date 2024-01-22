@@ -12,7 +12,7 @@ Cog = commands.Cog
 class ModsVote(Cog):
     def __init__(self, bot):
         self.bot = bot
-        schedule.every().day.at("00:00").do(self.ping_mods).tag("cogs.modsvote")
+        schedule.every().day.at("01:00").do(self.ping_mods).tag("cogs.modsvote")
 
     status_aliases = bidict.bidict(
         {
@@ -58,7 +58,7 @@ class ModsVote(Cog):
             )
             # post the content to mods-announcement
             output = (
-                f"**Mods Vote `#{vote_item_id}` "
+                f"⏳    **Mods Vote `#{vote_item_id}`    "
                 f"(Deadline: {deadline})**\n"
                 f"{content}"
             )
@@ -101,7 +101,7 @@ class ModsVote(Cog):
                 cfg.Config.config["mod_vote_chan"]
             ).fetch_message(vote_item[2])
             output = (
-                f"**Mods Vote `#{number}` "
+                f"⏳    **Mods Vote `#{number}`    "
                 f"(Deadline: {self.get_timestamp(vote_item[5])})**\n{content}"
             )
             await message.edit(content=output)
@@ -144,7 +144,7 @@ class ModsVote(Cog):
                 cfg.Config.config["mod_vote_chan"]
             ).fetch_message(msg_id)
             output = (
-                f"**Mods Vote `#{number}` "
+                f"⏳    **Mods Vote `#{number}`    "
                 f"(Deadline: {self.get_timestamp(vote_item[5])})**\n{content}"
             )
             await message.edit(content=output)
@@ -183,10 +183,13 @@ class ModsVote(Cog):
                 cfg.Config.config["mod_vote_chan"]
             ).fetch_message(msg_id)
             mods_vote_result = await self.get_mods_vote_result(msg_id)
+            deadline = datetime.now() + timedelta(
+                days=cfg.Config.config["modsvote_default_days"]
+            )
             output = (
-                f"{cfg.Config.config['check_emoji']} **Passed"
-                f" {mods_vote_result.result_string}"
-                f" Mods Vote `#{number}`**\n{content}"
+                f"👍    **Passed `#{number}`    "
+                f"{mods_vote_result.result_string}    "
+                f"(Deadline: {self.get_timestamp(deadline)})**\n{content}"
             )
             await message.edit(content=output)
         except Exception as e:
@@ -195,9 +198,10 @@ class ModsVote(Cog):
         else:
             # edit the content in db
             edit_sql = (
-                "UPDATE mods_vote SET status = ?, update_date = ? WHERE rowid = ?"
+                "UPDATE mods_vote SET status = ?, update_date = ?, "
+                "deadline = ? WHERE rowid = ?"
             )
-            cursor.execute(edit_sql, (2, datetime.now(), number))
+            cursor.execute(edit_sql, (2, datetime.now(), deadline, number))
             await ctx.send(f"Mods Vote #{number} marked as passed.")
         finally:
             cfg.db.commit()
@@ -225,8 +229,9 @@ class ModsVote(Cog):
             ).fetch_message(msg_id)
             mods_vote_result = await self.get_mods_vote_result(msg_id)
             output = (
-                f"🚫 **Rejected {mods_vote_result.result_string} Mods Vote "
-                f"`#{number}`**\n{content}"
+                f"🚫    **Rejected `#{number}`    "
+                f"{mods_vote_result.result_string}**"
+                f"\n{content}"
             )
             await message.edit(content=output)
         except Exception as e:
@@ -264,9 +269,9 @@ class ModsVote(Cog):
             ).fetch_message(msg_id)
             mods_vote_result = await self.get_mods_vote_result(msg_id)
             output = (
-                f"{cfg.Config.config['check_emoji']} **Implemented "
-                f"{mods_vote_result.result_string} "
-                f"Mods Vote `#{number}`**\n{content}"
+                f"{cfg.Config.config['check_emoji']}    **Implemented `#{number}`    "
+                f"{mods_vote_result.result_string}** "
+                f"\n{content}"
             )
             await message.edit(content=output)
         except Exception as e:
@@ -303,7 +308,10 @@ class ModsVote(Cog):
                 cfg.Config.config["mod_vote_chan"]
             ).fetch_message(msg_id)
             deadline = self.get_timestamp(datetime.now() + timedelta(days=days))
-            output = f"**Mods Vote `#{number}` (Deadline: {deadline})**\n{content}"
+            output = (
+                f"⏳    **Mods Vote `#{number}`    (Deadline: {deadline})**"
+                f"\n{content}"
+            )
             await message.edit(content=output)
         except Exception as e:
             await ctx.send("Error occured! Please try again.")
@@ -321,15 +329,15 @@ class ModsVote(Cog):
 
     async def check_modsvote(self):
         cursor = cfg.db.cursor()
-        # get items from db
+        # get pending items from db
         sql = "SELECT *, rowid FROM mods_vote WHERE status = 1 AND deadline < ?"
         cursor.execute(sql, (datetime.now(),))
-        vote_items = cursor.fetchall()
+        deadline_pending_items = cursor.fetchall()
 
-        # check votes for each vote item
-        for vote_item in vote_items:
+        # check votes for each pending item
+        for pending_item in deadline_pending_items:
             try:
-                msg_id = vote_item[2]
+                msg_id = pending_item[2]
                 mods_vote_result = await self.get_mods_vote_result(msg_id)
 
                 # ping the jackers
@@ -338,16 +346,80 @@ class ModsVote(Cog):
                     f"https://discord.com/channels/{cfg.Config.config['mods_guild']}"
                     f"/{cfg.Config.config['mod_vote_chan']}/{msg_id}"
                 )
+                if pings != "":
+                    await self.bot.get_channel(cfg.Config.config["mod_chan"]).send(
+                        f"{pings} Please vote on {url} "
+                        f"`{self.truncate_string(pending_item[0])}`"
+                    )
+                else:
+                    await self.bot.get_channel(cfg.Config.config["mod_chan"]).send(
+                        f"<@&{cfg.Config.config['mod_role']}> "
+                        f"Please finalize on {url} "
+                        f"`{self.truncate_string(pending_item[0])}`"
+                    )
+
+            except self.NotFoundException:
+                # if the message is deleted, mark the status as removed
+                sql = "UPDATE mods_vote SET status = ? WHERE rowid = ?"
+                cursor.execute(sql, (6, pending_item[6]))
                 await self.bot.get_channel(cfg.Config.config["mod_chan"]).send(
-                    f"{pings} Please vote on {url} "
-                    f"`{self.truncate_string(vote_item[0])}`"
+                    f"Mods Vote #{pending_item[6]} status set as removed."
+                )
+
+        sql = "SELECT *, rowid FROM mods_vote WHERE status = 1"
+        cursor.execute(sql)
+        pending_items = cursor.fetchall()
+        for pending_item in pending_items:
+            try:
+                msg_id = pending_item[2]
+                mods_vote_result = await self.get_mods_vote_result(msg_id)
+
+                # update message if enough for/against votes
+                if mods_vote_result.status in ["passed", "rejected"]:
+                    emoji = "🚀" if mods_vote_result.status == "passed" else "🥀"
+                    message = await self.bot.get_channel(
+                        cfg.Config.config["mod_vote_chan"]
+                    ).fetch_message(msg_id)
+                    output = (
+                        f"{emoji}    **Mods Vote `#{pending_item[6]}`    "
+                        f"(Deadline: {self.get_timestamp(pending_item[5])})**\n"
+                        f"{pending_item[0]}"
+                    )
+                    await message.edit(content=output)
+
+            except self.NotFoundException:
+                # if the message is deleted, mark the status as removed
+                sql = "UPDATE mods_vote SET status = ? WHERE rowid = ?"
+                cursor.execute(sql, (6, pending_item[6]))
+                await self.bot.get_channel(cfg.Config.config["mod_chan"]).send(
+                    f"Mods Vote #{pending_item[6]} status set as removed."
+                )
+
+        # get passed items from db
+        sql = "SELECT *, rowid FROM mods_vote WHERE status = 2 AND deadline < ?"
+        cursor.execute(sql, (datetime.now(),))
+        passed_items = cursor.fetchall()
+
+        # ping mods if after deadline
+        for passed_item in passed_items:
+            try:
+                msg_id = passed_item[2]
+                mods_vote_result = await self.get_mods_vote_result(msg_id)
+                url = (
+                    f"https://discord.com/channels/{cfg.Config.config['mods_guild']}"
+                    f"/{cfg.Config.config['mod_vote_chan']}/{msg_id}"
+                )
+                await self.bot.get_channel(cfg.Config.config["mod_chan"]).send(
+                    f"<@&{cfg.Config.config['mod_role']}> "
+                    f"Item not yet implemented: {url} "
+                    f"`{self.truncate_string(passed_item[0])}`"
                 )
             except self.NotFoundException:
                 # if the message is deleted, mark the status as removed
                 sql = "UPDATE mods_vote SET status = ? WHERE rowid = ?"
-                cursor.execute(sql, (6, vote_item[6]))
+                cursor.execute(sql, (6, passed_item[6]))
                 await self.bot.get_channel(cfg.Config.config["mod_chan"]).send(
-                    f"Mods Vote #{vote_item[6]} status set as removed."
+                    f"Mods Vote #{passed_item[6]} status set as removed."
                 )
 
     def get_mod_list(self):
@@ -450,7 +522,7 @@ class ModsVote(Cog):
         @property
         def result_string(self):
             return (
-                f"({self.for_count}, {self.abstain_count}, {self.against_count} /"
+                f"({self.for_count}, {self.abstain_count}, {self.against_count} / "
                 f"{len(self.mods_list)}+{len(self.advisors_list)})"
             )
 
@@ -489,9 +561,6 @@ class ModsVote(Cog):
             dt = datetime.strptime(dt, "%Y-%m-%d %H:%M:%S.%f")
         epoch = int(dt.timestamp())
         return f"<t:{epoch}:R>"
-
-    # TODO
-    # handle lost link (if message get deleted)
 
 
 async def setup(bot):
