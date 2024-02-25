@@ -43,7 +43,7 @@ class Mock(Cog):
         "[4,5],[5,6],[6,7],[7,8],[8,9]\n"
         "USAMO (United States of America Mathematical Olympiad):\n"
         "[5,7],[7,9],[9,11],[5,7],[7,9],[9,11]\n"
-        "USAJMO (United States of America Junior Mathematical Olympiad):\n"
+        "USAJMO/JMO (United States of America Junior Mathematical Olympiad):\n"
         "[3,5],[5,7],[7,8],[3,5],[5,7],[7,8]\n"
         "CHINA (Crushingly Hard Imbalanced Nightmarish Assessment):\n"
         "[7,8],[8,10],[10,12],[7,8],[8,10],[10,12]",
@@ -63,6 +63,7 @@ class Mock(Cog):
             "SMO2",
             "USAMO",
             "USAJMO",
+            "JMO",
             "CHINA",
         ]
         if template not in template_list and template != "AFMO":
@@ -108,7 +109,7 @@ class Mock(Cog):
                 difficulty_bounds = [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6]]
             elif template == "SMO2":
                 difficulty_bounds = [[4, 5], [5, 6], [6, 7], [7, 8], [8, 9]]
-            elif template == "USAJMO":
+            elif template == "USAJMO" or template == "JMO":
                 difficulty_bounds = [[3, 5], [5, 7], [7, 8], [3, 5], [5, 7], [7, 8]]
         # SMO2 seems to have an unspoken rule to start with geometry at P1 and nowhere
         # else
