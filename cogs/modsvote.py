@@ -162,7 +162,13 @@ class ModsVote(Cog):
             cfg.db.commit()
 
     @commands.command(
-        aliases=["modsvote_approve", "modsvote_accept"],
+        aliases=[
+            "modsvote_passed",
+            "modsvote_approve",
+            "modsvote_approved",
+            "modsvote_accept",
+            "modsvote_accepted",
+        ],
         brief="Mark a mods vote as passed",
         help="`-modsvote_pass <number>`: Mark the status of mods vote "
         "#<number> as passed",
@@ -207,8 +213,8 @@ class ModsVote(Cog):
             cfg.db.commit()
 
     @commands.command(
-        aliases=["modsvote_reject"],
-        brief="Mark a mods vote as reject",
+        aliases=["modsvote_denied", "modsvote_reject", "modsvote_rejected"],
+        brief="Mark a mods vote as rejected",
         help="`-modsvote_deny <number>`: Mark the status of mods vote #<number> "
         "as rejected",
     )
@@ -248,6 +254,7 @@ class ModsVote(Cog):
             cfg.db.commit()
 
     @commands.command(
+        aliases=["modsvote_implement"],
         brief="Mark a mods vote as implemented",
         help="`-modsvote_implemented <number>`: Mark the status of mods vote "
         "#<number> as implemented",
@@ -284,6 +291,45 @@ class ModsVote(Cog):
             )
             cursor.execute(edit_sql, (5, datetime.now(), number))
             await ctx.send(f"Mods Vote #{number} marked as implemented.")
+        finally:
+            cfg.db.commit()
+
+    @commands.command(
+        aliases=["modsvote_remove"],
+        brief="Mark a mods vote as removed",
+        help="`-modsvote_remove <number>`: Mark the status of mods vote "
+        "#<number> as removed",
+    )
+    @commands.check(cfg.is_staff)
+    async def modsvote_removed(self, ctx, number: int):
+        cursor = cfg.db.cursor()
+        try:
+            # get the item from db
+            sql = "SELECT * FROM mods_vote WHERE rowid = ?"
+            cursor.execute(sql, (str(number),))
+            vote_item = cursor.fetchall()[0]
+            content = vote_item[0]
+            msg_id = vote_item[2]
+
+            # edit the content to mods-announcement
+            message = await self.bot.get_channel(
+                cfg.Config.config["mod_vote_chan"]
+            ).fetch_message(msg_id)
+            output = (
+                f":skull_crossbones:     **Removed `#{number}`    "
+                f"(Deadline: {self.get_timestamp(vote_item[5])})**\n{content}"
+            )
+            await message.edit(content=output)
+        except Exception as e:
+            await ctx.send("Error occured! Please try again.")
+            self.bot.logger.exception(e)
+        else:
+            # edit the content in db
+            edit_sql = (
+                "UPDATE mods_vote SET status = ?, update_date = ? WHERE rowid = ?"
+            )
+            cursor.execute(edit_sql, (6, datetime.now(), number))
+            await ctx.send(f"Mods Vote #{number} marked as removed.")
         finally:
             cfg.db.commit()
 

@@ -188,9 +188,7 @@ class Ratings(Cog):
             cfg.db.commit()
             await ctx.send(f"User `{display_name}` is added to your blacklist.")
         else:
-            await ctx.send(
-                f"User `{display_name}` is already in your blacklist."
-            )
+            await ctx.send(f"User `{display_name}` is already in your blacklist.")
 
     @commands.command(
         aliases=["unblacklist", "rater_unblacklist"],
@@ -199,7 +197,7 @@ class Ratings(Cog):
     async def potd_rater_unblacklist(self, ctx, user_id: int):
         user = self.bot.get_user(user_id)
         if user is None:
-            await ctx.send(f"User with ID {user_id} is not found on this server!")        
+            await ctx.send(f"User with ID {user_id} is not found on this server!")
             display_name = f"<@{user_id}>"
         else:
             display_name = user.display_name
