@@ -394,13 +394,13 @@ class ModsVote(Cog):
                 )
                 if pings != "":
                     await self.bot.get_channel(cfg.Config.config["mod_chan"]).send(
-                        f"{pings} Please vote on {url} "
+                        f"{pings} Please vote on Mods Vote #{pending_item[6]} {url} "
                         f"`{self.truncate_string(pending_item[0])}`"
                     )
                 else:
                     await self.bot.get_channel(cfg.Config.config["mod_chan"]).send(
                         f"<@&{cfg.Config.config['mod_role']}> "
-                        f"Please finalize on {url} "
+                        f"Please finalize on Mods Vote #{pending_item[6]} {url} "
                         f"`{self.truncate_string(pending_item[0])}`"
                     )
 
@@ -457,7 +457,7 @@ class ModsVote(Cog):
                 )
                 await self.bot.get_channel(cfg.Config.config["mod_chan"]).send(
                     f"<@&{cfg.Config.config['mod_role']}> "
-                    f"Item not yet implemented: {url} "
+                    f"Item not yet implemented: Mods Vote #{pending_item[6]} {url} "
                     f"`{self.truncate_string(passed_item[0])}`"
                 )
             except self.NotFoundException:
