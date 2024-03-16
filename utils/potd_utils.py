@@ -16,7 +16,9 @@ CURATOR_RANGE = "Curators!A3:E"
 def is_pc(ctx):
     if ctx.guild is None:
         return False
-    return cfg.Config.config["problem_curator_role"] in [x.id for x in ctx.author.roles]
+    return cfg.Config.config["problem_curator_role"] in [
+        x.id for x in ctx.author.roles
+    ] or cfg.Config.config["mod_role"] in [x.id for x in ctx.author.roles]
 
 
 async def dm_or_channel(

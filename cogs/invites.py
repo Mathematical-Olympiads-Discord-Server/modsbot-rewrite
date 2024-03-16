@@ -49,9 +49,13 @@ class Invites(Cog):
         embed.add_field(name="User Joined", value=member.mention, inline=False)
         embed.add_field(
             name="Possible Invites",
-            value=possible_string
-            if possible_string != ""
-            else "None (probably Discovery)",
+            value=(
+                (
+                    possible_string
+                    if possible_string != ""
+                    else "None (probably Discovery)"
+                ),
+            ),
             inline=False,
         )
 

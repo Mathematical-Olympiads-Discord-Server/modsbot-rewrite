@@ -165,30 +165,30 @@ class Ratings(Cog):
     async def potd_rater_blacklist(self, ctx, user_id: int):
         user = self.bot.get_user(user_id)
         if user is None:
-            await ctx.send(f"User with ID {user_id} is not found!")
-
+            await ctx.send(f"User with ID {user_id} is not found on this server!")
+            display_name = f"<@{user_id}>"
         else:
-            cursor = cfg.db.cursor()
-            cursor.execute(
-                f"""SELECT blacklisted_user_id
-                FROM potd_rater_blacklist
-                WHERE discord_user_id = {ctx.author.id}
-                LIMIT 1000000;"""
+            display_name = user.display_name
+
+        cursor = cfg.db.cursor()
+        cursor.execute(
+            f"""SELECT blacklisted_user_id
+            FROM potd_rater_blacklist
+            WHERE discord_user_id = {ctx.author.id}
+            LIMIT 1000000;"""
+        )
+        blacklisted_users = cursor.fetchall()
+        if str(user_id) not in list(map(lambda x: x[0], blacklisted_users)):
+            sql = (
+                "INSERT INTO potd_rater_blacklist "
+                "(discord_user_id, blacklisted_user_id, create_date)"
+                "VALUES (?, ?, ?)"
             )
-            blacklisted_users = cursor.fetchall()
-            if str(user_id) not in list(map(lambda x: x[0], blacklisted_users)):
-                sql = (
-                    "INSERT INTO potd_rater_blacklist "
-                    "(discord_user_id, blacklisted_user_id, create_date)"
-                    "VALUES (?, ?, ?)"
-                )
-                cursor.execute(sql, (str(ctx.author.id), str(user_id), datetime.now()))
-                cfg.db.commit()
-                await ctx.send(f"User {user.display_name} is added to your blacklist.")
-            else:
-                await ctx.send(
-                    f"User {user.display_name} is already in your blacklist."
-                )
+            cursor.execute(sql, (str(ctx.author.id), str(user_id), datetime.now()))
+            cfg.db.commit()
+            await ctx.send(f"User `{display_name}` is added to your blacklist.")
+        else:
+            await ctx.send(f"User `{display_name}` is already in your blacklist.")
 
     @commands.command(
         aliases=["unblacklist", "rater_unblacklist"],
@@ -197,18 +197,20 @@ class Ratings(Cog):
     async def potd_rater_unblacklist(self, ctx, user_id: int):
         user = self.bot.get_user(user_id)
         if user is None:
-            await ctx.send(f"User with ID {user_id} is not found!")
-
+            await ctx.send(f"User with ID {user_id} is not found on this server!")
+            display_name = f"<@{user_id}>"
         else:
-            cursor = cfg.db.cursor()
-            sql = (
-                f"DELETE FROM potd_rater_blacklist "
-                f"WHERE blacklisted_user_id = {user_id} "
-                f"AND discord_user_id = {ctx.author.id}"
-            )
-            cursor.execute(sql)
-            cfg.db.commit()
-            await ctx.send(f"User {user.display_name} is removed from your blacklist.")
+            display_name = user.display_name
+
+        cursor = cfg.db.cursor()
+        sql = (
+            f"DELETE FROM potd_rater_blacklist "
+            f"WHERE blacklisted_user_id = {user_id} "
+            f"AND discord_user_id = {ctx.author.id}"
+        )
+        cursor.execute(sql)
+        cfg.db.commit()
+        await ctx.send(f"User `{display_name}` is removed from your blacklist.")
 
     @commands.command(aliases=["myblacklist"], brief="Get your potd rating blacklist.")
     async def potd_myblacklist(self, ctx):

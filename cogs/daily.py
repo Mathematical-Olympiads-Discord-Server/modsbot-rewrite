@@ -370,40 +370,6 @@ class Daily(Cog):
             )
             request.execute()
 
-            # record the link to rendered image if it is in POTD channel
-            # get the row and column to update
-            column = openpyxl.utils.get_column_letter(
-                cfg.Config.config["potd_sheet_image_link_col"] + 1
-            )
-            reply = (
-                cfg.Config.service.spreadsheets()
-                .values()
-                .get(spreadsheetId=cfg.Config.config["potd_sheet"], range=POTD_RANGE)
-                .execute()
-            )
-            values = reply.get("values", [])
-            current_potd = int(
-                values[0][0]
-            )  # this will be the top left cell which indicates the latest added potd
-            row = (
-                current_potd - self.requested_number + 2
-            )  # this gets the row requested
-            # update the source_msg in the sheet
-            request = (
-                cfg.Config.service.spreadsheets()
-                .values()
-                .update(
-                    spreadsheetId=cfg.Config.config["potd_sheet"],
-                    range=f"{column}{row}",
-                    valueInputOption="RAW",
-                    body={
-                        "range": f"{column}{row}",
-                        "values": [[str(message.attachments[0].proxy_url)]],
-                    },
-                )
-            )
-            request.execute()
-
         bot_log = self.bot.get_channel(cfg.Config.config["log_channel"])
 
         ping_msg = None
