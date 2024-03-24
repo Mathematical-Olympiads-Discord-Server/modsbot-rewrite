@@ -26,15 +26,14 @@ class Contest(Cog):
             if len(row) >= 3:
                 username = row[1]
                 medal = row[2]
-                match medal:
-                    case "Gold Award":
-                        gold_medalists.append(username)
-                    case "Silver Award":
-                        silver_medalists.append(username)
-                    case "Bronze Award":
-                        bronze_medalists.append(username)
-                    case "Honourable Mention":
-                        hm_medalists.append(username)
+                if medal == "Gold Award":
+                    gold_medalists.append(username)
+                elif  medal == "Silver Award":
+                    silver_medalists.append(username)
+                elif  medal == "Bronze Award":
+                    bronze_medalists.append(username)
+                elif  medal == "Honourable Mention":
+                    hm_medalists.append(username)
 
         if not confirm:
             # output contest name instruction
