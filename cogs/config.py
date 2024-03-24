@@ -23,6 +23,16 @@ def is_mod_or_tech(ctx):
     return Config.config["mod_role"] in roles or Config.config["tech_role"] in roles
 
 
+def is_contest_chair(ctx):
+    if ctx.guild is None or ctx.guild.id != Config.config["mods_guild"]:
+        return False
+    roles = list(map(lambda x: x.id, ctx.author.roles))
+    return (
+        Config.config["mod_role"] in roles
+        or Config.config["contest_chair_role"] in roles
+    )
+
+
 def timestamp(dt: datetime):
     if dt.tzinfo is None:
         dt = dt.astimezone()
@@ -41,7 +51,7 @@ class Config(Cog):
     service = discovery.build("sheets", "v4", credentials=credentials)
 
     def __init__(self, bot):
-        with open("config/config.yml") as cfgfile:
+        with open("config/config_test.yml") as cfgfile:
             Config.config = yaml.safe_load(cfgfile)
         self.bot = bot
 
