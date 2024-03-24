@@ -28,11 +28,11 @@ class Contest(Cog):
                 medal = row[2]
                 if medal == "Gold Award":
                     gold_medalists.append(username)
-                elif  medal == "Silver Award":
+                elif medal == "Silver Award":
                     silver_medalists.append(username)
-                elif  medal == "Bronze Award":
+                elif medal == "Bronze Award":
                     bronze_medalists.append(username)
-                elif  medal == "Honourable Mention":
+                elif medal == "Honourable Mention":
                     hm_medalists.append(username)
 
         if not confirm:
