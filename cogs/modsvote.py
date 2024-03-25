@@ -517,7 +517,7 @@ class ModsVote(Cog):
             return modsvote_result
 
     def truncate_string(self, text):
-        return f"{text[:50]}..." if len(text) > 50 else text
+        return f"{text[:200]}..." if len(text) > 200 else text
 
     class ModsVoteResult:
         def __init__(self):
