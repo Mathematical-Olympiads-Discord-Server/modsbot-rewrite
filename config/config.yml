@@ -21,6 +21,7 @@ cogs:
   - cogs.suggest-confirm
   - cogs.starfish
   - cogs.modsvote
+  - cogs.contest
 potd_sheet: '10X0-CCSv7FenZP1YaKlDSE-PD4LSZAgpzT5Rs9F8hvA'
 potd_sheet_id_col: 0
 potd_sheet_date_col: 1
@@ -99,3 +100,9 @@ well_sheet: '1eI2PzhwFzPJKEXskpG_ynY1SZYCxpU8eK_zGUH5SMxE'
 starfishing_emoji: '<:starfishing:763528284117008385>'
 check_emoji: '<:check:564272059610431508>'
 modsvote_default_days: 7
+contest_sheet: '1zP52G7-EsYT3TuL876kS2reGmv84V2JEoJbD5KvYcfE'
+contest_gold_role: 1159589417749598269
+contest_silver_role: 1159589354432364684
+contest_bronze_role: 1159588998247882814
+contest_hm_role: 1159589480106303492
+contest_chair_role: 1202585888211865670
