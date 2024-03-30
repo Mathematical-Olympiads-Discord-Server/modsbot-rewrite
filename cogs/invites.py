@@ -72,6 +72,17 @@ class Invites(Cog):
                 embed=embed
             )
 
+        # send welcome message
+        welcome_message = (
+            f"Welcome to the Mathematical Olympiads Discord Server "
+            f"<@!{member.id}>! Introduce yourself in "
+            f"<#{cfg.Config.config['introduction_channel']}>"
+            f"and enjoy your time here. 😃"
+        )
+        await self.bot.get_channel(cfg.Config.config["lounge_channel"]).send(
+            welcome_message
+        )
+
 
 async def setup(bot: commands.Bot):
     i = Invites(bot)
