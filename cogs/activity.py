@@ -166,8 +166,10 @@ class Activity(Cog):
     @commands.command(aliases=["ua"])
     @commands.check(cfg.is_staff)
     async def update_actives(
-        self, ctx, active_threshold: int = cfg.Config.config["active_threshold"],
-        new_threshold: int = cfg.Config.config["new_threshold"]
+        self,
+        ctx,
+        active_threshold: int = cfg.Config.config["active_threshold"],
+        new_threshold: int = cfg.Config.config["new_threshold"],
     ):
         cursor = cfg.db.cursor()
         cursor.execute(

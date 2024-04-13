@@ -148,10 +148,12 @@ class MODSBot(commands.Bot):
 
         # check if new users
         roles = list(map(lambda x: x.id, message.author.roles))
-        if (self.config["new_role"] in roles 
-        and self.config["admin_role"] not in roles
-        and self.config["mod_role"] not in roles 
-        and self.config["helper_team_role"] not in roles):
+        if (
+            self.config["new_role"] in roles
+            and self.config["admin_role"] not in roles
+            and self.config["mod_role"] not in roles
+            and self.config["helper_team_role"] not in roles
+        ):
             # mark as spam if message contains links with "discord"
             if re.search(r"http[s]?://.*discord.*", message.content):
                 spam = True
