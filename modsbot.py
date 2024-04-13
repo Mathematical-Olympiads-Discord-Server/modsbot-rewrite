@@ -152,8 +152,8 @@ class MODSBot(commands.Bot):
         and self.config["admin_role"] not in roles
         and self.config["mod_role"] not in roles 
         and self.config["helper_team_role"] not in roles):
-            # mark as spam if message contains links
-            if re.search(r"http://|https://", message.content):
+            # mark as spam if message contains links with "discord"
+            if re.search(r"http[s]?://.*discord.*", message.content):
                 spam = True
 
             # during embargo, remove messages from new users
