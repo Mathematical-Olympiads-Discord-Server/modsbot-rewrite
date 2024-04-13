@@ -166,7 +166,8 @@ class Activity(Cog):
     @commands.command(aliases=["ua"])
     @commands.check(cfg.is_staff)
     async def update_actives(
-        self, ctx, threshold: int = cfg.Config.config["active_threshold"]
+        self, ctx, active_threshold: int = cfg.Config.config["active_threshold"],
+        new_threshold: int = cfg.Config.config["new_threshold"]
     ):
         cursor = cfg.db.cursor()
         cursor.execute(
@@ -193,10 +194,12 @@ class Activity(Cog):
             else:
                 activity[message[0]] = weight(message[2], message[1], None, now)
             last_message[message[0]] = message[1]
-        actives_today = {i for i in activity if activity[i] >= threshold}
-        print([i for i in activity if activity[i] >= threshold])
-        print(len([i for i in activity if activity[i] >= threshold]))
+        actives_today = {i for i in activity if activity[i] >= active_threshold}
+        not_new_today = {i for i in activity if activity[i] >= new_threshold}
+        print([i for i in activity if activity[i] >= active_threshold])
+        print(len([i for i in activity if activity[i] >= active_threshold]))
 
+        # Assign active role
         active_role = ctx.guild.get_role(cfg.Config.config["active_role"])
         continued_actives = set()
         removed_actives = set()
@@ -226,6 +229,12 @@ class Activity(Cog):
         await ctx.guild.get_channel(cfg.Config.config["log_channel"]).send(
             f"Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```"
         )
+
+        # Remove new role
+        new_role = ctx.guild.get_role(cfg.Config.config["new_role"])
+        for member in new_role.members:
+            if member.id in not_new_today:
+                await member.remove_roles(new_role)
 
     class ActtopFlags(commands.FlagConverter, delimiter=" ", prefix="--"):
         interval: int = commands.flag(name="interval", aliases=["i"], default=30)

@@ -167,6 +167,23 @@ class MODSBot(commands.Bot):
             return
         await self.process_commands(message)
 
+        # during embargo, remove messages from new users
+        is_embargo = self.config["embargo"]
+        if is_embargo:
+            new_role = message.guild.get_role(self.config["new_role"])
+            admin_role = message.guild.get_role(self.config["admin_role"])
+            mod_role = message.guild.get_role(self.config["mod_role"])
+            helper_team_role = message.guild.get_role(self.config["helper_team_role"])
+            roles = message.author.roles
+            if (new_role in roles and admin_role not in roles and 
+                mod_role not in roles and helper_team_role not in roles):
+                await message.delete()
+                await message.author.send(
+                    "MODS is currently under embargo. "
+                    "New members are not allowed to post messages. "
+                    f"Please check <#{config['introduction_channel']}> for updates."
+                )
+
     async def set_presence(self, text):
         game = discord.Game(name=text)
         await self.change_presence(activity=game)

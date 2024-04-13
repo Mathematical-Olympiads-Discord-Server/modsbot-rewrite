@@ -83,6 +83,10 @@ class Invites(Cog):
             welcome_message
         )
 
+        # add new role
+        new_role = member.guild.get_role(cfg.Config.config["new_role"])
+        await member.add_roles(new_role)
+
 
 async def setup(bot: commands.Bot):
     i = Invites(bot)
