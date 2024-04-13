@@ -457,7 +457,7 @@ class ModsVote(Cog):
                 )
                 await self.bot.get_channel(cfg.Config.config["mod_chan"]).send(
                     f"<@&{cfg.Config.config['mod_role']}> "
-                    f"Item not yet implemented: Mods Vote #{pending_item[6]} {url} "
+                    f"Item not yet implemented: Mods Vote #{passed_item[6]} {url} "
                     f"`{self.truncate_string(passed_item[0])}`"
                 )
             except self.NotFoundException:
