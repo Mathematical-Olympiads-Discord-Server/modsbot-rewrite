@@ -128,7 +128,7 @@ class MODSBot(commands.Bot):
         if message.author.bot:
             return
 
-        # Mute for spam
+        # Mark as spam if message contains links with "discord" and "nitro"
         spam = False
         if re.search(r"http://|https://", message.content):
             search_str = message.content
@@ -142,9 +142,31 @@ class MODSBot(commands.Bot):
             ):
                 spam = True
 
+        # Mark as spam if user is troll and calling MODSbot
         if message.author.id in self.config["troll"] and message.content[0] == "-":
             spam = True
 
+        # check if new users
+        roles = list(map(lambda x: x.id, message.author.roles))
+        if (self.config["new_role"] in roles 
+        and self.config["admin_role"] not in roles
+        and self.config["mod_role"] not in roles 
+        and self.config["helper_team_role"] not in roles):
+            # mark as spam if message contains links
+            if re.search(r"http://|https://", message.content):
+                spam = True
+
+            # during embargo, remove messages from new users
+            is_embargo = self.config["embargo"]
+            if is_embargo:
+                await message.delete()
+                await message.author.send(
+                    "MODS is currently under embargo. "
+                    "New members are not allowed to post messages. "
+                    f"Please check <#{config['introduction_channel']}> for updates."
+                )
+
+        # mute for spam
         if spam:
             with contextlib.suppress(Exception):
                 log_message = (
@@ -166,23 +188,6 @@ class MODSBot(commands.Bot):
         if message.author.id in self.blacklist:
             return
         await self.process_commands(message)
-
-        # during embargo, remove messages from new users
-        is_embargo = self.config["embargo"]
-        if is_embargo:
-            new_role = message.guild.get_role(self.config["new_role"])
-            admin_role = message.guild.get_role(self.config["admin_role"])
-            mod_role = message.guild.get_role(self.config["mod_role"])
-            helper_team_role = message.guild.get_role(self.config["helper_team_role"])
-            roles = message.author.roles
-            if (new_role in roles and admin_role not in roles and 
-                mod_role not in roles and helper_team_role not in roles):
-                await message.delete()
-                await message.author.send(
-                    "MODS is currently under embargo. "
-                    "New members are not allowed to post messages. "
-                    f"Please check <#{config['introduction_channel']}> for updates."
-                )
 
     async def set_presence(self, text):
         game = discord.Game(name=text)
