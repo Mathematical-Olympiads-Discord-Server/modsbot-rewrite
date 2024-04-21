@@ -169,7 +169,7 @@ class Activity(Cog):
         self,
         ctx,
         active_threshold: int = cfg.Config.config["active_threshold"],
-        new_threshold: int = cfg.Config.config["new_threshold"],
+        trust_threshold: int = cfg.Config.config["trust_threshold"],
     ):
         cursor = cfg.db.cursor()
         cursor.execute(
@@ -197,7 +197,7 @@ class Activity(Cog):
                 activity[message[0]] = weight(message[2], message[1], None, now)
             last_message[message[0]] = message[1]
         actives_today = {i for i in activity if activity[i] >= active_threshold}
-        not_new_today = {i for i in activity if activity[i] >= new_threshold}
+        trusted_today = {i for i in activity if activity[i] >= trust_threshold}
         print([i for i in activity if activity[i] >= active_threshold])
         print(len([i for i in activity if activity[i] >= active_threshold]))
 
@@ -232,11 +232,11 @@ class Activity(Cog):
             f"Continued: ```{ca}```\nRemoved: ```{ra}```\nNew: ```{na}```"
         )
 
-        # Remove new role
-        new_role = ctx.guild.get_role(cfg.Config.config["new_role"])
-        for member in new_role.members:
-            if member.id in not_new_today:
-                await member.remove_roles(new_role)
+        # Assign trusted role role
+        trusted_role = ctx.guild.get_role(cfg.Config.config["trusted_role"])
+        for id in trusted_today:
+            if id not in trusted_role.members:
+                await ctx.guild.get_member(id).add_roles(trusted_role)
 
     class ActtopFlags(commands.FlagConverter, delimiter=" ", prefix="--"):
         interval: int = commands.flag(name="interval", aliases=["i"], default=30)

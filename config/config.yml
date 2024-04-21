@@ -109,6 +109,6 @@ contest_silver_role: 1159589354432364684
 contest_bronze_role: 1159588998247882814
 contest_hm_role: 1159589480106303492
 contest_chair_role: 1202585888211865670
-new_role: 1228639191215116288
-new_threshold: 100
+trusted_role: 1228639191215116288
+trust_threshold: 100
 embargo: false

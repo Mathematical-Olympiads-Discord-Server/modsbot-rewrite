@@ -146,17 +146,17 @@ class MODSBot(commands.Bot):
         if message.author.id in self.config["troll"] and message.content[0] == "-":
             spam = True
 
-        # check if new users
+        # check if trusted users
         roles = list(map(lambda x: x.id, message.author.roles))
         if (
-            self.config["new_role"] in roles
+            self.config["trusted_role"] not in roles
             and self.config["admin_role"] not in roles
             and self.config["mod_role"] not in roles
             and self.config["helper_team_role"] not in roles
         ):
-            # mark as spam if message contains links with "discord"
-            if re.search(r"http[s]?://.*discord.*", message.content):
-                spam = True
+            # # mark as spam if message contains links with "discord"
+            # if re.search(r"http[s]?://.*discord.*", message.content):
+            #     spam = True
 
             # during embargo, remove messages from new users
             is_embargo = self.config["embargo"]
