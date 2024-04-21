@@ -12,11 +12,26 @@ words = open(word_file).read().splitlines()
 waiting_for = set()
 aphasiad = set()
 in_verif_speedrun_mode = set()
-
+embargo = False
 
 class Misc(Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        cursor = cfg.db.cursor()
+        cursor.execute(
+            """INSERT OR IGNORE INTO settings VALUES
+            ('embargo', 'False')
+            """
+        )
+        cursor.execute(
+            """SELECT value
+            FROM settings
+            WHERE setting = 'embargo';
+            """
+        )
+        result = cursor.fetchone()
+        if result is not None:
+            self.embargo = result[0]
 
     def record(self):
         # TODO: work out what to do with this
@@ -123,6 +138,24 @@ class Misc(Cog):
     @commands.check(cfg.is_staff)
     async def unaphasia(self, ctx, user: discord.User):
         aphasiad.remove(user.id)
+
+    @commands.command()
+    @commands.check(cfg.is_staff)
+    async def toggle_embargo(self, ctx, status:bool):
+        cursor = cfg.db.cursor()
+        cursor.execute(
+            f"""UPDATE settings
+            SET value = '{status}'
+            WHERE setting = 'embargo';
+            """
+        )
+        self.embargo = status
+        await ctx.send(f"Embargo status toggled to {status}")
+        
+    @commands.command()
+    @commands.check(cfg.is_staff)
+    async def embargo_status(self, ctx):
+        await ctx.send(f"Current embargo status: {self.embargo}")
 
     @Cog.listener()
     async def on_message(self, message: discord.Message):

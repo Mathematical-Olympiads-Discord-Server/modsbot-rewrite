@@ -159,13 +159,14 @@ class MODSBot(commands.Bot):
             #     spam = True
 
             # during embargo, remove messages from new users
-            is_embargo = self.config["embargo"]
+            misc = self.get_cog('Misc')
+            is_embargo = misc.embargo
             if is_embargo:
                 await message.delete()
                 await message.author.send(
                     "MODS is currently under embargo. "
                     "New members are not allowed to post messages. "
-                    f"Please check <#{config['introduction_channel']}> for updates."
+                    f"Please check <#{config['announcement_channel']}> for updates."
                 )
 
         # mute for spam
