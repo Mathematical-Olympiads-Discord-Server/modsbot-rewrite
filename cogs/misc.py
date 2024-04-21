@@ -14,6 +14,7 @@ aphasiad = set()
 in_verif_speedrun_mode = set()
 embargo = False
 
+
 class Misc(Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -141,7 +142,7 @@ class Misc(Cog):
 
     @commands.command()
     @commands.check(cfg.is_staff)
-    async def toggle_embargo(self, ctx, status:bool):
+    async def toggle_embargo(self, ctx, status: bool):
         cursor = cfg.db.cursor()
         cursor.execute(
             f"""UPDATE settings
@@ -151,7 +152,7 @@ class Misc(Cog):
         )
         self.embargo = status
         await ctx.send(f"Embargo status toggled to {status}")
-        
+
     @commands.command()
     @commands.check(cfg.is_staff)
     async def embargo_status(self, ctx):

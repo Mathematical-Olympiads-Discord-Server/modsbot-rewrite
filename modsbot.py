@@ -159,7 +159,7 @@ class MODSBot(commands.Bot):
             #     spam = True
 
             # during embargo, remove messages from new users
-            misc = self.get_cog('Misc')
+            misc = self.get_cog("Misc")
             is_embargo = misc.embargo
             if is_embargo:
                 await message.delete()
