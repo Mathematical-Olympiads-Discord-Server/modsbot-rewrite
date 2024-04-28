@@ -128,7 +128,7 @@ class MODSBot(commands.Bot):
         if message.author.bot:
             return
 
-        # Mute for spam
+        # Mark as spam if message contains links with "discord" and "nitro"
         spam = False
         if re.search(r"http://|https://", message.content):
             search_str = message.content
@@ -142,9 +142,34 @@ class MODSBot(commands.Bot):
             ):
                 spam = True
 
+        # Mark as spam if user is troll and calling MODSbot
         if message.author.id in self.config["troll"] and message.content[0] == "-":
             spam = True
 
+        # check if trusted users
+        roles = list(map(lambda x: x.id, message.author.roles))
+        if (
+            self.config["trusted_role"] not in roles
+            and self.config["admin_role"] not in roles
+            and self.config["mod_role"] not in roles
+            and self.config["helper_team_role"] not in roles
+        ):
+            # # mark as spam if message contains links with "discord"
+            # if re.search(r"http[s]?://.*discord.*", message.content):
+            #     spam = True
+
+            # during embargo, remove messages from new users
+            misc = self.get_cog("Misc")
+            is_embargo = misc.embargo
+            if is_embargo:
+                await message.delete()
+                await message.author.send(
+                    "MODS is currently under embargo. "
+                    "New members are not allowed to post messages. "
+                    f"Please check <#{config['announcement_channel']}> for updates."
+                )
+
+        # mute for spam
         if spam:
             with contextlib.suppress(Exception):
                 log_message = (

@@ -155,7 +155,7 @@ class Mock(Cog):
             )
 
         if template in {"IMO", "AMO", "USAMO", "USAJMO", "CHINA"}:  # 2-day contests
-            if template in {"IMO", "CHINA", "USAMO", "USAJMO"}:
+            if template in {"IMO", "CHINA", "USAMO", "USAJMO", "JMO"}:
                 index_day1 = [0, 1, 2]
                 index_day2 = [3, 4, 5]
             elif template in {"AMO"}:
