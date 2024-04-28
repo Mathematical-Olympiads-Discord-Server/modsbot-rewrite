@@ -236,7 +236,8 @@ class Activity(Cog):
         trusted_role = ctx.guild.get_role(cfg.Config.config["trusted_role"])
         for id in trusted_today:
             if id not in trusted_role.members:
-                await ctx.guild.get_member(id).add_roles(trusted_role)
+                with contextlib.suppress(Exception):
+                    await ctx.guild.get_member(id).add_roles(trusted_role)
 
     class ActtopFlags(commands.FlagConverter, delimiter=" ", prefix="--"):
         interval: int = commands.flag(name="interval", aliases=["i"], default=30)
