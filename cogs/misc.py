@@ -12,7 +12,7 @@ words = open(word_file).read().splitlines()
 waiting_for = set()
 aphasiad = set()
 in_verif_speedrun_mode = set()
-embargo:bool = False
+embargo: bool = False
 
 
 class Misc(Cog):
@@ -32,7 +32,7 @@ class Misc(Cog):
         )
         result = cursor.fetchone()
         if result is not None:
-            self.embargo = (result[0] == 'True')
+            self.embargo = result[0] == "True"
 
     def record(self):
         # TODO: work out what to do with this
