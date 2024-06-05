@@ -122,7 +122,7 @@ class Suggestions(Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.lock = False  # Lock when changing the sheet over a period of time.
-        self.initialize_suggestion_list()        
+        self.initialize_suggestion_list()
 
     @commands.command(
         brief="Suggest a change to the server. ", cooldown_after_parsing=True
@@ -539,8 +539,8 @@ class Suggestions(Cog):
 
     @commands.command()
     @commands.check(cfg.is_mod_or_tech)
-    async def sync_suggestion(self, ctx):        
-        self.initialize_suggestion_list()        
+    async def sync_suggestion(self, ctx):
+        self.initialize_suggestion_list()
         await ctx.send("Sync with suggestion sheet completed.")
 
     @Cog.listener()
