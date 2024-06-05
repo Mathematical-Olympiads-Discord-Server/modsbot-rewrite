@@ -160,10 +160,7 @@ class MODSBot(commands.Bot):
 
             # during embargo, remove messages from new users
             misc = self.get_cog("Misc")
-            if misc is None:
-                is_embargo = False
-            else:
-                is_embargo = misc.embargo
+            is_embargo = False if misc is None else misc.embargo
             if is_embargo:
                 await message.delete()
                 await message.author.send(
