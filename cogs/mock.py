@@ -257,7 +257,7 @@ class Mock(Cog):
             )
 
     async def send_out_mock(self, ctx, name, problems_tex):
-        count = 0 # add a count to prevent infinite loop
+        count = 0  # add a count to prevent infinite loop
         while len(problems_tex) > 0 and count < 15:  # still has problems to send out
             title = (
                 r"\begin{center}\textbf{\textsf{MODSBot Mock "
