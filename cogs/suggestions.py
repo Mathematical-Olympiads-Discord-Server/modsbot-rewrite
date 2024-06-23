@@ -122,40 +122,7 @@ class Suggestions(Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.lock = False  # Lock when changing the sheet over a period of time.
-
-        # Initialise suggestion list
-        suggestion_list.clear()
-        suggestions = (
-            cfg.Config.service.spreadsheets()
-            .values()
-            .get(
-                spreadsheetId=cfg.Config.config["suggestion_sheet"],
-                range="Suggestions!A2:J",
-            )
-            .execute()
-            .get("values", [])
-        )
-        for s in suggestions:
-            suggestion_list.append(from_list(s))
-        suggestion_list.sort(key=operator.attrgetter("id"))
-        suggestion_list.sort(key=lambda x: statuses.inverse[x.status])
-
-        # Initialise tech suggestion list
-        tech_suggestion_list.clear()
-        tech_suggestions = (
-            cfg.Config.service.spreadsheets()
-            .values()
-            .get(
-                spreadsheetId=cfg.Config.config["suggestion_sheet"],
-                range="Tech Suggestions!A2:J",
-            )
-            .execute()
-            .get("values", [])
-        )
-        for s in tech_suggestions:
-            tech_suggestion_list.append(from_list(s))
-        tech_suggestion_list.sort(key=operator.attrgetter("id"))
-        tech_suggestion_list.sort(key=lambda x: statuses.inverse[x.status])
+        self.initialize_suggestion_list()
 
     @commands.command(
         brief="Suggest a change to the server. ", cooldown_after_parsing=True
@@ -570,6 +537,12 @@ class Suggestions(Cog):
 
             await ctx.send(f"Done {status}")
 
+    @commands.command()
+    @commands.check(cfg.is_mod_or_tech)
+    async def sync_suggestion(self, ctx):
+        self.initialize_suggestion_list()
+        await ctx.send("Sync with suggestion sheet completed.")
+
     @Cog.listener()
     async def on_message(self, message: discord.Message):
         if (
@@ -615,6 +588,41 @@ class Suggestions(Cog):
 
         # Delete message
         await message.delete(delay=15)
+
+    def initialize_suggestion_list(self):
+        # Initialise suggestion list
+        suggestion_list.clear()
+        suggestions = (
+            cfg.Config.service.spreadsheets()
+            .values()
+            .get(
+                spreadsheetId=cfg.Config.config["suggestion_sheet"],
+                range="Suggestions!A2:J",
+            )
+            .execute()
+            .get("values", [])
+        )
+        for s in suggestions:
+            suggestion_list.append(from_list(s))
+        suggestion_list.sort(key=operator.attrgetter("id"))
+        suggestion_list.sort(key=lambda x: statuses.inverse[x.status])
+
+        # Initialise tech suggestion list
+        tech_suggestion_list.clear()
+        tech_suggestions = (
+            cfg.Config.service.spreadsheets()
+            .values()
+            .get(
+                spreadsheetId=cfg.Config.config["suggestion_sheet"],
+                range="Tech Suggestions!A2:J",
+            )
+            .execute()
+            .get("values", [])
+        )
+        for s in tech_suggestions:
+            tech_suggestion_list.append(from_list(s))
+        tech_suggestion_list.sort(key=operator.attrgetter("id"))
+        tech_suggestion_list.sort(key=lambda x: statuses.inverse[x.status])
 
 
 async def setup(bot):

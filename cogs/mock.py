@@ -257,7 +257,8 @@ class Mock(Cog):
             )
 
     async def send_out_mock(self, ctx, name, problems_tex):
-        while len(problems_tex) > 0:  # still has problems to send out
+        count = 0  # add a count to prevent infinite loop
+        while len(problems_tex) > 0 and count < 15:  # still has problems to send out
             title = (
                 r"\begin{center}\textbf{\textsf{MODSBot Mock "
                 + name
@@ -271,6 +272,7 @@ class Mock(Cog):
             problems = problems[:-5]
             to_tex = f"<@419356082981568522>\n```tex\n {title} {problems}```"
             await ctx.send(to_tex, delete_after=5)
+            count += 1
 
     def is_genre_legit(self, genres, template, genre_rule):
         if len(genres) != len(genre_rule):
