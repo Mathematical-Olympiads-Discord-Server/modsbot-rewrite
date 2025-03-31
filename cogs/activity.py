@@ -72,7 +72,7 @@ class Activity(Cog):
         if (
             not message.author.bot
             and message.guild is not None
-            and message.guild.id != cfg.Config.config["mods_guild"]
+            and message.guild.id == cfg.Config.config["mods_guild"]
         ):  # Ignore messages from bots and DMs and servers outside MODS
             cursor = cfg.db.cursor()
             cursor.execute(
