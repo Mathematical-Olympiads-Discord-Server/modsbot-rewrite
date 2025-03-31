@@ -70,8 +70,8 @@ class Activity(Cog):
     @Cog.listener()
     async def on_message(self, message):
         if (
-            not message.author.bot 
-            and message.guild is not None 
+            not message.author.bot
+            and message.guild is not None
             and message.guild.id != cfg.Config.config['mods_guild']
         ):  # Ignore messages from bots and DMs and servers outside MODS
             cursor = cfg.db.cursor()
