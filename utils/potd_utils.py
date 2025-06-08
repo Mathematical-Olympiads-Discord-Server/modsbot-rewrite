@@ -158,38 +158,29 @@ async def fetch(ctx, number: int, flag: str = ""):
     else:
         # Create the message to send
         try:
-            # if there is image link, just send it out
-            image_link = check_for_image_link(potd_row)
-            if image_link and "t" not in flag:
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(image_link) as resp:
-                        if resp.status != 200:
-                            return await ctx.send("Could not download file...")
-                        data = io.BytesIO(await resp.read())
-                        if "s" not in flag:
-                            await ctx.send(file=discord.File(data, f"potd{number}.png"))
-                        else:
-                            await ctx.send(
-                                file=discord.File(data, f"SPOILER_potd{number}.png")
-                            )
-            # if no image link, send tex
+            # Always send tex format now
+            if "s" not in flag:
+                output = (
+                    "<@"
+                    + str(cfg.Config.config["paradox_id"])
+                    + ">\n"
+                    + texify_potd(potd_row)
+                )
             else:
-                if "s" not in flag:
-                    output = (
-                        "<@"
-                        + str(cfg.Config.config["paradox_id"])
-                        + ">\n"
-                        + texify_potd(potd_row)
-                    )
-                else:
-                    output = (
-                        "<@"
-                        + str(cfg.Config.config["paradox_id"])
-                        + ">texsp\n||"
-                        + texify_potd(potd_row)
-                        + "||"
-                    )
+                output = (
+                    "<@"
+                    + str(cfg.Config.config["paradox_id"])
+                    + ">texsp\n||"
+                    + texify_potd(potd_row)
+                    + "||"
+                )
+            
+            # If 't' flag is present, don't delete after time
+            # If 't' flag is not present, delete after 5 seconds
+            if "t" not in flag:
                 await ctx.send(output, delete_after=5)
+            else:
+                await ctx.send(output)
         except IndexError:
             await ctx.send(f"There is no potd for day {number}. ")
             return
