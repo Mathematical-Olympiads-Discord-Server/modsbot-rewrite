@@ -394,7 +394,42 @@ def get_potd_row(number, sheet):
         values[0][0]
     )  # this will be the top left cell which indicates the latest added potd
 
-    if number > current_potd or number < 1:
+    # Handle special cases for relative dates
+    if number <= 0:
+        from datetime import datetime, timezone, timedelta
+        
+        # Get current time in GMT
+        now_gmt = datetime.now(timezone.utc)
+        
+        # If it's before 1800 GMT, consider it as previous day
+        if now_gmt.hour < 18:
+            days_offset = -1
+        else:
+            days_offset = 0
+        
+        # Calculate the target date
+        if number == 0:
+            # Today's POTD
+            target_date = now_gmt + timedelta(days=days_offset)
+        else:
+            # n days ago POTD (number is negative)
+            target_date = now_gmt + timedelta(days=days_offset + number)
+        
+        # Format date like the daily system does
+        date_str = target_date.strftime("%d %b %Y")
+        if date_str[0] == "0":
+            date_str = date_str[1:]
+        
+        # Search for POTD with this date
+        for potd_row in values:
+            if len(potd_row) > 1 and potd_row[1] == date_str:
+                return potd_row
+        
+        # If no POTD found for that date
+        return None
+
+    # Handle positive numbers (specific POTD IDs)
+    if number > current_potd:
         return None
 
     try:

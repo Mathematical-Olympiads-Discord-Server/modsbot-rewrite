@@ -23,6 +23,8 @@ class Potd(Cog):
         aliases=["fetch"],
         brief="Fetch a potd by id.",
         help="`-fetch 1`: Fetch POTD Day 1 in TeX format (auto-deletes after 5 seconds).\n"
+        "`-fetch 0`: Fetch today's POTD (updates at 1800 GMT).\n"
+        "`-fetch -3`: Fetch POTD from 3 days ago.\n"
         "`-fetch 1 s`: Fetch POTD Day 1, masked by spoiler (auto-deletes after 5 seconds).\n"
         "`-fetch 1 t`: Fetch POTD Day 1, in TeX form (permanent, no auto-delete).\n",
     )
