@@ -1,10 +1,8 @@
 import contextlib
-import io
 import random
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-import aiohttp
 import discord
 
 from cogs import config as cfg
