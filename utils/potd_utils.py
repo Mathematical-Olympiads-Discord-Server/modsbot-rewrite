@@ -1,7 +1,7 @@
 import contextlib
 import io
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import aiohttp
@@ -396,8 +396,6 @@ def get_potd_row(number, sheet):
 
     # Handle special cases for relative dates
     if number <= 0:
-        from datetime import datetime, timezone, timedelta
-
         # Get current time in GMT
         now_gmt = datetime.now(timezone.utc)
 
