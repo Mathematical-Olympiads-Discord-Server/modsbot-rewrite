@@ -1,10 +1,8 @@
 import contextlib
-import io
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-import aiohttp
 import discord
 
 from cogs import config as cfg
@@ -158,38 +156,29 @@ async def fetch(ctx, number: int, flag: str = ""):
     else:
         # Create the message to send
         try:
-            # if there is image link, just send it out
-            image_link = check_for_image_link(potd_row)
-            if image_link and "t" not in flag:
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(image_link) as resp:
-                        if resp.status != 200:
-                            return await ctx.send("Could not download file...")
-                        data = io.BytesIO(await resp.read())
-                        if "s" not in flag:
-                            await ctx.send(file=discord.File(data, f"potd{number}.png"))
-                        else:
-                            await ctx.send(
-                                file=discord.File(data, f"SPOILER_potd{number}.png")
-                            )
-            # if no image link, send tex
+            # Always send tex format now
+            if "s" not in flag:
+                output = (
+                    "<@"
+                    + str(cfg.Config.config["paradox_id"])
+                    + ">\n"
+                    + texify_potd(potd_row)
+                )
             else:
-                if "s" not in flag:
-                    output = (
-                        "<@"
-                        + str(cfg.Config.config["paradox_id"])
-                        + ">\n"
-                        + texify_potd(potd_row)
-                    )
-                else:
-                    output = (
-                        "<@"
-                        + str(cfg.Config.config["paradox_id"])
-                        + ">texsp\n||"
-                        + texify_potd(potd_row)
-                        + "||"
-                    )
+                output = (
+                    "<@"
+                    + str(cfg.Config.config["paradox_id"])
+                    + ">texsp\n||"
+                    + texify_potd(potd_row)
+                    + "||"
+                )
+
+            # If 't' flag is present, don't delete after time
+            # If 't' flag is not present, delete after 5 seconds
+            if "t" not in flag:
                 await ctx.send(output, delete_after=5)
+            else:
+                await ctx.send(output)
         except IndexError:
             await ctx.send(f"There is no potd for day {number}. ")
             return
@@ -403,7 +392,40 @@ def get_potd_row(number, sheet):
         values[0][0]
     )  # this will be the top left cell which indicates the latest added potd
 
-    if number > current_potd or number < 1:
+    # Handle special cases for relative dates
+    if number <= 0:
+        # Get current time in GMT
+        now_gmt = datetime.now(timezone.utc)
+
+        # If it's before 1800 GMT, consider it as previous day
+        if now_gmt.hour < 18:
+            days_offset = -1
+        else:
+            days_offset = 0
+
+        # Calculate the target date
+        if number == 0:
+            # Today's POTD
+            target_date = now_gmt + timedelta(days=days_offset)
+        else:
+            # n days ago POTD (number is negative)
+            target_date = now_gmt + timedelta(days=days_offset + number)
+
+        # Format date like the daily system does
+        date_str = target_date.strftime("%d %b %Y")
+        if date_str[0] == "0":
+            date_str = date_str[1:]
+
+        # Search for POTD with this date
+        for potd_row in values:
+            if len(potd_row) > 1 and potd_row[1] == date_str:
+                return potd_row
+
+        # If no POTD found for that date
+        return None
+
+    # Handle positive numbers (specific POTD IDs)
+    if number > current_potd:
         return None
 
     try:
