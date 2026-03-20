@@ -189,7 +189,7 @@ async def fetch(ctx, number: int, flag: str = ""):
                         + texify_potd(potd_row)
                         + "||"
                     )
-                await ctx.send(output, delete_after=5)
+                await ctx.send(output, delete_after=10)
         except IndexError:
             await ctx.send(f"There is no potd for day {number}. ")
             return

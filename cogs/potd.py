@@ -223,7 +223,7 @@ class Potd(Cog):
                     + ">\n"
                     + potd_utils.texify_potd(picked_potd_row)
                 )
-                await interaction.response.send_message(output, delete_after=5)
+                await interaction.response.send_message(output, delete_after=10)
         else:
             await interaction.response.send_message("No POTD found!", ephemeral=True)
 

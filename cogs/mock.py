@@ -65,6 +65,7 @@ class Mock(Cog):
             "USAJMO",
             "JMO",
             "CHINA",
+            "JPMO",
         ]
         if template not in template_list and template != "AFMO":
             await ctx.send(
@@ -111,6 +112,8 @@ class Mock(Cog):
                 difficulty_bounds = [[4, 5], [5, 6], [6, 7], [7, 8], [8, 9]]
             elif template in {"USAJMO", "JMO"}:
                 difficulty_bounds = [[3, 5], [5, 7], [7, 8], [3, 5], [5, 7], [7, 8]]
+            elif template == "JPMO":
+                difficulty_bounds = [[4,5], [5,6], [6,7], [7,8], [8,9]]
         # SMO2 seems to have an unspoken rule to start with geometry at P1 and nowhere
         # else
         if template == "SMO2":
@@ -271,7 +274,7 @@ class Mock(Cog):
                 problems = problems + problems_tex.pop(0) + r"\\ \\"
             problems = problems[:-5]
             to_tex = f"<@419356082981568522>\n```tex\n {title} {problems}```"
-            await ctx.send(to_tex, delete_after=5)
+            await ctx.send(to_tex, delete_after=10)
             count += 1
 
     def is_genre_legit(self, genres, template, genre_rule):
