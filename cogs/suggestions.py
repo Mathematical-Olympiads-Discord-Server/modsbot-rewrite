@@ -10,6 +10,7 @@ from cogs import config as cfg
 
 import time
 import httplib2
+import asyncio
 
 Cog = commands.Cog
 suggestion_list = []
@@ -98,41 +99,52 @@ def from_list(s):
     )
 
 
-def update_suggestions():
-    upload_suggestion_list(suggestion_list, "Suggestions")
-    upload_suggestion_list(tech_suggestion_list, "Tech Suggestions")
-
-import time
-import httplib2
+async def update_suggestions():
+    try:
+        await asyncio.to_thread(upload_suggestion_list, suggestion_list, "Suggestions")
+        await asyncio.to_thread(upload_suggestion_list, tech_suggestion_list, "Tech Suggestions")
+    except Exception as e:
+        print(f"ERROR in update_suggestions: {e}")
+        raise
 
 def upload_suggestion_list(suggestion_list_var, sheet_name):
-    # Sort the list
     suggestion_list_var.sort(key=operator.attrgetter("id"))
     suggestion_list_var.sort(key=lambda x: statuses.inverse[x.status])
 
-    # Prepare header and data rows
-    header = ["Id", "Msg Id", "Time", "User", "UserID", "Status", "C", "Suggestion", "Reason", "Jump_Url"]
-    values = [header] + [s.to_list() for s in suggestion_list_var]
+    # Clear the data rows (leave header)
+    cfg.Config.service.spreadsheets().values().clear(
+        spreadsheetId=cfg.Config.config["suggestion_sheet"],
+        range=f"{sheet_name}!A2:J"
+    ).execute()
 
-    body = {"values": values}
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            cfg.Config.service.spreadsheets().values().update(
-                spreadsheetId=cfg.Config.config["suggestion_sheet"],
-                range=f"{sheet_name}!A1:J",
-                valueInputOption="RAW",
-                body=body
-            ).execute()
-            return {"values": values}
-        except (httplib2.HttpLib2Error, ConnectionError, BrokenPipeError) as e:
-            if attempt == max_retries - 1:
-                print(f"Failed to update sheet after {max_retries} attempts: {e}")
-                raise
-            print(f"Retry {attempt+1} after error: {e}")
-            time.sleep(2 ** attempt)
-  
-    raise RuntimeError("Unexpected end of retry loop")
+    data_rows = [s.to_list() for s in suggestion_list_var]
+    if not data_rows:
+        return {"values": []}
+
+    chunk_size = 100
+    total_rows = len(data_rows)
+
+    for start in range(0, total_rows, chunk_size):
+        chunk = data_rows[start:start+chunk_size]
+        body = {"values": chunk}
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                cfg.Config.service.spreadsheets().values().append(
+                    spreadsheetId=cfg.Config.config["suggestion_sheet"],
+                    range=f"{sheet_name}!A1",
+                    valueInputOption="RAW",
+                    insertDataOption="INSERT_ROWS",
+                    body=body
+                ).execute()
+                break
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    raise
+                time.sleep(2 ** attempt)
+        time.sleep(0.5)
+
+    return {"values": data_rows}
 
 
 class Suggestion:
@@ -270,7 +282,7 @@ class Suggestions(Cog):
                 )
 
             # Update the sheet
-            update_suggestions()
+            await update_suggestions()
         finally:
             # Release the lock
             self.lock = False
@@ -393,9 +405,6 @@ class Suggestions(Cog):
             .union(bell)
         )
 
-        # Print out ids_to_dm for logging purposes
-        # print(ids_to_dm)
-
         # Construct the embed
         embed = discord.Embed(
             title=f"{suggestion_string} status change",
@@ -449,7 +458,7 @@ class Suggestions(Cog):
         # Actually update the suggestion
         suggestion.status = new_status
         suggestion.reason = reason
-        update_suggestions()
+        await update_suggestions()
         content = (
             f"**{suggestion_string} `#{sugg_id}` by <@!{suggestion.userid}>:** "
             f"`[{new_status}: {reason}]`\n{suggestion.jump_url}\n{suggestion.body}"
