@@ -247,7 +247,7 @@ class Suggestions(Cog):
                 f"**{suggestion_string} `#{len(list_to_read) + 1}` by "
                 f"<@!{ctx.author.id}>:** `[Pending]`\n"
                 f"<{ctx.message.jump_url}>\n"
-                f"{suggestion}"
+                f"{suggestion[:1800]}"
             )
             await m.add_reaction("👍")
             await m.add_reaction("🤷")
@@ -478,7 +478,17 @@ class Suggestions(Cog):
                     )
                     for id in dm_failed:
                         msg += f"<@{id}> "
-                    await bot_spam.send(msg, embed=embed)
+                    if len(msg) > 1800:
+                        msg = msg[:1800] + "..."
+                    try:
+                        await bot_spam.send(msg, embed=embed)
+                    except discord.HTTPException as e:
+                        self.bot.logger.error(f"Failed to send DM failure notification: {e}")
+                        # Try sending just the message without embed
+                        try:
+                            await bot_spam.send(msg)
+                        except discord.HTTPException as e2:
+                            self.bot.logger.error(f"Failed to send DM failure message: {e2}")
 
             # Actually update the suggestion
             suggestion.status = new_status
@@ -494,15 +504,22 @@ class Suggestions(Cog):
                 print(f"Failed to edit suggestion message: {e}")
 
             # Finish up
-            await bot_spam.send("Finished.")
+            try:
+                await bot_spam.send("Finished.")
+            except discord.HTTPException as e:
+                self.bot.logger.error(f"Failed to send 'Finished' message: {e}")
+            
             log_channel = ctx.guild.get_channel(cfg.Config.config["log_channel"])
             if log_channel is not None:
-                await log_channel.send(
-                    f"**{suggestion_string} `#{sugg_id}` set to `[{new_status}]` by "
-                    f"{ctx.author.nick} ({ctx.author.id})\n"
-                    f"Reason: `{reason}`**\n"
-                    f"{suggestion.body[:1800]}"
-                )
+                try:
+                    await log_channel.send(
+                        f"**{suggestion_string} `#{sugg_id}` set to `[{new_status}]` by "
+                        f"{ctx.author.nick} ({ctx.author.id})\n"
+                        f"Reason: `{reason}`**\n"
+                        f"{suggestion.body[:1800]}"
+                    )
+                except discord.HTTPException as e:
+                    self.bot.logger.error(f"Failed to send log message: {e}")
         finally:
             self.lock = False
         return suggestion
