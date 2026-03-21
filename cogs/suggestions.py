@@ -478,6 +478,8 @@ class Suggestions(Cog):
                     )
                     for id in dm_failed:
                         msg += f"<@{id}> "
+                    if len(msg) > 1800:
+                        msg = msg[:1800] + "..."
                     await bot_spam.send(msg, embed=embed)
 
             # Actually update the suggestion
