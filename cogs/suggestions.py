@@ -239,7 +239,11 @@ class Suggestions(Cog):
                 suggestion_string = "Tech Suggestion"
 
             # Create message
-            m = await self.bot.get_channel(target_channel).send(
+            target_channel_obj = self.bot.get_channel(target_channel)
+            if target_channel_obj is None:
+                await ctx.send("Suggestion channel not found.")
+                return
+            m = await target_channel_obj.send(
                 f"**{suggestion_string} `#{len(list_to_read) + 1}` by "
                 f"<@!{ctx.author.id}>:** `[Pending]`\n"
                 f"<{ctx.message.jump_url}>\n"
@@ -290,7 +294,11 @@ class Suggestions(Cog):
     @commands.command()
     @commands.is_owner()
     async def index_suggestions(self, ctx, *, channel: int):
-        messages = [x async for x in self.bot.get_channel(channel).history(limit=200)]
+        channel_obj = self.bot.get_channel(channel)
+        if channel_obj is None:
+            await ctx.send("Channel not found.")
+            return
+        messages = [x async for x in channel_obj.history(limit=200)]
         values = []
         for message in messages:
             values.append(
@@ -328,6 +336,8 @@ class Suggestions(Cog):
         self, ctx, sugg_id: int, new_status, reason, mode, notify: bool = True
     ) -> Suggestion:
         bot_spam = ctx.guild.get_channel(cfg.Config.config["bot_spam_channel"])
+        if bot_spam is None:
+            bot_spam = ctx.channel
 
         suggestion_channel = ""
         list_to_read = []
@@ -342,138 +352,159 @@ class Suggestions(Cog):
             suggestion_string = "Tech Suggestion"
 
         # Make sure not locked
+                # Make sure not locked
         if self.lock:
             await bot_spam.send(
                 "You're going too fast! Wait for the previous command to process!"
             )
             return
 
-        self.lock = True
-
         # Validate status
         if new_status not in statuses.inverse:
             await ctx.send("I didn't recognise that status!")
-            self.lock = False
             return
 
-        # Figure out who needs to be notified
-        ids_to_dm = set()
+        # Set lock and enter try block immediately
+        self.lock = True
+        try:
+            # Figure out who needs to be notified
+            ids_to_dm = set()
 
-        # Get the message
-        suggestion = next((s for s in list_to_read if s.id == sugg_id), None)
-        if suggestion is None:
-            await bot_spam.send("No suggestion with that ID!")
-            self.lock = False
-            return
+            # Get the message
+            suggestion = next((s for s in list_to_read if s.id == sugg_id), None)
+            if suggestion is None:
+                await bot_spam.send("No suggestion with that ID!")
+                return
 
-        suggestion_message = await self.bot.get_channel(
-            suggestion_channel
-        ).fetch_message(suggestion.msgid)
-        voted = set()
-        votes_for = {}
-        if suggestion_message is not None:
-            for reaction in suggestion_message.reactions:
-                # Add everyone who reacted
-                if reaction.emoji == "🔔":
-                    users = [x async for x in reaction.users()]
-                    bell = {u.id for u in users}
-                elif reaction.emoji == "🔕":
-                    users = [x async for x in reaction.users()]
-                    no_bell = {u.id for u in users}
-                else:
-                    users = [x async for x in reaction.users()]
-                    votes_for[reaction.emoji] = len(users) - 1
-                    for u in users:
-                        voted.add(u.id)
-        # Add everyone with the suggestions role
-        ping_role = {
-            x.id
-            for x in ctx.guild.get_role(cfg.Config.config["suggestion_role"]).members
-        }
-        no_ping_role = {
-            x.id
-            for x in ctx.guild.get_role(
-                cfg.Config.config["suggestion_no_notify"]
-            ).members
-        }
-        ids_to_dm = set()
-        ids_to_dm = (
-            ids_to_dm.union(ping_role)
-            .union(voted)
-            .difference(no_bell)
-            .difference(no_ping_role)
-            .union(bell)
-        )
+            suggestion_channel_obj = self.bot.get_channel(suggestion_channel)
+            if suggestion_channel_obj is None:
+                await bot_spam.send("Suggestion channel not found.")
+                return
+            suggestion_message = await suggestion_channel_obj.fetch_message(suggestion.msgid)
+            voted = set()
+            votes_for = {}
+            bell = set()
+            no_bell = set()
+            if suggestion_message is not None:
+                for reaction in suggestion_message.reactions:
+                    # Add everyone who reacted
+                    if reaction.emoji == "🔔":
+                        users = [x async for x in reaction.users()]
+                        bell = {u.id for u in users}
+                    elif reaction.emoji == "🔕":
+                        users = [x async for x in reaction.users()]
+                        no_bell = {u.id for u in users}
+                    else:
+                        users = [x async for x in reaction.users()]
+                        votes_for[reaction.emoji] = len(users) - 1
+                        for u in users:
+                            voted.add(u.id)
 
-        # Construct the embed
-        embed = discord.Embed(
-            title=f"{suggestion_string} status change",
-            description=f"{suggestion_string} {suggestion.id} changed status from "
-            f"{suggestion.status} to {new_status}",
-            colour=status_colours[statuses.inverse[new_status]],
-        )
-        embed.add_field(name="Suggestor", value=suggestion.username, inline=False)
-        embed.add_field(name="Content", value=suggestion.body[:1000], inline=False)
-        if len(suggestion.body) > 1000:
-            embed.add_field(
-                name="More content", value=suggestion.body[1000:], inline=False
+            # Add everyone with the suggestions role
+            # Get suggestion role (if it exists)
+            suggestion_role_id = cfg.Config.config.get("suggestion_role")
+            suggestion_role_obj = ctx.guild.get_role(suggestion_role_id) if suggestion_role_id else None
+            if suggestion_role_obj:
+                ping_role = {x.id for x in suggestion_role_obj.members}
+            else:
+                ping_role = set()
+                if suggestion_role_id:
+                    self.bot.logger.warning(f"Role with ID {suggestion_role_id} not found in guild {ctx.guild.id}")
+
+            # Get no‑notify role
+            no_notify_role_id = cfg.Config.config.get("suggestion_no_notify")
+            no_notify_role_obj = ctx.guild.get_role(no_notify_role_id) if no_notify_role_id else None
+            if no_notify_role_obj:
+                no_ping_role = {x.id for x in no_notify_role_obj.members}
+            else:
+                no_ping_role = set()
+                if no_notify_role_id:
+                    self.bot.logger.warning(f"Role with ID {no_notify_role_id} not found in guild {ctx.guild.id}")
+
+            ids_to_dm = (
+                ids_to_dm.union(ping_role)
+                .union(voted)
+                .difference(no_bell)
+                .difference(no_ping_role)
+                .union(bell)
             )
-        if reason is not None:
-            embed.add_field(name="Reason", value=reason, inline=False)
-        embed.add_field(
-            name="Date/time", value=suggestion.time.isoformat(), inline=True
-        )
-        embed.add_field(
-            name="Vote split",
-            value=f'👍: {votes_for["👍"]}, 🤷: {votes_for["🤷"]}, 👎: {votes_for["👎"]}',
-            inline=True,
-        )
 
-        embed.set_footer(
-            text="You received this DM because you either have the "
-            "`Suggestions-Notify` role, voted on the suggestion, or reacted with 🔔. "
-            "If you do not want to be notified about suggestion changes, "
-            "please react with 🔕. "
-        )
-
-        if notify:
-            dm_failed = []
-            for id in ids_to_dm:
-                # Spam people :_)
-                member = ctx.guild.get_member(id)
-                try:
-                    if member is not None and not member.bot:
-                        await member.send(embed=embed)
-                except Exception:
-                    dm_failed.append(id)
-            if dm_failed != []:
-                msg = (
-                    "Remember to turn on DMs from this server to get private"
-                    "notifications!"
+            # Construct the embed
+            embed = discord.Embed(
+                title=f"{suggestion_string} status change",
+                description=f"{suggestion_string} {suggestion.id} changed status from "
+                f"{suggestion.status} to {new_status}",
+                colour=status_colours[statuses.inverse[new_status]],
+            )
+            embed.add_field(name="Suggestor", value=suggestion.username, inline=False)
+            embed.add_field(name="Content", value=suggestion.body[:1000], inline=False)
+            if len(suggestion.body) > 1000:
+                embed.add_field(
+                    name="More content", value=suggestion.body[1000:1124], inline=False  # 1024 chars max
                 )
-                for id in dm_failed:
-                    msg += f"<@{id}> "
-                await bot_spam.send(msg, embed=embed)
+            if reason is not None:
+                embed.add_field(name="Reason", value=reason[:1024], inline=False)
+            embed.add_field(
+                name="Date/time", value=suggestion.time.isoformat(), inline=True
+            )
+            embed.add_field(
+                name="Vote split",
+                value=f'👍: {votes_for.get("👍", 0)}, 🤷: {votes_for.get("🤷", 0)}, 👎: {votes_for.get("👎", 0)}',
+                inline=True,
+            )
 
-        # Actually update the suggestion
-        suggestion.status = new_status
-        suggestion.reason = reason
-        await update_suggestions()
-        content = (
-            f"**{suggestion_string} `#{sugg_id}` by <@!{suggestion.userid}>:** "
-            f"`[{new_status}: {reason}]`\n{suggestion.jump_url}\n{suggestion.body}"
-        )
-        await suggestion_message.edit(content=content)
+            embed.set_footer(
+                text="You received this DM because you either have the "
+                "`Suggestions-Notify` role, voted on the suggestion, or reacted with 🔔. "
+                "If you do not want to be notified about suggestion changes, "
+                "please react with 🔕. "
+            )
 
-        # Finish up
-        await bot_spam.send("Finished.")
-        await ctx.guild.get_channel(cfg.Config.config["log_channel"]).send(
-            f"**{suggestion_string} `#{sugg_id}` set to `[{new_status}]` by "
-            f"{ctx.author.nick} ({ctx.author.id})\n"
-            f"Reason: `{reason}`**\n"
-            f"{suggestion.body}"
-        )
-        self.lock = False
+            if notify:
+                dm_failed = []
+                for id in ids_to_dm:
+                    # Spam people :_)
+                    member = ctx.guild.get_member(id)
+                    try:
+                        if member is not None and not member.bot:
+                            await member.send(embed=embed)
+                    except discord.HTTPException as e:
+                        print(f"Failed to DM {member}: {e}")
+                        dm_failed.append(id)
+                if dm_failed != []:
+                    msg = (
+                        "Remember to turn on DMs from this server to get private "
+                        "notifications! "
+                    )
+                    for id in dm_failed:
+                        msg += f"<@{id}> "
+                    await bot_spam.send(msg, embed=embed)
+
+            # Actually update the suggestion
+            suggestion.status = new_status
+            suggestion.reason = reason
+            await update_suggestions()
+            content = (
+                f"**{suggestion_string} `#{sugg_id}` by <@!{suggestion.userid}>:** "
+                f"`[{new_status}: {reason}]`\n{suggestion.jump_url}\n{suggestion.body[:1800]}"
+            )
+            try:
+                await suggestion_message.edit(content=content)
+            except discord.HTTPException as e:
+                print(f"Failed to edit suggestion message: {e}")
+
+            # Finish up
+            await bot_spam.send("Finished.")
+            log_channel = ctx.guild.get_channel(cfg.Config.config["log_channel"])
+            if log_channel is not None:
+                await log_channel.send(
+                    f"**{suggestion_string} `#{sugg_id}` set to `[{new_status}]` by "
+                    f"{ctx.author.nick} ({ctx.author.id})\n"
+                    f"Reason: `{reason}`**\n"
+                    f"{suggestion.body[:1800]}"
+                )
+        finally:
+            self.lock = False
         return suggestion
 
     @commands.command(
@@ -491,9 +522,11 @@ class Suggestions(Cog):
         suggestion = await self.change_suggestion_status_back(
             ctx, sugg_id, "Mod-vote", reason, "server"
         )
-        m = await self.bot.get_channel(
-            cfg.Config.config["suggestion_channel"]
-        ).fetch_message(suggestion.msgid)
+        suggestion_channel_obj = self.bot.get_channel(cfg.Config.config["suggestion_channel"])
+        if suggestion_channel_obj is None:
+            await ctx.send("Suggestion channel not found.")
+            return
+        m = await suggestion_channel_obj.fetch_message(suggestion.msgid)
         await self.bot.get_cog("ModsVote").modsvote(ctx, content=m.content)
 
     # Modify suggestion status
@@ -573,6 +606,13 @@ class Suggestions(Cog):
 
     @commands.command()
     @commands.is_owner()
+    async def force_unlock(self, ctx):
+        """Manually unlock the suggestions cog (owner only)."""
+        self.lock = False
+        await ctx.send("Lock manually released.")
+
+    @commands.command()
+    @commands.is_owner()
     async def multichg(self, ctx, *, commands):
         new_statuses = [
             [j.strip() for j in i.strip().split(" ")] for i in commands.split("\n")
@@ -586,12 +626,16 @@ class Suggestions(Cog):
                 "server",
             )
             if status[1] == "Mod-vote":
-                m = await self.bot.get_channel(
-                    cfg.Config.config["suggestion_channel"]
-                ).fetch_message(suggestion.msgid)
-                await self.bot.get_channel(cfg.Config.config["mod_vote_chan"]).send(
-                    m.content
-                )
+                suggestion_channel_obj = self.bot.get_channel(cfg.Config.config["suggestion_channel"])
+                if suggestion_channel_obj is None:
+                    await ctx.send("Suggestion channel not found.")
+                    continue
+                mod_vote_chan_obj = self.bot.get_channel(cfg.Config.config["mod_vote_chan"])
+                if mod_vote_chan_obj is None:
+                    await ctx.send("Mod vote channel not found.")
+                    continue
+                m = await suggestion_channel_obj.fetch_message(suggestion.msgid)
+                await mod_vote_chan_obj.send(m.content)
 
             await ctx.send(f"Done {status}")
 
