@@ -8,6 +8,9 @@ from discord.ext.commands import BucketType
 
 from cogs import config as cfg
 
+import time
+import httplib2
+
 Cog = commands.Cog
 suggestion_list = []
 tech_suggestion_list = []
@@ -99,22 +102,37 @@ def update_suggestions():
     upload_suggestion_list(suggestion_list, "Suggestions")
     upload_suggestion_list(tech_suggestion_list, "Tech Suggestions")
 
+import time
+import httplib2
+
 def upload_suggestion_list(suggestion_list_var, sheet_name):
+    # Sort the list
     suggestion_list_var.sort(key=operator.attrgetter("id"))
     suggestion_list_var.sort(key=lambda x: statuses.inverse[x.status])
 
-    values = [["ID", "Message ID", "Time", "Username", "User ID", "Status", "Status Code", "Body", "Reason", "Jump URL"]]
-    values += [s.to_list() for s in suggestion_list_var]
+    # Prepare header and data rows
+    header = ["Id", "Msg Id", "Time", "User", "UserID", "Status", "C", "Suggestion", "Reason", "Jump_Url"]
+    values = [header] + [s.to_list() for s in suggestion_list_var]
 
     body = {"values": values}
-    cfg.Config.service.spreadsheets().values().update(
-        spreadsheetId=cfg.Config.config["suggestion_sheet"],
-        range=f"{sheet_name}!A1:J",
-        valueInputOption="RAW",
-        body=body
-    ).execute()
-
-    return {"values": values}
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            cfg.Config.service.spreadsheets().values().update(
+                spreadsheetId=cfg.Config.config["suggestion_sheet"],
+                range=f"{sheet_name}!A1:J",
+                valueInputOption="RAW",
+                body=body
+            ).execute()
+            return {"values": values}
+        except (httplib2.HttpLib2Error, ConnectionError, BrokenPipeError) as e:
+            if attempt == max_retries - 1:
+                print(f"Failed to update sheet after {max_retries} attempts: {e}")
+                raise
+            print(f"Retry {attempt+1} after error: {e}")
+            time.sleep(2 ** attempt)
+  
+    raise RuntimeError("Unexpected end of retry loop")
 
 
 class Suggestion:
