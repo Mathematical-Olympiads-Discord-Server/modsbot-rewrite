@@ -380,7 +380,17 @@ class Suggestions(Cog):
             if suggestion_channel_obj is None:
                 await bot_spam.send("Suggestion channel not found.")
                 return
-            suggestion_message = await suggestion_channel_obj.fetch_message(suggestion.msgid)
+            
+            try:
+                suggestion_message = await suggestion_channel_obj.fetch_message(suggestion.msgid)
+            except discord.NotFound:
+                await bot_spam.send(f"Suggestion message not found (it may have been deleted). Updating status anyway.")
+                suggestion_message = None
+            except discord.HTTPException as e:
+                self.bot.logger.error(f"Failed to fetch suggestion message: {e}")
+                await bot_spam.send(f"Error fetching suggestion message: {e}")
+                return
+            
             voted = set()
             votes_for = {}
             bell = set()
@@ -498,10 +508,13 @@ class Suggestions(Cog):
                 f"**{suggestion_string} `#{sugg_id}` by <@!{suggestion.userid}>:** "
                 f"`[{new_status}: {reason}]`\n{suggestion.jump_url}\n{suggestion.body[:1800]}"
             )
-            try:
-                await suggestion_message.edit(content=content)
-            except discord.HTTPException as e:
-                print(f"Failed to edit suggestion message: {e}")
+            if suggestion_message is not None:
+                try:
+                    await suggestion_message.edit(content=content)
+                except discord.NotFound:
+                    self.bot.logger.warning(f"Suggestion message was deleted while processing: {suggestion.msgid}")
+                except discord.HTTPException as e:
+                    self.bot.logger.error(f"Failed to edit suggestion message: {e}")
 
             # Finish up
             try:
@@ -539,11 +552,21 @@ class Suggestions(Cog):
         suggestion = await self.change_suggestion_status_back(
             ctx, sugg_id, "Mod-vote", reason, "server"
         )
+        if suggestion is None:
+            return
         suggestion_channel_obj = self.bot.get_channel(cfg.Config.config["suggestion_channel"])
         if suggestion_channel_obj is None:
             await ctx.send("Suggestion channel not found.")
             return
-        m = await suggestion_channel_obj.fetch_message(suggestion.msgid)
+        try:
+            m = await suggestion_channel_obj.fetch_message(suggestion.msgid)
+        except discord.NotFound:
+            await ctx.send("Suggestion message not found (it may have been deleted).")
+            return
+        except discord.HTTPException as e:
+            self.bot.logger.error(f"Failed to fetch suggestion message in escalate: {e}")
+            await ctx.send(f"Error fetching suggestion message: {e}")
+            return
         await self.bot.get_cog("ModsVote").modsvote(ctx, content=m.content)
 
     # Modify suggestion status
@@ -651,7 +674,15 @@ class Suggestions(Cog):
                 if mod_vote_chan_obj is None:
                     await ctx.send("Mod vote channel not found.")
                     continue
-                m = await suggestion_channel_obj.fetch_message(suggestion.msgid)
+                try:
+                    m = await suggestion_channel_obj.fetch_message(suggestion.msgid)
+                except discord.NotFound:
+                    await ctx.send(f"Suggestion message for ID {status[0]} not found (it may have been deleted).")
+                    continue
+                except discord.HTTPException as e:
+                    self.bot.logger.error(f"Failed to fetch suggestion message in multichg: {e}")
+                    await ctx.send(f"Error fetching suggestion message for ID {status[0]}: {e}")
+                    continue
                 await mod_vote_chan_obj.send(m.content)
 
             await ctx.send(f"Done {status}")
