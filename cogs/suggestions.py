@@ -45,17 +45,53 @@ status_aliases = bidict.bidict(
 
 
 def from_list(s):
-    """Creates a Suggestion object from a list."""
+    while len(s) < 10:
+        s.append("")
+
+    # Id
+    try:
+        sugg_id = int(s[0])
+    except ValueError:
+        sugg_id = 0
+
+    # Msg Id (string)
+    msgid = s[1]
+
+    # Time
+    try:
+        time = datetime.fromisoformat(s[2]) if s[2] else datetime.now()
+    except ValueError:
+        time = datetime.now()
+
+    username = s[3]
+
+    # UserID
+    try:
+        userid = int(s[4]) if s[4] and s[4].strip() else 0
+    except ValueError:
+        userid = 0
+
+    status = s[5] if s[5] else "Pending"
+
+    # Body (Suggestion)
+    body = s[7] if len(s) > 7 else ""
+
+    # Reason (optional)
+    reason = s[8] if len(s) > 8 and s[8] else None
+
+    # Jump URL (optional)
+    jump_url = s[9] if len(s) > 9 and s[9] else None
+
     return Suggestion(
-        int(s[0]),
-        s[1],
-        datetime.fromisoformat(s[2]),
-        s[3],
-        int(s[4]),
-        s[5],
-        s[7],
-        s[8] if len(s) > 8 else None,
-        s[9] if len(s) > 9 else None,
+        sugg_id,
+        msgid,
+        time,
+        username,
+        userid,
+        status,
+        body,
+        reason,
+        jump_url,
     )
 
 
@@ -63,27 +99,22 @@ def update_suggestions():
     upload_suggestion_list(suggestion_list, "Suggestions")
     upload_suggestion_list(tech_suggestion_list, "Tech Suggestions")
 
-
 def upload_suggestion_list(suggestion_list_var, sheet_name):
-    # Sort the list
     suggestion_list_var.sort(key=operator.attrgetter("id"))
     suggestion_list_var.sort(key=lambda x: statuses.inverse[x.status])
 
-    # Clear the sheet
-    cfg.Config.service.spreadsheets().values().clear(
-        spreadsheetId=cfg.Config.config["suggestion_sheet"], range=f"{sheet_name}!A2:J"
-    ).execute()
-    # Write new data
-    result = {"values": [s.to_list() for s in suggestion_list_var]}
-    cfg.Config.service.spreadsheets().values().append(
+    values = [["ID", "Message ID", "Time", "Username", "User ID", "Status", "Status Code", "Body", "Reason", "Jump URL"]]
+    values += [s.to_list() for s in suggestion_list_var]
+
+    body = {"values": values}
+    cfg.Config.service.spreadsheets().values().update(
         spreadsheetId=cfg.Config.config["suggestion_sheet"],
-        range=f"{sheet_name}!A1",
+        range=f"{sheet_name}!A1:J",
         valueInputOption="RAW",
-        insertDataOption="INSERT_ROWS",
-        body=result,
+        body=body
     ).execute()
 
-    return result
+    return {"values": values}
 
 
 class Suggestion:
