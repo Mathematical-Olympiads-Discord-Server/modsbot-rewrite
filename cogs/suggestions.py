@@ -8,6 +8,10 @@ from discord.ext.commands import BucketType
 
 from cogs import config as cfg
 
+import time
+import httplib2
+import asyncio
+
 Cog = commands.Cog
 suggestion_list = []
 tech_suggestion_list = []
@@ -95,26 +99,52 @@ def from_list(s):
     )
 
 
-def update_suggestions():
-    upload_suggestion_list(suggestion_list, "Suggestions")
-    upload_suggestion_list(tech_suggestion_list, "Tech Suggestions")
+async def update_suggestions():
+    try:
+        await asyncio.to_thread(upload_suggestion_list, suggestion_list, "Suggestions")
+        await asyncio.to_thread(upload_suggestion_list, tech_suggestion_list, "Tech Suggestions")
+    except Exception as e:
+        print(f"ERROR in update_suggestions: {e}")
+        raise
 
 def upload_suggestion_list(suggestion_list_var, sheet_name):
     suggestion_list_var.sort(key=operator.attrgetter("id"))
     suggestion_list_var.sort(key=lambda x: statuses.inverse[x.status])
 
-    values = [["ID", "Message ID", "Time", "Username", "User ID", "Status", "Status Code", "Body", "Reason", "Jump URL"]]
-    values += [s.to_list() for s in suggestion_list_var]
-
-    body = {"values": values}
-    cfg.Config.service.spreadsheets().values().update(
+    # Clear the data rows (leave header)
+    cfg.Config.service.spreadsheets().values().clear(
         spreadsheetId=cfg.Config.config["suggestion_sheet"],
-        range=f"{sheet_name}!A1:J",
-        valueInputOption="RAW",
-        body=body
+        range=f"{sheet_name}!A2:J"
     ).execute()
 
-    return {"values": values}
+    data_rows = [s.to_list() for s in suggestion_list_var]
+    if not data_rows:
+        return {"values": []}
+
+    chunk_size = 100
+    total_rows = len(data_rows)
+
+    for start in range(0, total_rows, chunk_size):
+        chunk = data_rows[start:start+chunk_size]
+        body = {"values": chunk}
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                cfg.Config.service.spreadsheets().values().append(
+                    spreadsheetId=cfg.Config.config["suggestion_sheet"],
+                    range=f"{sheet_name}!A1",
+                    valueInputOption="RAW",
+                    insertDataOption="INSERT_ROWS",
+                    body=body
+                ).execute()
+                break
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    raise
+                time.sleep(2 ** attempt)
+        time.sleep(0.5)
+
+    return {"values": data_rows}
 
 
 class Suggestion:
@@ -252,7 +282,7 @@ class Suggestions(Cog):
                 )
 
             # Update the sheet
-            update_suggestions()
+            await update_suggestions()
         finally:
             # Release the lock
             self.lock = False
@@ -375,9 +405,6 @@ class Suggestions(Cog):
             .union(bell)
         )
 
-        # Print out ids_to_dm for logging purposes
-        # print(ids_to_dm)
-
         # Construct the embed
         embed = discord.Embed(
             title=f"{suggestion_string} status change",
@@ -431,7 +458,7 @@ class Suggestions(Cog):
         # Actually update the suggestion
         suggestion.status = new_status
         suggestion.reason = reason
-        update_suggestions()
+        await update_suggestions()
         content = (
             f"**{suggestion_string} `#{sugg_id}` by <@!{suggestion.userid}>:** "
             f"`[{new_status}: {reason}]`\n{suggestion.jump_url}\n{suggestion.body}"
