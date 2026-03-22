@@ -216,7 +216,9 @@ class MODSBot(commands.Bot):
                 with contextlib.suppress(
                     discord.Forbidden  # we can't send messages in that channel
                 ):
-                    await ctx.send("Sorry, I can't send that.")
+                    http_error = exception.original
+                    await ctx.send(f"Sorry, I can't send that. (Status: {http_error.status})")
+                self.logger.error(f"HTTPException in command: {exception.original}")
                 return
 
             # Print to log then notify developers
@@ -243,6 +245,12 @@ class MODSBot(commands.Bot):
         if isinstance(exception, commands.CheckFailure):
             await ctx.send("You are not authorised to use this command. ")
         elif isinstance(exception, commands.CommandOnCooldown):
+            # Staff bypass cooldown on all commands.
+            staff_ids = set(self.config.get("staff", [])) if hasattr(self, 'config') else set()
+            if ctx.guild and ctx.author.id in staff_ids:
+                ctx.command.reset_cooldown(ctx)
+                await ctx.reinvoke()
+                return
             exception: commands.CommandOnCooldown
             await ctx.send(
                 f"You're going too fast! "
