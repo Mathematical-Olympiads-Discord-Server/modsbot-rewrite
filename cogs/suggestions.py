@@ -109,12 +109,12 @@ async def update_suggestions():
 
 def upload_suggestion_list(suggestion_list_var, sheet_name):
     suggestion_list_var.sort(key=operator.attrgetter("id"))
-    suggestion_list_var.sort(key=lambda x: statuses.inverse[x.status])
+    # suggestion_list_var.sort(key=lambda x: statuses.inverse[x.status])
 
     # Remove duplicates by id
     suggestion_list_var = list(dict((s.id, s) for s in suggestion_list_var).values())
     suggestion_list_var.sort(key=operator.attrgetter("id"))
-    suggestion_list_var.sort(key=lambda x: statuses.inverse[x.status])
+    # suggestion_list_var.sort(key=lambda x: statuses.inverse[x.status])
 
     # Clear the data rows (leave header)
     cfg.Config.service.spreadsheets().values().clear(
@@ -363,6 +363,38 @@ class Suggestions(Cog):
             await ctx.send(f"```Python \n {e}```")
             return
         await ctx.send("Finished!")
+
+    @commands.command()
+    @commands.is_owner()
+    async def fix_msgids(self, ctx):
+        await ctx.send("Fixing message IDs... This may take a while.")
+        fixed_count = 0
+        for suggestion in suggestion_list + tech_suggestion_list:
+            if suggestion.jump_url:
+                try:
+                    parts = suggestion.jump_url.split('/')
+                    if len(parts) >= 7:
+                        msg_id = int(parts[-1])
+                        channel_id = int(parts[-2])
+                        command_channel = self.bot.get_channel(channel_id)
+                        if command_channel:
+                            command_msg = await command_channel.fetch_message(msg_id)
+                            command_time = command_msg.created_at
+                            if suggestion in suggestion_list:
+                                sugg_channel_id = cfg.Config.config["suggestion_channel"]
+                            else:
+                                sugg_channel_id = cfg.Config.config["tech_suggestion_channel"]
+                            sugg_channel = self.bot.get_channel(sugg_channel_id)
+                            if sugg_channel:
+                                async for msg in sugg_channel.history(limit=10, after=command_time):
+                                    if msg.author == self.bot.user and suggestion.jump_url in msg.content:
+                                        suggestion.msgid = str(msg.id)
+                                        fixed_count += 1
+                                        break
+                except Exception as e:
+                    print(f"Error fixing msgid for suggestion {suggestion.id}: {e}")
+        await update_suggestions()
+        await ctx.send(f"Fixed {fixed_count} message IDs.")
 
     async def change_suggestion_status_back(
         self, ctx, sugg_id: int, new_status, reason, mode, notify: bool = True
