@@ -515,6 +515,7 @@ class Suggestions(Cog):
                     self.bot.logger.warning(f"Suggestion message was deleted while processing: {suggestion.msgid}")
                 except discord.HTTPException as e:
                     self.bot.logger.error(f"Failed to edit suggestion message: {e}")
+                suggestion.msgid = str(suggestion_message.id)
 
             # Finish up
             try:
@@ -568,6 +569,11 @@ class Suggestions(Cog):
             await ctx.send(f"Error fetching suggestion message: {e}")
             return
         await self.bot.get_cog("ModsVote").modsvote(ctx, content=m.content)
+        cursor = cfg.db.cursor()
+        cursor.execute("SELECT msg_id FROM mods_vote ORDER BY rowid DESC LIMIT 1")
+        msg_id = cursor.fetchone()[0]
+        suggestion.msgid = str(msg_id)
+        await update_suggestions()
 
     # Modify suggestion status
     @commands.command()
