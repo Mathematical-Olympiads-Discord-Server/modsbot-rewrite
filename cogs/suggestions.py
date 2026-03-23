@@ -9,7 +9,6 @@ from discord.ext.commands import BucketType
 from cogs import config as cfg
 
 import time
-import httplib2
 import asyncio
 
 Cog = commands.Cog
@@ -190,33 +189,6 @@ class Suggestions(Cog):
         self.lock = False  # Lock when changing the sheet over a period of time.
         self.initialize_suggestion_list()
 
-    def initialize_suggestion_list(self):
-        global suggestion_list, tech_suggestion_list
-        suggestion_list = []
-        tech_suggestion_list = []
-        try:
-            result = cfg.Config.service.spreadsheets().values().get(
-                spreadsheetId=cfg.Config.config["suggestion_sheet"],
-                range="Suggestions!A2:J"
-            ).execute()
-            values = result.get('values', [])
-            for row in values:
-                if len(row) >= 10:
-                    suggestion_list.append(from_list(row))
-        except Exception as e:
-            print(f"Error loading suggestions: {e}")
-        try:
-            result = cfg.Config.service.spreadsheets().values().get(
-                spreadsheetId=cfg.Config.config["suggestion_sheet"],
-                range="Tech Suggestions!A2:J"
-            ).execute()
-            values = result.get('values', [])
-            for row in values:
-                if len(row) >= 10:
-                    tech_suggestion_list.append(from_list(row))
-        except Exception as e:
-            print(f"Error loading tech suggestions: {e}")
-
     @commands.command(
         brief="Suggest a change to the server. ", cooldown_after_parsing=True
     )
@@ -365,7 +337,7 @@ class Suggestions(Cog):
         await ctx.send("Finished!")
 
     @commands.command()
-    @commands.is_owner()
+    @commands.check(cfg.is_mod_or_tech)
     async def fix_msgids(self, ctx):
         await ctx.send("Fixing message IDs... This may take a while.")
         fixed_count = 0
