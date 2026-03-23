@@ -365,7 +365,7 @@ class Suggestions(Cog):
         await ctx.send("Finished!")
 
     @commands.command()
-    @commands.is_owner()
+    @commands.check(cfg.is_mod_or_tech)
     async def fix_msgids(self, ctx):
         await ctx.send("Fixing message IDs... This may take a while.")
         fixed_count = 0
