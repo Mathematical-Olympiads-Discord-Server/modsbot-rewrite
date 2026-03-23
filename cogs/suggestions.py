@@ -388,7 +388,6 @@ class Suggestions(Cog):
             suggestion_string = "Tech Suggestion"
 
         # Make sure not locked
-                # Make sure not locked
         if self.lock:
             await bot_spam.send(
                 "You're going too fast! Wait for the previous command to process!"
@@ -406,17 +405,26 @@ class Suggestions(Cog):
             # Figure out who needs to be notified
             ids_to_dm = set()
 
-            # Get the message
+            # Get the suggestion
             suggestion = next((s for s in list_to_read if s.id == sugg_id), None)
             if suggestion is None:
                 await bot_spam.send("No suggestion with that ID!")
+                return
+
+            # Check for suspicious data that could cause corruption
+            if suggestion.body == "0" and not suggestion.jump_url:
+                await bot_spam.send(
+                    f"Suggestion {sugg_id} has a suspicious body (`0`) and missing jump URL. "
+                    "Aborting to prevent corruption. Please sync the suggestion list first (use `-sync_suggestion`)."
+                )
+                self.bot.logger.error(f"Blocked edit for suggestion {sugg_id}: body='0', jump_url missing")
                 return
 
             suggestion_channel_obj = self.bot.get_channel(suggestion_channel)
             if suggestion_channel_obj is None:
                 await bot_spam.send("Suggestion channel not found.")
                 return
-            
+
             try:
                 suggestion_message = await suggestion_channel_obj.fetch_message(suggestion.msgid)
             except discord.NotFound:
@@ -426,7 +434,7 @@ class Suggestions(Cog):
                 self.bot.logger.error(f"Failed to fetch suggestion message: {e}")
                 await bot_spam.send(f"Error fetching suggestion message: {e}")
                 return
-            
+
             voted = set()
             votes_for = {}
             bell = set()
@@ -544,6 +552,15 @@ class Suggestions(Cog):
                 f"**{suggestion_string} `#{sugg_id}` by <@!{suggestion.userid}>:** "
                 f"`[{new_status}: {reason}]`\n{suggestion.jump_url}\n{suggestion.body[:1800]}"
             )
+
+            # Ensure the content we are about to edit is not suspiciously short or "0"
+            if content.strip() == "0" or len(content.strip()) < 2:
+                await bot_spam.send(
+                    f"Attempted to edit suggestion {sugg_id} with invalid content. Aborting."
+                )
+                self.bot.logger.error(f"Invalid content for suggestion {sugg_id}: {content}")
+                return
+
             if suggestion_message is not None:
                 try:
                     await suggestion_message.edit(content=content)
@@ -558,7 +575,7 @@ class Suggestions(Cog):
                 await bot_spam.send("Finished.")
             except discord.HTTPException as e:
                 self.bot.logger.error(f"Failed to send 'Finished' message: {e}")
-            
+
             log_channel = ctx.guild.get_channel(cfg.Config.config["log_channel"])
             if log_channel is not None:
                 try:
