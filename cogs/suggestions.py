@@ -11,6 +11,8 @@ from cogs import config as cfg
 import time
 import asyncio
 
+import re
+
 Cog = commands.Cog
 suggestion_list = []
 tech_suggestion_list = []
@@ -338,35 +340,75 @@ class Suggestions(Cog):
 
     @commands.command()
     @commands.check(cfg.is_mod_or_tech)
-    async def fix_msgids(self, ctx):
-        await ctx.send("Fixing message IDs... This may take a while.")
-        fixed_count = 0
-        for suggestion in suggestion_list + tech_suggestion_list:
-            if suggestion.jump_url:
+    async def fix_message_ids(self, ctx, mode):
+
+        process_list = []
+
+        if mode == "server":
+            process_list.append(("server", suggestion_list))
+        elif mode == "tech":
+            process_list.append(("tech", tech_suggestion_list))
+        elif mode == "both":
+            #both
+            process_list.append(("server", suggestion_list))
+            process_list.append(("tech", tech_suggestion_list))
+        else:
+            await ctx.send("mode must be server, tech, or both")
+        
+        for process in process_list:
+            type = process[0]
+            list_to_process = process[1]
+            channel_id = 0
+
+            if type == "server":
+                channel_id = cfg.Config.config["suggestion_channel"]
+            else:
+                channel_id = cfg.Config.config["tech_suggestion_channel"]
+
+            channel = self.bot.get_channel(channel_id)
+            if not channel:
+                await ctx.send(f"Channel for {type} not found.")
+                continue
+
+            await ctx.send(f"Fixing {type} suggestion messages...")
+
+            fixed = 0
+
+            for suggestion in list_to_process:
                 try:
-                    parts = suggestion.jump_url.split('/')
-                    if len(parts) >= 7:
-                        msg_id = int(parts[-1])
-                        channel_id = int(parts[-2])
-                        command_channel = self.bot.get_channel(channel_id)
-                        if command_channel:
-                            command_msg = await command_channel.fetch_message(msg_id)
-                            command_time = command_msg.created_at
-                            if suggestion in suggestion_list:
-                                sugg_channel_id = cfg.Config.config["suggestion_channel"]
-                            else:
-                                sugg_channel_id = cfg.Config.config["tech_suggestion_channel"]
-                            sugg_channel = self.bot.get_channel(sugg_channel_id)
-                            if sugg_channel:
-                                async for msg in sugg_channel.history(limit=10, after=command_time):
-                                    if msg.author == self.bot.user and suggestion.jump_url in msg.content:
-                                        suggestion.msgid = str(msg.id)
-                                        fixed_count += 1
-                                        break
-                except Exception as e:
-                    print(f"Error fixing msgid for suggestion {suggestion.id}: {e}")
-        await update_suggestions()
-        await ctx.send(f"Fixed {fixed_count} message IDs.")
+                    message = await channel.fetch_message(int(suggestion.msgid))
+                except (discord.NotFound, ValueError, discord.HTTPException) as error:
+                    print(f"error: {error}")
+                    continue
+
+                first_line = message.content.split('\n')[0]
+
+                match = re.search(r'#(\d+)', first_line)
+                if not match:
+                    continue
+                
+                displayed_id = int(match.group(1))
+
+                if displayed_id == suggestion.id:
+                    #correct displayed id
+                    continue
+                
+                #Build new message
+                new_first_line = re.sub(r'#\d+', f'#{suggestion.id}', first_line, count=1)
+
+                lines = message.content.split('\n')
+                lines[0] = new_first_line
+                new_content = '\n'.join(lines)
+
+                #Edit
+                await message.edit(content=new_content)
+                await asyncio.sleep(0.5) #rate limit avoiding
+
+                fixed += 1
+            
+            await ctx.send("Fixed.")
+
+        
 
     async def change_suggestion_status_back(
         self, ctx, sugg_id: int, new_status, reason, mode, notify: bool = True
