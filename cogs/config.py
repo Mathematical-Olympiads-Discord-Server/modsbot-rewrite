@@ -32,6 +32,11 @@ def is_contest_chair(ctx):
         or Config.config["contest_chair_role"] in roles
     )
 
+def is_active(ctx):
+    if ctx.guild is None or ctx.guild.id != Config.config["mods_guild"]:
+        return False
+    roles = list(map(lambda x: x.id, ctx.author.roles))
+    return Config.config["active_role"] in roles
 
 def timestamp(dt: datetime):
     if dt.tzinfo is None:
