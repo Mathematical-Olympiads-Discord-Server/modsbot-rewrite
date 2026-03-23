@@ -12,8 +12,6 @@ import schedule
 from discord.ext import commands
 from ruamel import yaml
 
-import os
-
 cfgfile = open("config/config.yml")
 config = yaml.safe_load(cfgfile)
 
