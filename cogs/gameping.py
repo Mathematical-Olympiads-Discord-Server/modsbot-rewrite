@@ -1,49 +1,43 @@
-from datetime import datetime, timezone
-from random import choice
-
+import time
 from discord.ext import commands
-
 from cogs import config as cfg
 
-import asyncio
-
-Cog = commands.Cog
-
-class Games(Cog):
+class Games(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.lock = False
-    
-    async def release_lock(self):
-        minutes_cooldown = cfg.Config.config.get("minutes_games_cooldown", 10)
-        await asyncio.sleep(minutes_cooldown * 60)
-        self.lock = False  
-      
-    @commands.command()
+        self.cooldown_until = None   # stores expiration timestamp (time.time() + seconds)
+
+    @commands.command(name="games", aliases=["g"])
     @commands.guild_only()
     @commands.check(cfg.is_active)
     async def games(self, ctx):
-        role_id = cfg.Config.config["games_role"]
+
+        role_id = self.bot.config.get("games_role")
+        if not role_id:
+            await ctx.send("Game role not configured.")
+            return
+
         role = ctx.guild.get_role(role_id)
-        if not role:
-            await ctx.send("Incorrect or missing game role")
+        if role is None:
+            await ctx.send("Game role not found in this server.")
             return
 
-        if self.lock:
-            await ctx.send("Games role ping is on cooldown.")
+        # Cooldown duration in seconds
+        cooldown_minutes = self.bot.config.get("minutes_games_cooldown", 5)
+        cooldown_seconds = cooldown_minutes * 60
+
+        # Check cooldown
+        now = time.time()
+        if self.cooldown_until and now < self.cooldown_until:
+            remaining = self.cooldown_until - now
+            await ctx.send(f"Game role ping is on cooldown. Try again in {remaining} seconds.")
             return
 
-        self.lock = True
-        try:
-            await ctx.send(f"{role.mention}")
-        finally:
-            asyncio.create_task(self.release_lock())
-        
+        # Send the ping
+        await ctx.send(f"{role.mention}")
+
+        # Set cooldown expiration
+        self.cooldown_until = now + cooldown_seconds
 
 async def setup(bot):
     await bot.add_cog(Games(bot))
-
-
-        
-
-    
