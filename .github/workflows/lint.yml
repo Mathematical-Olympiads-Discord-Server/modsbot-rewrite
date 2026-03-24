@@ -16,7 +16,7 @@ jobs:
       - name: Install python dependencies
         run: |
           pip install -r requirements_dev.txt
-          pip install --upgrade black isort flake8 sourcery
+          pip install --upgrade isort flake8 sourcery
       - name: Check with black
         run: black . --check --diff
       - name: Check with isort
