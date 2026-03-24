@@ -13,7 +13,7 @@ class Mathjams(Cog):
         cursor.execute("""INSERT OR IGNORE INTO settings VALUES
             ('mathjams_ping', 'True')
             """)
-        
+
         cfg.db.commit()
         cursor.execute("SELECT value FROM settings WHERE setting = 'mathjams_ping'")
         self.ping = cursor.fetchone()[0] == "True"
