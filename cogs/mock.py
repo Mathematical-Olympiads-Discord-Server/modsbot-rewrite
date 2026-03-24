@@ -113,7 +113,7 @@ class Mock(Cog):
             elif template in {"USAJMO", "JMO"}:
                 difficulty_bounds = [[3, 5], [5, 7], [7, 8], [3, 5], [5, 7], [7, 8]]
             elif template == "JPMO":
-                difficulty_bounds = [[4,5], [5,6], [6,7], [7,8], [8,9]]
+                difficulty_bounds = [[4, 5], [5, 6], [6, 7], [7, 8], [8, 9]]
         # SMO2 seems to have an unspoken rule to start with geometry at P1 and nowhere
         # else
         if template == "SMO2":
