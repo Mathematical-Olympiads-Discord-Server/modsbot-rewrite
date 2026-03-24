@@ -573,13 +573,13 @@ class Potd(Cog):
                 remaining.remove(i)
                 index = ["a", "c", "g", "n"].index(i[0])
                 if result[1][4 * index] == "x":
-                    result[1] = (
-                        f"{result[1][:4 * index]}0 12{result[1][4 * index + 4:]}"
-                    )
+                    result[
+                        1
+                    ] = f"{result[1][:4 * index]}0 12{result[1][4 * index + 4:]}"
                 else:
-                    result[1] = (
-                        f"{result[1][:4 * index]}xxxx{result[1][4 * index + 4:]}"
-                    )
+                    result[
+                        1
+                    ] = f"{result[1][:4 * index]}xxxx{result[1][4 * index + 4:]}"
             else:
                 # Category with difficulty
                 criterion = i[1:].split("-")
