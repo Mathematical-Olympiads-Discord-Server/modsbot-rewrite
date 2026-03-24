@@ -175,6 +175,9 @@ async def fetch(ctx, number: int, flag: str = ""):
             # if no image link, send tex
             else:
                 if "s" not in flag:
+                    if flag.isdigit():
+                        await ctx.send("Did you mean ``-search``?")
+                        return
                     output = (
                         "<@"
                         + str(cfg.Config.config["paradox_id"])
