@@ -10,8 +10,7 @@ class Mathjams(Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         cursor = cfg.db.cursor()
-        cursor.execute(
-            """INSERT OR IGNORE INTO settings VALUES
+        cursor.execute("""INSERT OR IGNORE INTO settings VALUES
             ('mathjams_ping', 'True')
             """
         )
