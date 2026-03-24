@@ -19,6 +19,9 @@ jobs:
       - name: Install python dependencies
         run: |
           pip install -r requirements_dev.txt
+          pip install --upgrade pre-commit
+      - name: Clear pre-commit cache
+        run: rm -rf ~/.cache/pre-commit
       - name: Install pre-commit hooks
         run: pre-commit install
       - name: Check with pre-commit
