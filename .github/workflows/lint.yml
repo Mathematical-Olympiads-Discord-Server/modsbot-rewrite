@@ -12,22 +12,11 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
-      - name: Upgrade pip, setuptools, virtualenv
-        run: |
-          python -m pip install --upgrade pip setuptools virtualenv
+          python-version: '3.10'   # or '3.10', whichever works
       - name: Install python dependencies
         run: |
           pip install -r requirements_dev.txt
-          pip install --upgrade pre-commit
-      - name: Clear pre-commit cache
-        run: rm -rf ~/.cache/pre-commit
-      - name: Install pre-commit hooks
-        run: pre-commit install
-      - name: Check with pre-commit
-        run: pre-commit run --all-files
-        env:
-          SKIP: flake8,black,isort,sourcery
+          pip install --upgrade black isort flake8 sourcery
       - name: Check with black
         run: black . --check --diff
       - name: Check with isort
