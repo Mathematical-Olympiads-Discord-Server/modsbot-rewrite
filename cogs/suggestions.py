@@ -143,7 +143,7 @@ def upload_suggestion_list(suggestion_list_var, sheet_name):
                     body=body,
                 ).execute()
                 break
-            except Exception as e:
+            except Exception:
                 if attempt == max_retries - 1:
                     raise
                 time.sleep(2**attempt)
@@ -431,7 +431,8 @@ class Suggestions(Cog):
                 )
             except discord.NotFound:
                 await bot_spam.send(
-                    "Suggestion message not found (it may have been deleted). Updating status anyway."
+                    "Suggestion message not found (it may have been deleted). "
+                    "Updating status anyway."
                 )
                 suggestion_message = None
             except discord.HTTPException as e:
@@ -470,7 +471,8 @@ class Suggestions(Cog):
                 ping_role = set()
                 if suggestion_role_id:
                     self.bot.logger.warning(
-                        f"Role with ID {suggestion_role_id} not found in guild {ctx.guild.id}"
+                        f"Role with ID {suggestion_role_id} not found in guild "
+                        f"{ctx.guild.id}"
                     )
 
             # Get no‑notify role
@@ -484,7 +486,8 @@ class Suggestions(Cog):
                 no_ping_role = set()
                 if no_notify_role_id:
                     self.bot.logger.warning(
-                        f"Role with ID {no_notify_role_id} not found in guild {ctx.guild.id}"
+                        f"Role with ID {no_notify_role_id} "
+                        f"not found in guild {ctx.guild.id}"
                     )
 
             ids_to_dm = (
@@ -517,15 +520,22 @@ class Suggestions(Cog):
             )
             embed.add_field(
                 name="Vote split",
-                value=f'👍: {votes_for.get("👍", 0)}, 🤷: {votes_for.get("🤷", 0)}, 👎: {votes_for.get("👎", 0)}',
+                value=(
+                    f'👍: {votes_for.get("👍", 0)}, '
+                    f'🤷: {votes_for.get("🤷", 0)}, '
+                    f'👎: {votes_for.get("👎", 0)}'
+                ),
                 inline=True,
             )
 
             embed.set_footer(
-                text="You received this DM because you either have the "
-                "`Suggestions-Notify` role, voted on the suggestion, or reacted with 🔔. "
-                "If you do not want to be notified about suggestion changes, "
-                "please react with 🔕. "
+                text=(
+                    "You received this DM because you either have the "
+                    "`Suggestions-Notify` role, "
+                    "voted on the suggestion, or reacted with 🔔. "
+                    "If you do not want to be notified about suggestion changes, "
+                    "please react with 🔕. "
+                )
             )
 
             if notify:
@@ -568,14 +578,17 @@ class Suggestions(Cog):
             await update_suggestions()
             content = (
                 f"**{suggestion_string} `#{sugg_id}` by <@!{suggestion.userid}>:** "
-                f"`[{new_status}: {reason}]`\n{suggestion.jump_url}\n{suggestion.body[:1800]}"
+                f"`[{new_status}: {reason}]`\n"
+                f"{suggestion.jump_url}\n"
+                f"{suggestion.body[:1800]}"
             )
             if suggestion_message is not None:
                 try:
                     await suggestion_message.edit(content=content)
                 except discord.NotFound:
                     self.bot.logger.warning(
-                        f"Suggestion message was deleted while processing: {suggestion.msgid}"
+                        f"Suggestion message was deleted "
+                        f"while processing: {suggestion.msgid}"
                     )
                 except discord.HTTPException as e:
                     self.bot.logger.error(f"Failed to edit suggestion message: {e}")
@@ -591,7 +604,8 @@ class Suggestions(Cog):
             if log_channel is not None:
                 try:
                     await log_channel.send(
-                        f"**{suggestion_string} `#{sugg_id}` set to `[{new_status}]` by "
+                        f"**{suggestion_string} `#{sugg_id}` "
+                        f"set to `[{new_status}]` by "
                         f"{ctx.author.nick} ({ctx.author.id})\n"
                         f"Reason: `{reason}`**\n"
                         f"{suggestion.body[:1800]}"
@@ -756,7 +770,8 @@ class Suggestions(Cog):
                     m = await suggestion_channel_obj.fetch_message(suggestion.msgid)
                 except discord.NotFound:
                     await ctx.send(
-                        f"Suggestion message for ID {status[0]} not found (it may have been deleted)."
+                        f"Suggestion message for ID {status[0]} not found "
+                        f"(it may have been deleted)."
                     )
                     continue
                 except discord.HTTPException as e:

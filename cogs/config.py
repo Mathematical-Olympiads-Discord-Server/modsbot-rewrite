@@ -69,7 +69,8 @@ class Config(Cog):
                 local_config = yaml.safe_load(f)
             main_config.update(local_config)
             print(
-                f"[Config] Loaded local config, games_role = {main_config.get('games_role')}"
+                f"[Config] Loaded local config, "
+                f"games_role = {main_config.get('games_role')}"
             )
 
         # Assign to class attribute
