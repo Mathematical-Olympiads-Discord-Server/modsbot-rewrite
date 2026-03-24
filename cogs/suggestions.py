@@ -360,9 +360,7 @@ class Suggestions(Cog):
                                 sugg_channel_id = cfg.Config.config[
                                     "tech_suggestion_channel"
                                 ]
-                            if sugg_channel := self.bot.get_channel(
-                                sugg_channel_id
-                            ):
+                            if sugg_channel := self.bot.get_channel(sugg_channel_id):
                                 async for msg in sugg_channel.history(
                                     limit=10, after=command_time
                                 ):
