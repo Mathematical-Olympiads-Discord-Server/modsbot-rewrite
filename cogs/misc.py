@@ -165,6 +165,45 @@ class Misc(Cog):
             x = " ".join(choice(words) for _ in range(m_len))
             await message.delete()
             await message.channel.send(f"{message.author.mention}: {x}")
+    
+    @commands.command()
+    async def lockin(self, ctx):
+        role_id = cfg.Config.config.get("lock_in_role")
+        if not role_id:
+            await ctx.send("Focus role not configured")
+            return
+
+        role = ctx.guild.get_role(role_id)
+        if not role:
+            await ctx.send("Focus role not found")
+            return
+
+        if role in ctx.author.roles:
+            await ctx.send("You are already locked in!")
+        else:
+            await ctx.author.add_roles(role)
+            await ctx.send("You are now locked in. Off-topic channels are now hidden. If you wish to leave this mode, run -lockout")
+    
+    @commands.command()
+    @commands.guild_only()
+    async def lockout(self,ctx):
+
+        role_id = cfg.Config.config.get("lock_in_role")
+        if not role_id:
+            await ctx.send("Focus role not configured")
+            return
+
+        role = ctx.guild.get_role(role_id)
+        if not role:
+            await ctx.send("Focus role not found")
+            return
+
+        if not role in ctx.author.roles:
+            await ctx.send("You are already locked out!")
+        else:
+            await ctx.author.remove_roles(role)
+            await ctx.send("You are now locked out!")
+        
 
 
 async def setup(bot):
