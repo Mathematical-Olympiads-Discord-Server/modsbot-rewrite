@@ -363,8 +363,16 @@ class Marking(Cog):
     )
     @commands.cooldown(1, 5, BucketType.user)
     async def potd_solved(self, ctx, flag=None):
+        lounge_id = cfg.Config.config.get("lounge_channel")
+        bot_spam_id = cfg.Config.config.get("bot_spam_channel")
+        potd_grinders_id = cfg.Config.config.get("potd_grinders_channel")
+
         solved = potd_utils.get_potd_solved(ctx)
         read = potd_utils.get_potd_read(ctx)
+
+        if ctx.channel.id == lounge_id:
+            await ctx.send(f"Please use these commands in <#{bot_spam_id}> or <#{potd_grinders_id}>!")
+            return
 
         potd_rows = (
             cfg.Config.service.spreadsheets()
