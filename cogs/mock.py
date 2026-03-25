@@ -292,7 +292,6 @@ class Mock(Cog):
             to_tex = f"<@419356082981568522>\n```tex\n {title} {problems}```"
             msg = await ctx.send(to_tex)
             messages.append(msg)
-            count += 1
 
         return messages
 
@@ -420,7 +419,7 @@ class Mock(Cog):
 
     @commands.command(aliases=["strike"])
     @commands.guild_only()
-    async def strike(self, ctx, target: str):
+    async def mock_strike(self, ctx, target: str):
         key = (ctx.author.id, ctx.channel.id)
         mock = self.mocks.get(key)
         if not mock:
@@ -477,23 +476,40 @@ class Mock(Cog):
 
         # Generate new content
         new_contents = await self.generate_mock_content(mock["template"], new_problem_ids, mock["search_unsolved"])
-        if len(new_contents) != len(mock["message_ids"]):
-            await ctx.send("The mock changed length; cannot edit in place. Please create a new mock.")
-            return
 
-        # Edit each message
-        channel = ctx.channel
-        for i, msg_id in enumerate(mock["message_ids"]):
-            try:
-                msg = await channel.fetch_message(msg_id)
-                await msg.edit(content=new_contents[i])
-            except Exception as e:
-                await ctx.send(f"Failed to edit message {i+1}: {e}")
-                return
+        # Edit in place if possible
+        if len(new_contents) == len(mock["message_ids"]):
+            channel = ctx.channel
+            for i, msg_id in enumerate(mock["message_ids"]):
+                try:
+                    msg = await channel.fetch_message(msg_id)
+                    await msg.edit(content=new_contents[i])
+                except Exception as e:
+                    await ctx.send(f"Failed to edit message {i+1}: {e}")
+                    return
+            # Update stored problem IDs
+            self.mocks[key]["problem_ids"] = new_problem_ids
+            await ctx.send(f"Problem {index+1} (POTD {old_id}) replaced with POTD {replacement}.")
+        else:
+            # Length changed: delete old messages and send new ones
+            channel = ctx.channel
+            for msg_id in mock["message_ids"]:
+                try:
+                    msg = await channel.fetch_message(msg_id)
+                    await msg.delete()
+                except Exception as e:
+                    self.bot.logger.warning(f"Could not delete message {msg_id}: {e}")
 
-        # Update stored data
-        self.mocks[key]["problem_ids"] = new_problem_ids
-        await ctx.send(f"Problem {index+1} (POTD {old_id}) replaced with POTD {replacement}.")
+            # Send the new mock
+            new_message_ids = []
+            for content in new_contents:
+                msg = await ctx.send(content)
+                new_message_ids.append(msg.id)
+
+            # Update stored data
+            self.mocks[key]["message_ids"] = new_message_ids
+            self.mocks[key]["problem_ids"] = new_problem_ids
+            await ctx.send(f"Problem {index+1} (POTD {old_id}) replaced with POTD {replacement}. The mock was re‑created because the length changed.")
 
 async def setup(bot):
     await bot.add_cog(Mock(bot))
