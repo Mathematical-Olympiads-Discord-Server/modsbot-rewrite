@@ -15,6 +15,7 @@ POTD_RANGE = "POTD!A2:S"
 class Mock(Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.mocks = {}
 
     @commands.command(
         aliases=["mock"],
@@ -139,6 +140,8 @@ class Mock(Cog):
 
         # set up variables
         problems_tex = []
+        problem_ids = []
+        rules = []
         # render the mock paper
         for i in range(len(difficulty_bounds)):
             picked_potd = potd_utils.pick_potd(
@@ -150,30 +153,32 @@ class Mock(Cog):
                 ctx,
                 search_unsolved,
             )
+
+            problem_ids.append(picked_potd)
+            rules.append({
+                "diff_lower": difficulty_bounds[i][0],
+                "diff_upper": difficulty_bounds[i][1],
+                "genres": genres[i]
+            })
             already_picked.append(picked_potd)
             potd_statement = potd_utils.get_potd_statement(int(picked_potd), potds)
             problems_tex.append(
                 f"\\textbf{{Problem {i + 1}. (POTD {str(picked_potd)})}}\\\\ "
                 f"{potd_statement}"
             )
+        
+        messages = await self.send_out_mock(ctx, template, problems_tex)
+        message_ids = [msg.id for msg in messages]
 
-        if template in {"IMO", "AMO", "USAMO", "USAJMO", "CHINA"}:  # 2-day contests
-            if template in {"IMO", "CHINA", "USAMO", "USAJMO", "JMO"}:
-                index_day1 = [0, 1, 2]
-                index_day2 = [3, 4, 5]
-            elif template in {"AMO"}:
-                index_day1 = [0, 1, 2, 3]
-                index_day2 = [4, 5, 6, 7]
+        self.mocks[(ctx.author.id, ctx.channel.id)] = {
+            "message_ids": message_ids,
+            "channel_id": ctx.channel.id,
+            "template": template,
+            "rules": rules,
+            "problem_ids": problem_ids,
+            "search_unsolved": search_unsolved,
+        }
 
-            name_day1 = f"{template} (Day 1)"
-            problems_tex_day1 = [problems_tex[index] for index in index_day1]
-            await self.send_out_mock(ctx, name_day1, problems_tex_day1)
-
-            name_day2 = f"{template} (Day 2)"
-            problems_tex_day2 = [problems_tex[index] for index in index_day2]
-            await self.send_out_mock(ctx, name_day2, problems_tex_day2)
-        else:  # 1-day contests
-            await self.send_out_mock(ctx, template, problems_tex)
 
     @commands.command(
         aliases=["mock_custom", "custom_mock"],
@@ -228,6 +233,7 @@ class Mock(Cog):
             .get("values", [])
         )
         already_picked = []
+        problem_ids = []
         parsed_rules_string = self.stringify_mock_rules(parsed_rules)
 
         # render the mock paper
@@ -242,17 +248,25 @@ class Mock(Cog):
                     ctx,
                     True,
                 )
+                problem_ids.append(picked_potd)
                 already_picked.append(picked_potd)
                 potd_statement = potd_utils.get_potd_statement(int(picked_potd), potds)
                 problems_tex.append(
                     f"\\textbf{{Problem {i + 1}. (POTD {str(picked_potd)})}}\\\\ "
                     f"{potd_statement}"
                 )
+            
+            messages = await self.send_out_mock(ctx, "Custom", problems_tex)
+            message_ids = [msg.id for msg in messages]
+            self.mocks[(ctx.author.id, ctx.channel.id)] = {
+                "message_ids": message_ids,
+                "channel_id": ctx.channel.id,
+                "template": "Custom",
+                "rules": parsed_rules,
+                "problem_ids": problem_ids,
+                "search_unsolved": True,
+            }
 
-            await ctx.send(
-                f"<@{ctx.author.id}> Custom Mock created ({parsed_rules_string})"
-            )
-            await self.send_out_mock(ctx, "(Custom)", problems_tex)
         except Exception:
             await ctx.send(
                 "Unable to create mock paper according to custom rule "
@@ -260,22 +274,26 @@ class Mock(Cog):
             )
 
     async def send_out_mock(self, ctx, name, problems_tex):
-        count = 0  # add a count to prevent infinite loop
-        while len(problems_tex) > 0 and count < 15:  # still has problems to send out
+        messages = []
+        index = 0
+        while index < len(problems_tex):  # still has problems to send out
             title = (
                 r"\begin{center}\textbf{\textsf{MODSBot Mock "
                 + name
                 + r"}}\end{center}"
             )
             problems = ""
-            while (
-                len(problems_tex) > 0 and len(problems + problems_tex[0]) < 1800
-            ):  # add problems one-by-one until no problems left or it's too long
-                problems = problems + problems_tex.pop(0) + r"\\ \\"
+
+            while index < len(problems_tex) and len(problems + problems_tex[index]) < 1800:
+                problems = problems + problems_tex[index] + r"\\ \\"
+                index +=1
+
             problems = problems[:-5]
             to_tex = f"<@419356082981568522>\n```tex\n {title} {problems}```"
-            await ctx.send(to_tex, delete_after=10)
-            count += 1
+            msg = await ctx.send(to_tex)
+            messages.append(msg)
+
+        return messages
 
     def is_genre_legit(self, genres, template, genre_rule):
         if len(genres) != len(genre_rule):
@@ -369,7 +387,129 @@ class Mock(Cog):
                 rule_string = f"[{parse_rule['diff_lower']} {parse_rule['diff_upper']}]"
             rule_strings.append(rule_string)
         return " ".join(rule_strings)
+    
+    async def generate_mock_content(self, template, problem_ids, search_unsolved):
+        # Fetch sheet
+        potds = (cfg.Config.service.spreadsheets()
+                .values()
+                .get(spreadsheetId=cfg.Config.config["potd_sheet"], range=POTD_RANGE)
+                .execute()
+                .get("values", []))
 
+        # Build problems_tex list
+        problems_tex = []
+        for i, pid in enumerate(problem_ids, start=1):
+            stmt = potd_utils.get_potd_statement(int(pid), potds)
+            if stmt is None:
+                stmt = "*(statement missing)*"
+            problems_tex.append(f"\\textbf{{Problem {i}. (POTD {pid})}}\\\\ {stmt}")
+
+        # Split into messages like send_out_mock
+        contents = []
+        idx = 0
+        while idx < len(problems_tex):
+            title = r"\begin{center}\textbf{\textsf{MODSBot Mock " + template + r"}}\end{center}"
+            problems = ""
+            while idx < len(problems_tex) and len(problems + problems_tex[idx]) < 1800:
+                problems = problems + problems_tex[idx] + r"\\ \\"
+                idx += 1
+            problems = problems[:-5]   # remove trailing double backslash
+            contents.append(f"<@419356082981568522>\n```tex\n{title}\n{problems}\n```")
+        return contents
+
+    @commands.command(aliases=["strike"])
+    @commands.guild_only()
+    async def mock_strike(self, ctx, target: str):
+        key = (ctx.author.id, ctx.channel.id)
+        mock = self.mocks.get(key)
+        if not mock:
+            await ctx.send("You don't have a mock in this channel.")
+            return
+
+        # Parse target
+        if target.lower().startswith('p'):
+            try:
+                index = int(target[1:]) - 1
+            except ValueError:
+                await ctx.send("Invalid index. Use `p1`, `p2`, etc.")
+                return
+            if index < 0 or index >= len(mock["problem_ids"]):
+                await ctx.send(f"Problem index out of range. There are {len(mock['problem_ids'])} problems.")
+                return
+            old_id = mock["problem_ids"][index]
+        else:
+            try:
+                potd_id = int(target)
+            except ValueError:
+                await ctx.send("Invalid input. Use `p1`, `p2`, etc. or a POTD ID.")
+                return
+            if potd_id not in mock["problem_ids"]:
+                await ctx.send(f"POTD {potd_id} not found in your mock.")
+                return
+            index = mock["problem_ids"].index(potd_id)
+            old_id = potd_id
+
+        rule = mock["rules"][index]
+        diff_lower = rule["diff_lower"]
+        diff_upper = rule["diff_upper"]
+        genre = rule["genres"]
+
+        # Fetch current POTD sheet
+        potds = (cfg.Config.service.spreadsheets()
+                .values()
+                .get(spreadsheetId=cfg.Config.config["potd_sheet"], range=POTD_RANGE)
+                .execute()
+                .get("values", []))
+
+        # Find replacement
+        exclude = mock["problem_ids"][:]   # copy
+        replacement = potd_utils.pick_potd(
+            diff_lower, diff_upper, genre, potds, exclude, ctx, mock["search_unsolved"], ""
+        )
+        if not replacement:
+            await ctx.send("Could not find a suitable replacement problem.")
+            return
+
+        # Build new problem list
+        new_problem_ids = mock["problem_ids"][:]
+        new_problem_ids[index] = replacement
+
+        # Generate new content
+        new_contents = await self.generate_mock_content(mock["template"], new_problem_ids, mock["search_unsolved"])
+
+        # Edit in place if possible
+        if len(new_contents) == len(mock["message_ids"]):
+            channel = ctx.channel
+            for i, msg_id in enumerate(mock["message_ids"]):
+                try:
+                    msg = await channel.fetch_message(msg_id)
+                    await msg.edit(content=new_contents[i])
+                except Exception as e:
+                    await ctx.send(f"Failed to edit message {i+1}: {e}")
+                    return
+            # Update stored problem IDs
+            self.mocks[key]["problem_ids"] = new_problem_ids
+            await ctx.send(f"Problem {index+1} (POTD {old_id}) replaced with POTD {replacement}.")
+        else:
+            # Length changed: delete old messages and send new ones
+            channel = ctx.channel
+            for msg_id in mock["message_ids"]:
+                try:
+                    msg = await channel.fetch_message(msg_id)
+                    await msg.delete()
+                except Exception as e:
+                    self.bot.logger.warning(f"Could not delete message {msg_id}: {e}")
+
+            # Send the new mock
+            new_message_ids = []
+            for content in new_contents:
+                msg = await ctx.send(content)
+                new_message_ids.append(msg.id)
+
+            # Update stored data
+            self.mocks[key]["message_ids"] = new_message_ids
+            self.mocks[key]["problem_ids"] = new_problem_ids
+            await ctx.send(f"Problem {index+1} (POTD {old_id}) replaced with POTD {replacement}. The mock was re‑created because the length changed.")
 
 async def setup(bot):
     await bot.add_cog(Mock(bot))
