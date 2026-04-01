@@ -166,6 +166,15 @@ class Misc(Cog):
             await message.delete()
             await message.channel.send(f"{message.author.mention}: {x}")
 
+        if "clanker" in message.content.lower():
+            if message.author.bot: return
+            try:
+                await message.delete()
+                await message.channel.send(f"{message.author.mention} how dare you call me a clanker... ill ban u if u say that again")
+            except discord.Forbidden:
+                pass
+            return
+
     @commands.command()
     @commands.check(cfg.is_staff)
     async def send_msg(self, ctx, destination_channel_id: int, *, message):
