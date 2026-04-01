@@ -166,6 +166,19 @@ class Misc(Cog):
             await message.delete()
             await message.channel.send(f"{message.author.mention}: {x}")
 
+    @commands.command()
+    @commands.check(cfg.is_staff)
+    async def send_msg(self, ctx, destination_channel_id: int, *, message):
+        destination_channel = self.bot.get_channel(destination_channel_id)
+        if destination_channel is None:
+            try:
+                destination_channel = await self.bot.fetch_channel(destination_channel_id)
+            except discord.NotFound:
+                await ctx.send("Channel not found")
+                return
+            except discord.Forbidden:
+                await ctx.send("no permission")
+        await destination_channel.send(message)
 
 async def setup(bot):
     await bot.add_cog(Misc(bot))
