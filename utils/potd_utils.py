@@ -180,18 +180,14 @@ async def fetch(ctx, number: int, flag: str = ""):
                         "<@"
                         + str(cfg.Config.config["paradox_id"])
                         + ">\n"
-                        + texify_potd(
-                            potd_row, await settings.get_setting(ctx, "indents")
-                        )
+                        + await texify_potd(ctx, potd_row)
                     )
                 else:
                     output = (
                         "<@"
                         + str(cfg.Config.config["paradox_id"])
                         + ">texsp\n||"
-                        + texify_potd(
-                            potd_row, await settings.get_setting(ctx, "indents")
-                        )
+                        + await texify_potd(ctx, potd_row)
                         + "||"
                     )
                 await ctx.send(output, delete_after=5)
@@ -209,7 +205,8 @@ def check_for_image_link(potd_row) -> Optional[str]:
         return None
 
 
-def texify_potd(potd_row, indents) -> str:
+async def texify_potd(ctx, potd_row) -> str:
+    indents = await settings.get_setting(ctx, "indents")
     return (
         "```tex\n\\textbf{Day "
         + str(potd_row[cfg.Config.config["potd_sheet_id_col"]])

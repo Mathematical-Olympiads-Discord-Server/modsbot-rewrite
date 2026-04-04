@@ -221,7 +221,9 @@ class Potd(Cog):
                     "<@"
                     + str(cfg.Config.config["paradox_id"])
                     + ">\n"
-                    + potd_utils.texify_potd(picked_potd_row)
+                    + await potd_utils.texify_potd(
+                        await self.bot.get_context(interaction), picked_potd_row
+                    )
                 )
                 await interaction.response.send_message(output, delete_after=5)
         else:
