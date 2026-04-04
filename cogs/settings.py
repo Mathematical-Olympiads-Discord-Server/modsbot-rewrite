@@ -70,7 +70,7 @@ class Settings(Cog):
             await ctx.send(f"<@{ctx.author.id}> `{setting}` is not a valid setting!")
         except Exception as e:
             print(f"Failed to get user preferences: {e}")
-            await ctx.send("Failed to get user preferences >:3")
+            await ctx.send("Failed to get user preferences")
 
     async def set_setting_wrapper(self, ctx, setting: str, value: str):
         try:
@@ -95,7 +95,7 @@ class Settings(Cog):
             await ctx.send(f"<@{ctx.author.id}> `{setting}` is not a valid setting!")
         except Exception as e:
             print(f"Failed to set user preferences: {e}")
-            await ctx.send("Failed to set user preferences >:3")
+            await ctx.send("Failed to set user preferences")
 
     async def display_settings(self, ctx):
         output = "# Your settings:\n```\n"
