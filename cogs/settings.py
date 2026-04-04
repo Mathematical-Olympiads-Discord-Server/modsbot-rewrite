@@ -41,7 +41,7 @@ async def set_setting(ctx, setting: str, value: str):
         )
     elif value in cfg.Config.config[setting]:
         cursor.execute(
-            "INSERT OR REPLACE INTO user_settings (userid, setting, value)"
+            "INSERT OR REPLACE INTO user_settings (userid, setting, value) "
             "VALUES (?, ?, ?)",
             (ctx.author.id, setting, value),
         )
@@ -59,7 +59,7 @@ class Settings(Cog):
             if value == "auto":
                 await ctx.send(
                     f"<@{ctx.author.id}> Setting `{setting}` is currently `auto`. "
-                    f"In the current server configuration, this is equivalent to"
+                    f"In the current server configuration, this is equivalent to "
                     f"`{cfg.Config.config[setting][0]}`."
                 )
             else:
@@ -78,7 +78,7 @@ class Settings(Cog):
             if value == "auto":
                 await ctx.send(
                     f"<@{ctx.author.id}> Setting `{setting}` has been set to `auto`. "
-                    f"In the current server configuration, this is equivalent to"
+                    f"In the current server configuration, this is equivalent to "
                     f"`{cfg.Config.config[setting][0]}`."
                 )
             else:
@@ -87,7 +87,7 @@ class Settings(Cog):
                 )
         except InvalidValueError:
             await ctx.send(
-                f"<@{ctx.author.id}> `{value}` is not a valid value for"
+                f"<@{ctx.author.id}> `{value}` is not a valid value for "
                 f"setting `{setting}`! "
                 f"Valid values: {'`' + '`, `'.join(cfg.Config.config[setting]) + '`'}"
             )
