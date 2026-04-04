@@ -119,10 +119,10 @@ class MODSBot(commands.Bot):
 
         MODS_SERVER = discord.Object(id=self.config["mods_guild"])
         self.tree.copy_global_to(guild=MODS_SERVER)
-        # await self.tree.sync(guild=MODS_SERVER)
-        # wait self.tree.sync()
+        await self.tree.sync(guild=MODS_SERVER)
+        await self.tree.sync()
 
-        # await self.get_channel(self.config["tech_garage"]).send("MODSbot loaded")
+        await self.get_channel(self.config["tech_garage"]).send("MODSbot loaded")
 
     async def on_message(self, message):
         if message.author.bot:
