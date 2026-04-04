@@ -119,10 +119,10 @@ class MODSBot(commands.Bot):
 
         MODS_SERVER = discord.Object(id=self.config["mods_guild"])
         self.tree.copy_global_to(guild=MODS_SERVER)
-        #await self.tree.sync(guild=MODS_SERVER)
-        #wait self.tree.sync()
+        await self.tree.sync(guild=MODS_SERVER)
+        await self.tree.sync()
 
-        #await self.get_channel(self.config["tech_garage"]).send("MODSbot loaded")
+        await self.get_channel(self.config["tech_garage"]).send("MODSbot loaded")
 
     async def on_message(self, message):
         if message.author.bot:
@@ -217,7 +217,9 @@ class MODSBot(commands.Bot):
                     discord.Forbidden  # we can't send messages in that channel
                 ):
                     http_error = exception.original
-                    await ctx.send(f"Sorry, I can't send that. (Status: {http_error.status})")
+                    await ctx.send(
+                        f"Sorry, I can't send that. (Status: {http_error.status})"
+                    )
                 self.logger.error(f"HTTPException in command: {exception.original}")
                 return
 
@@ -246,7 +248,9 @@ class MODSBot(commands.Bot):
             await ctx.send("You are not authorised to use this command. ")
         elif isinstance(exception, commands.CommandOnCooldown):
             # Staff bypass cooldown on all commands.
-            staff_ids = set(self.config.get("staff", [])) if hasattr(self, 'config') else set()
+            staff_ids = (
+                set(self.config.get("staff", [])) if hasattr(self, "config") else set()
+            )
             if ctx.guild and ctx.author.id in staff_ids:
                 ctx.command.reset_cooldown(ctx)
                 await ctx.reinvoke()

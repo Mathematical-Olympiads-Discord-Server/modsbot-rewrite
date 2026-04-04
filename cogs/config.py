@@ -32,11 +32,13 @@ def is_contest_chair(ctx):
         or Config.config["contest_chair_role"] in roles
     )
 
+
 def is_active(ctx):
     if ctx.guild is None or ctx.guild.id != Config.config["mods_guild"]:
         return False
     roles = list(map(lambda x: x.id, ctx.author.roles))
     return Config.config["active_role"] in roles
+
 
 def timestamp(dt: datetime):
     if dt.tzinfo is None:
@@ -66,7 +68,10 @@ class Config(Cog):
             with open(local_path) as f:
                 local_config = yaml.safe_load(f)
             main_config.update(local_config)
-            print(f"[Config] Loaded local config, games_role = {main_config.get('games_role')}")
+            print(
+                f"[Config] Loaded local config, "
+                f"games_role = {main_config.get('games_role')}"
+            )
 
         # Assign to class attribute
         Config.config = main_config

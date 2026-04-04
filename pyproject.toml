@@ -10,7 +10,11 @@ exclude = [
     ".env",
     ".git",
 ]
+
 extend-ignore = [
     "E203",
     "E722",  # 'do not use bare except'  TODO: fix all occurences
 ]
+
+[tool.black]
+line-length = 88

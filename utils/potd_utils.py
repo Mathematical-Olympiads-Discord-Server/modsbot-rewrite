@@ -175,6 +175,9 @@ async def fetch(ctx, number: int, flag: str = ""):
             # if no image link, send tex
             else:
                 if "s" not in flag:
+                    if flag.isdigit():
+                        await ctx.send("Did you mean ``-search``?")
+                        return
                     output = (
                         "<@"
                         + str(cfg.Config.config["paradox_id"])
@@ -237,6 +240,13 @@ def pick_potd(
     def match_genre(x, genre_filter):
         if len(genre_filter) == 0:
             return True
+
+        #Special Case: When user searching for "G", it will reject C
+        if genre_filter == {"G"}:
+            genres = set(x[cfg.Config.config["potd_sheet_genre_col"]])
+            return "G" in genres and "C" not in genres
+
+
         for genre in genre_filter:
             if len(
                 set(x[cfg.Config.config["potd_sheet_genre_col"]]).intersection(genre)
