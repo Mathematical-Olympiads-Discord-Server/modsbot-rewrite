@@ -1,4 +1,6 @@
+import asyncio
 import operator
+import time
 from datetime import datetime
 
 import bidict
@@ -7,9 +9,6 @@ from discord.ext import commands
 from discord.ext.commands import BucketType
 
 from cogs import config as cfg
-
-import time
-import asyncio
 
 Cog = commands.Cog
 suggestion_list = []
@@ -74,7 +73,7 @@ def from_list(s):
     except ValueError:
         userid = 0
 
-    status = s[5] if s[5] else "Pending"
+    status = s[5] or "Pending"
 
     # Body (Suggestion)
     body = s[7] if len(s) > 7 else ""
@@ -101,10 +100,13 @@ def from_list(s):
 async def update_suggestions():
     try:
         await asyncio.to_thread(upload_suggestion_list, suggestion_list, "Suggestions")
-        await asyncio.to_thread(upload_suggestion_list, tech_suggestion_list, "Tech Suggestions")
+        await asyncio.to_thread(
+            upload_suggestion_list, tech_suggestion_list, "Tech Suggestions"
+        )
     except Exception as e:
         print(f"ERROR in update_suggestions: {e}")
         raise
+
 
 def upload_suggestion_list(suggestion_list_var, sheet_name):
     suggestion_list_var.sort(key=operator.attrgetter("id"))
@@ -117,8 +119,7 @@ def upload_suggestion_list(suggestion_list_var, sheet_name):
 
     # Clear the data rows (leave header)
     cfg.Config.service.spreadsheets().values().clear(
-        spreadsheetId=cfg.Config.config["suggestion_sheet"],
-        range=f"{sheet_name}!A2:J"
+        spreadsheetId=cfg.Config.config["suggestion_sheet"], range=f"{sheet_name}!A2:J"
     ).execute()
 
     data_rows = [s.to_list() for s in suggestion_list_var]
@@ -129,7 +130,7 @@ def upload_suggestion_list(suggestion_list_var, sheet_name):
     total_rows = len(data_rows)
 
     for start in range(0, total_rows, chunk_size):
-        chunk = data_rows[start:start+chunk_size]
+        chunk = data_rows[start : start + chunk_size]
         body = {"values": chunk}
         max_retries = 3
         for attempt in range(max_retries):
@@ -139,13 +140,13 @@ def upload_suggestion_list(suggestion_list_var, sheet_name):
                     range=f"{sheet_name}!A1",
                     valueInputOption="RAW",
                     insertDataOption="INSERT_ROWS",
-                    body=body
+                    body=body,
                 ).execute()
                 break
-            except Exception as e:
+            except Exception:
                 if attempt == max_retries - 1:
                     raise
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
         time.sleep(0.5)
 
     return {"values": data_rows}
@@ -344,22 +345,29 @@ class Suggestions(Cog):
         for suggestion in suggestion_list + tech_suggestion_list:
             if suggestion.jump_url:
                 try:
-                    parts = suggestion.jump_url.split('/')
+                    parts = suggestion.jump_url.split("/")
                     if len(parts) >= 7:
                         msg_id = int(parts[-1])
                         channel_id = int(parts[-2])
-                        command_channel = self.bot.get_channel(channel_id)
-                        if command_channel:
+                        if command_channel := self.bot.get_channel(channel_id):
                             command_msg = await command_channel.fetch_message(msg_id)
                             command_time = command_msg.created_at
                             if suggestion in suggestion_list:
-                                sugg_channel_id = cfg.Config.config["suggestion_channel"]
+                                sugg_channel_id = cfg.Config.config[
+                                    "suggestion_channel"
+                                ]
                             else:
-                                sugg_channel_id = cfg.Config.config["tech_suggestion_channel"]
-                            sugg_channel = self.bot.get_channel(sugg_channel_id)
-                            if sugg_channel:
-                                async for msg in sugg_channel.history(limit=10, after=command_time):
-                                    if msg.author == self.bot.user and suggestion.jump_url in msg.content:
+                                sugg_channel_id = cfg.Config.config[
+                                    "tech_suggestion_channel"
+                                ]
+                            if sugg_channel := self.bot.get_channel(sugg_channel_id):
+                                async for msg in sugg_channel.history(
+                                    limit=10, after=command_time
+                                ):
+                                    if (
+                                        msg.author == self.bot.user
+                                        and suggestion.jump_url in msg.content
+                                    ):
                                         suggestion.msgid = str(msg.id)
                                         fixed_count += 1
                                         break
@@ -388,7 +396,7 @@ class Suggestions(Cog):
             suggestion_string = "Tech Suggestion"
 
         # Make sure not locked
-                # Make sure not locked
+        # Make sure not locked
         if self.lock:
             await bot_spam.send(
                 "You're going too fast! Wait for the previous command to process!"
@@ -416,17 +424,22 @@ class Suggestions(Cog):
             if suggestion_channel_obj is None:
                 await bot_spam.send("Suggestion channel not found.")
                 return
-            
+
             try:
-                suggestion_message = await suggestion_channel_obj.fetch_message(suggestion.msgid)
+                suggestion_message = await suggestion_channel_obj.fetch_message(
+                    suggestion.msgid
+                )
             except discord.NotFound:
-                await bot_spam.send(f"Suggestion message not found (it may have been deleted). Updating status anyway.")
+                await bot_spam.send(
+                    "Suggestion message not found (it may have been deleted). "
+                    "Updating status anyway."
+                )
                 suggestion_message = None
             except discord.HTTPException as e:
                 self.bot.logger.error(f"Failed to fetch suggestion message: {e}")
                 await bot_spam.send(f"Error fetching suggestion message: {e}")
                 return
-            
+
             voted = set()
             votes_for = {}
             bell = set()
@@ -449,23 +462,33 @@ class Suggestions(Cog):
             # Add everyone with the suggestions role
             # Get suggestion role (if it exists)
             suggestion_role_id = cfg.Config.config.get("suggestion_role")
-            suggestion_role_obj = ctx.guild.get_role(suggestion_role_id) if suggestion_role_id else None
+            suggestion_role_obj = (
+                ctx.guild.get_role(suggestion_role_id) if suggestion_role_id else None
+            )
             if suggestion_role_obj:
                 ping_role = {x.id for x in suggestion_role_obj.members}
             else:
                 ping_role = set()
                 if suggestion_role_id:
-                    self.bot.logger.warning(f"Role with ID {suggestion_role_id} not found in guild {ctx.guild.id}")
+                    self.bot.logger.warning(
+                        f"Role with ID {suggestion_role_id} not found in guild "
+                        f"{ctx.guild.id}"
+                    )
 
             # Get no‑notify role
             no_notify_role_id = cfg.Config.config.get("suggestion_no_notify")
-            no_notify_role_obj = ctx.guild.get_role(no_notify_role_id) if no_notify_role_id else None
+            no_notify_role_obj = (
+                ctx.guild.get_role(no_notify_role_id) if no_notify_role_id else None
+            )
             if no_notify_role_obj:
                 no_ping_role = {x.id for x in no_notify_role_obj.members}
             else:
                 no_ping_role = set()
                 if no_notify_role_id:
-                    self.bot.logger.warning(f"Role with ID {no_notify_role_id} not found in guild {ctx.guild.id}")
+                    self.bot.logger.warning(
+                        f"Role with ID {no_notify_role_id} "
+                        f"not found in guild {ctx.guild.id}"
+                    )
 
             ids_to_dm = (
                 ids_to_dm.union(ping_role)
@@ -486,7 +509,9 @@ class Suggestions(Cog):
             embed.add_field(name="Content", value=suggestion.body[:1000], inline=False)
             if len(suggestion.body) > 1000:
                 embed.add_field(
-                    name="More content", value=suggestion.body[1000:1124], inline=False  # 1024 chars max
+                    name="More content",
+                    value=suggestion.body[1000:1124],
+                    inline=False,  # 1024 chars max
                 )
             if reason is not None:
                 embed.add_field(name="Reason", value=reason[:1024], inline=False)
@@ -495,15 +520,22 @@ class Suggestions(Cog):
             )
             embed.add_field(
                 name="Vote split",
-                value=f'👍: {votes_for.get("👍", 0)}, 🤷: {votes_for.get("🤷", 0)}, 👎: {votes_for.get("👎", 0)}',
+                value=(
+                    f'👍: {votes_for.get("👍", 0)}, '
+                    f'🤷: {votes_for.get("🤷", 0)}, '
+                    f'👎: {votes_for.get("👎", 0)}'
+                ),
                 inline=True,
             )
 
             embed.set_footer(
-                text="You received this DM because you either have the "
-                "`Suggestions-Notify` role, voted on the suggestion, or reacted with 🔔. "
-                "If you do not want to be notified about suggestion changes, "
-                "please react with 🔕. "
+                text=(
+                    "You received this DM because you either have the "
+                    "`Suggestions-Notify` role, "
+                    "voted on the suggestion, or reacted with 🔔. "
+                    "If you do not want to be notified about suggestion changes, "
+                    "please react with 🔕. "
+                )
             )
 
             if notify:
@@ -525,16 +557,20 @@ class Suggestions(Cog):
                     for id in dm_failed:
                         msg += f"<@{id}> "
                     if len(msg) > 1800:
-                        msg = msg[:1800] + "..."
+                        msg = f"{msg[:1800]}..."
                     try:
                         await bot_spam.send(msg, embed=embed)
                     except discord.HTTPException as e:
-                        self.bot.logger.error(f"Failed to send DM failure notification: {e}")
+                        self.bot.logger.error(
+                            f"Failed to send DM failure notification: {e}"
+                        )
                         # Try sending just the message without embed
                         try:
                             await bot_spam.send(msg)
                         except discord.HTTPException as e2:
-                            self.bot.logger.error(f"Failed to send DM failure message: {e2}")
+                            self.bot.logger.error(
+                                f"Failed to send DM failure message: {e2}"
+                            )
 
             # Actually update the suggestion
             suggestion.status = new_status
@@ -542,13 +578,18 @@ class Suggestions(Cog):
             await update_suggestions()
             content = (
                 f"**{suggestion_string} `#{sugg_id}` by <@!{suggestion.userid}>:** "
-                f"`[{new_status}: {reason}]`\n{suggestion.jump_url}\n{suggestion.body[:1800]}"
+                f"`[{new_status}: {reason}]`\n"
+                f"{suggestion.jump_url}\n"
+                f"{suggestion.body[:1800]}"
             )
             if suggestion_message is not None:
                 try:
                     await suggestion_message.edit(content=content)
                 except discord.NotFound:
-                    self.bot.logger.warning(f"Suggestion message was deleted while processing: {suggestion.msgid}")
+                    self.bot.logger.warning(
+                        f"Suggestion message was deleted "
+                        f"while processing: {suggestion.msgid}"
+                    )
                 except discord.HTTPException as e:
                     self.bot.logger.error(f"Failed to edit suggestion message: {e}")
                 suggestion.msgid = str(suggestion_message.id)
@@ -558,12 +599,13 @@ class Suggestions(Cog):
                 await bot_spam.send("Finished.")
             except discord.HTTPException as e:
                 self.bot.logger.error(f"Failed to send 'Finished' message: {e}")
-            
+
             log_channel = ctx.guild.get_channel(cfg.Config.config["log_channel"])
             if log_channel is not None:
                 try:
                     await log_channel.send(
-                        f"**{suggestion_string} `#{sugg_id}` set to `[{new_status}]` by "
+                        f"**{suggestion_string} `#{sugg_id}` "
+                        f"set to `[{new_status}]` by "
                         f"{ctx.author.nick} ({ctx.author.id})\n"
                         f"Reason: `{reason}`**\n"
                         f"{suggestion.body[:1800]}"
@@ -591,7 +633,9 @@ class Suggestions(Cog):
         )
         if suggestion is None:
             return
-        suggestion_channel_obj = self.bot.get_channel(cfg.Config.config["suggestion_channel"])
+        suggestion_channel_obj = self.bot.get_channel(
+            cfg.Config.config["suggestion_channel"]
+        )
         if suggestion_channel_obj is None:
             await ctx.send("Suggestion channel not found.")
             return
@@ -601,7 +645,9 @@ class Suggestions(Cog):
             await ctx.send("Suggestion message not found (it may have been deleted).")
             return
         except discord.HTTPException as e:
-            self.bot.logger.error(f"Failed to fetch suggestion message in escalate: {e}")
+            self.bot.logger.error(
+                f"Failed to fetch suggestion message in escalate: {e}"
+            )
             await ctx.send(f"Error fetching suggestion message: {e}")
             return
         await self.bot.get_cog("ModsVote").modsvote(ctx, content=m.content)
@@ -708,22 +754,33 @@ class Suggestions(Cog):
                 "server",
             )
             if status[1] == "Mod-vote":
-                suggestion_channel_obj = self.bot.get_channel(cfg.Config.config["suggestion_channel"])
+                suggestion_channel_obj = self.bot.get_channel(
+                    cfg.Config.config["suggestion_channel"]
+                )
                 if suggestion_channel_obj is None:
                     await ctx.send("Suggestion channel not found.")
                     continue
-                mod_vote_chan_obj = self.bot.get_channel(cfg.Config.config["mod_vote_chan"])
+                mod_vote_chan_obj = self.bot.get_channel(
+                    cfg.Config.config["mod_vote_chan"]
+                )
                 if mod_vote_chan_obj is None:
                     await ctx.send("Mod vote channel not found.")
                     continue
                 try:
                     m = await suggestion_channel_obj.fetch_message(suggestion.msgid)
                 except discord.NotFound:
-                    await ctx.send(f"Suggestion message for ID {status[0]} not found (it may have been deleted).")
+                    await ctx.send(
+                        f"Suggestion message for ID {status[0]} not found "
+                        f"(it may have been deleted)."
+                    )
                     continue
                 except discord.HTTPException as e:
-                    self.bot.logger.error(f"Failed to fetch suggestion message in multichg: {e}")
-                    await ctx.send(f"Error fetching suggestion message for ID {status[0]}: {e}")
+                    self.bot.logger.error(
+                        f"Failed to fetch suggestion message in multichg: {e}"
+                    )
+                    await ctx.send(
+                        f"Error fetching suggestion message for ID {status[0]}: {e}"
+                    )
                     continue
                 await mod_vote_chan_obj.send(m.content)
 

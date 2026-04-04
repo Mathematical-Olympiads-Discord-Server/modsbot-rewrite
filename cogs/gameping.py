@@ -1,11 +1,16 @@
 import time
+
 from discord.ext import commands
+
 from cogs import config as cfg
+
 
 class Games(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.cooldown_until = None   # stores expiration timestamp (time.time() + seconds)
+        self.cooldown_until = (
+            None  # stores expiration timestamp (time.time() + seconds)
+        )
 
     @commands.command(name="games", aliases=["g"])
     @commands.guild_only()
@@ -30,7 +35,9 @@ class Games(commands.Cog):
         now = time.time()
         if self.cooldown_until and now < self.cooldown_until:
             remaining = self.cooldown_until - now
-            await ctx.send(f"Game role ping is on cooldown. Try again in {remaining} seconds.")
+            await ctx.send(
+                f"Game role ping is on cooldown. Try again in {remaining} seconds."
+            )
             return
 
         # Send the ping
@@ -38,6 +45,7 @@ class Games(commands.Cog):
 
         # Set cooldown expiration
         self.cooldown_until = now + cooldown_seconds
+
 
 async def setup(bot):
     await bot.add_cog(Games(bot))
