@@ -75,6 +75,14 @@ DATABASES_TO_CREATE = [
         PRIMARY KEY (prob, userid)
     );
     """,
+    """
+    CREATE TABLE user_settings (
+        userid INTEGER,
+        setting TEXT,
+        value TEXT,
+        PRIMARY KEY (userid, setting)
+    )
+    """,
 ]
 
 
