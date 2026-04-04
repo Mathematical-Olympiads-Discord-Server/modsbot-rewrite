@@ -6,3 +6,6 @@
 /config/config.yml
 */__pycache__
 /data/
+/.python-version
+/config/config.local.yml
+__pycache__/

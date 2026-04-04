@@ -225,7 +225,7 @@ class Potd(Cog):
                         await self.bot.get_context(interaction), picked_potd_row
                     )
                 )
-                await interaction.response.send_message(output, delete_after=5)
+                await interaction.response.send_message(output, delete_after=10)
         else:
             await interaction.response.send_message("No POTD found!", ephemeral=True)
 
@@ -575,13 +575,13 @@ class Potd(Cog):
                 remaining.remove(i)
                 index = ["a", "c", "g", "n"].index(i[0])
                 if result[1][4 * index] == "x":
-                    result[
-                        1
-                    ] = f"{result[1][:4 * index]}0 12{result[1][4 * index + 4:]}"
+                    result[1] = (
+                        f"{result[1][:4 * index]}0 12{result[1][4 * index + 4:]}"
+                    )
                 else:
-                    result[
-                        1
-                    ] = f"{result[1][:4 * index]}xxxx{result[1][4 * index + 4:]}"
+                    result[1] = (
+                        f"{result[1][:4 * index]}xxxx{result[1][4 * index + 4:]}"
+                    )
             else:
                 # Category with difficulty
                 criterion = i[1:].split("-")

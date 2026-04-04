@@ -51,10 +51,13 @@ class SuggestConfirm:
 
     async def open(self):
         # TODO: edit the message
+        truncated_suggestion = self.suggestion[:1740]
+        if len(self.suggestion) > 1740:
+            truncated_suggestion += "..."
         self.message = await self.ctx.send(
             f"<@!{self.authorId}> You are about to submit the following suggestion:\n"
             f"<{self.suggestion_url}>\n"
-            f"{self.suggestion}\n\n"
+            f"{truncated_suggestion}\n\n"
             "Confirm by reacting ✅, Cancel by reacting ❌"
         )
         await self.message.add_reaction("✅")
