@@ -371,7 +371,9 @@ class Marking(Cog):
         read = potd_utils.get_potd_read(ctx)
 
         if ctx.channel.id == lounge_id:
-            await ctx.send(f"Please use these commands in <#{bot_spam_id}> or <#{potd_grinders_id}>!")
+            await ctx.send(
+                f"Please use these commands in <#{bot_spam_id}> or <#{potd_grinders_id}>!"
+            )
             return
 
         potd_rows = (

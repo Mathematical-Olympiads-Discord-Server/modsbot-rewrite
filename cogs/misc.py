@@ -165,16 +165,19 @@ class Misc(Cog):
             x = " ".join(choice(words) for _ in range(m_len))
             await message.delete()
             await message.channel.send(f"{message.author.mention}: {x}")
-        
+
         if "clanker" in message.content.lower():
-            if message.author.bot: return
+            if message.author.bot:
+                return
             try:
                 await message.delete()
-                await message.channel.send(f"{message.author.mention} how dare you call me a clanker... ill ban u if u say that again")
+                await message.channel.send(
+                    f"{message.author.mention} how dare you call me a clanker... ill ban u if u say that again"
+                )
             except discord.Forbidden:
                 pass
             return
-    
+
     @commands.command()
     @commands.guild_only()
     async def lockin(self, ctx):
@@ -192,11 +195,13 @@ class Misc(Cog):
             await ctx.send("You are already locked in!")
         else:
             await ctx.author.add_roles(role)
-            await ctx.send("You are now locked in. Off-topic channels are now hidden. If you wish to leave this mode, run -lockout")
-    
+            await ctx.send(
+                "You are now locked in. Off-topic channels are now hidden. If you wish to leave this mode, run -lockout"
+            )
+
     @commands.command()
     @commands.guild_only()
-    async def lockout(self,ctx):
+    async def lockout(self, ctx):
 
         role_id = cfg.Config.config.get("lock_in_role")
         if not role_id:
@@ -220,13 +225,16 @@ class Misc(Cog):
         destination_channel = self.bot.get_channel(destination_channel_id)
         if destination_channel is None:
             try:
-                destination_channel = await self.bot.fetch_channel(destination_channel_id)
+                destination_channel = await self.bot.fetch_channel(
+                    destination_channel_id
+                )
             except discord.NotFound:
                 await ctx.send("Channel not found")
                 return
             except discord.Forbidden:
                 await ctx.send("no permission")
         await destination_channel.send(message)
+
 
 async def setup(bot):
     await bot.add_cog(Misc(bot))
