@@ -165,8 +165,18 @@ class Misc(Cog):
             x = " ".join(choice(words) for _ in range(m_len))
             await message.delete()
             await message.channel.send(f"{message.author.mention}: {x}")
+        
+        if "clanker" in message.content.lower():
+            if message.author.bot: return
+            try:
+                await message.delete()
+                await message.channel.send(f"{message.author.mention} how dare you call me a clanker... ill ban u if u say that again")
+            except discord.Forbidden:
+                pass
+            return
     
     @commands.command()
+    @commands.guild_only()
     async def lockin(self, ctx):
         role_id = cfg.Config.config.get("lock_in_role")
         if not role_id:
@@ -203,16 +213,6 @@ class Misc(Cog):
         else:
             await ctx.author.remove_roles(role)
             await ctx.send("You are now locked out!")
-        
-
-        if "clanker" in message.content.lower():
-            if message.author.bot: return
-            try:
-                await message.delete()
-                await message.channel.send(f"{message.author.mention} how dare you call me a clanker... ill ban u if u say that again")
-            except discord.Forbidden:
-                pass
-            return
 
     @commands.command()
     @commands.check(cfg.is_staff)
