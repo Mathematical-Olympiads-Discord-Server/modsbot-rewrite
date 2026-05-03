@@ -40,8 +40,10 @@ class Misc(Cog):
         # TODO: work out what to do with this
         g = self.bot.get_guild(cfg.Config.config["mods_guild"])  # noqa: F841
     
-    async def delete_recent_messages(self, user):
-        cutoff = datetime.now(timezone.utc) - timedelta(minutes=15)
+    async def delete_recent_messages(self, user: discord.Member):
+        trap_window_minutes = cfg.Config.config["trap_window_minutes"]
+
+        cutoff = datetime.now(timezone.utc) - timedelta(minutes=trap_window_minutes)
         guild = user.guild
         deleted_count = 0
 
@@ -206,10 +208,12 @@ class Misc(Cog):
             return"""
         
         trap_channel_id = cfg.Config.config["trap_channel_id"]
+        trap_timeout_duration_minutes = cfg.Config.config["trap_timeout_duration_minutes"]
+        staff_ids = cfg.Config.config.get("staff", [])
 
-        if message.channel.id == trap_channel_id and not message.author.bot:
+        if message.channel.id == trap_channel_id and not message.author.bot and message.author.id not in staff_ids:
             member = message.author
-            await member.edit(timeout=timedelta(seconds=3600))
+            await member.timeout(timedelta(minutes=trap_timeout_duration_minutes))
             asyncio.create_task(self.delete_recent_messages(message.author))
 
 
