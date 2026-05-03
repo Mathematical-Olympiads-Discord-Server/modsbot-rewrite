@@ -1,5 +1,7 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from random import choice
+
+import asyncio
 
 import discord
 from discord.ext import commands
@@ -37,6 +39,31 @@ class Misc(Cog):
     def record(self):
         # TODO: work out what to do with this
         g = self.bot.get_guild(cfg.Config.config["mods_guild"])  # noqa: F841
+    
+    async def delete_recent_messages(user):
+        cutoff = datetime.now(timezone.utc) - timedelta(minutes=15)
+        guild = user.guild
+        deleted_count = 0
+
+        for channel in guild.text_channels:
+            perms = channel.permissions_for(guild.me)
+            if not perms.manage_messages or not perms.read_message_history: continue
+
+            batch = []
+
+            async for message in channel.history(limit=None, after=cutoff):
+                if message.author.id != user.id: continue
+
+                batch.append(message)
+            
+            for msg in batch:
+                try:
+                    await msg.delete()
+                    deleted_count += 1
+                except(discord.NotFound, discord.Forbidden):
+                    pass
+        
+        print(f"Delted {deleted_count} messages from {user}")
 
     @Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -166,7 +193,7 @@ class Misc(Cog):
             await message.delete()
             await message.channel.send(f"{message.author.mention}: {x}")
 
-        if "clanker" in message.content.lower():
+        """if "clanker" in message.content.lower():
             if message.author.bot:
                 return
             try:
@@ -176,7 +203,15 @@ class Misc(Cog):
                 )
             except discord.Forbidden:
                 pass
-            return
+            return"""
+        
+        trap_channel_id = cfg.Config.config["trap_channel_id"]
+
+        if message.channel.id == trap_channel_id and not message.author.bot:
+            member = message.author
+            await member.edit(timeout=datetime.timedelta(seconds=3600))
+            asyncio.create_task(self.delete_recent_messages(message.author))
+
 
     @commands.command()
     @commands.guild_only()
