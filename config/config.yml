@@ -73,7 +73,7 @@ suggestion_role: 722259030298329098
 helper_team_role: 572016283281784844
 games_role: 1419316212294488164
 lock_in_role: 1485906765978665000
-trap_channel_id: 0
+trap_channel_id: 1500317842787274923
 trap_timeout_duration_minutes: 15
 trap_window_minutes: 15
 minutes_games_cooldown: 10
