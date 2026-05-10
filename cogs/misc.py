@@ -45,6 +45,8 @@ class Misc(Cog):
         cutoff = datetime.now(timezone.utc) - timedelta(minutes=trap_window_minutes)
         guild = user.guild
         deleted_count = 0
+        log_channel_id = cfg.Config.config["log_channel"]
+        log_channel = self.bot.get_channel(log_channel_id)
 
         for channel in guild.text_channels:
             perms = channel.permissions_for(guild.me)
@@ -65,8 +67,10 @@ class Misc(Cog):
                     deleted_count += 1
                 except (discord.NotFound, discord.Forbidden):
                     pass
-
-        print(f"Delted {deleted_count} messages from {user}")
+        
+        await log_channel.send(
+            f"Deleted {deleted_count} messages from {user} using trap"
+        )
 
     @Cog.listener()
     async def on_raw_reaction_add(self, payload):
