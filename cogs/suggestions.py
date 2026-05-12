@@ -740,7 +740,7 @@ class Suggestions(Cog):
         await ctx.send("Lock manually released.")
 
     @commands.command()
-    @commands.is_owner()
+    @commands.check(cfg.is_staff)
     async def multichg(self, ctx, *, commands):
         new_statuses = [
             [j.strip() for j in i.strip().split(" ")] for i in commands.split("\n")
