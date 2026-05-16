@@ -4,7 +4,7 @@ async-timeout==4.0.2
 attrs==22.1.0
 bidict==0.19.0
 cachetools==4.1.1
-certifi==2022.9.24
+certifi==2024.7.4
 chardet==3.0.4
 charset-normalizer==2.1.1
 contourpy==1.0.6
