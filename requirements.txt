@@ -45,5 +45,5 @@ ruamel.yaml.clib==0.2.7
 schedule==0.6.0
 six==1.15.0
 uritemplate==3.0.1
-urllib3==1.25.11
+urllib3==1.26.19
 yarl==1.8.1
