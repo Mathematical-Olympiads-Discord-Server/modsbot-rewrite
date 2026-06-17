@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+import asyncio
+from datetime import datetime, timedelta, timezone
 from random import choice
 
 import discord
@@ -37,6 +38,39 @@ class Misc(Cog):
     def record(self):
         # TODO: work out what to do with this
         g = self.bot.get_guild(cfg.Config.config["mods_guild"])  # noqa: F841
+
+    async def delete_recent_messages(self, user: discord.Member):
+        trap_window_minutes = cfg.Config.config["trap_window_minutes"]
+
+        cutoff = datetime.now(timezone.utc) - timedelta(minutes=trap_window_minutes)
+        guild = user.guild
+        deleted_count = 0
+        log_channel_id = cfg.Config.config["log_channel"]
+        log_channel = self.bot.get_channel(log_channel_id)
+
+        for channel in guild.text_channels:
+            perms = channel.permissions_for(guild.me)
+            if not perms.manage_messages or not perms.read_message_history:
+                continue
+
+            batch = []
+
+            async for message in channel.history(limit=None, after=cutoff):
+                if message.author.id != user.id:
+                    continue
+
+                batch.append(message)
+
+            for msg in batch:
+                try:
+                    await msg.delete()
+                    deleted_count += 1
+                except (discord.NotFound, discord.Forbidden):
+                    pass
+        
+        await log_channel.send(
+            f"Deleted {deleted_count} messages from {user} using trap"
+        )
 
     @Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -166,7 +200,7 @@ class Misc(Cog):
             await message.delete()
             await message.channel.send(f"{message.author.mention}: {x}")
 
-        if "clanker" in message.content.lower():
+        """if "clanker" in message.content.lower():
             if message.author.bot:
                 return
             try:
@@ -176,7 +210,22 @@ class Misc(Cog):
                 )
             except discord.Forbidden:
                 pass
-            return
+            return"""
+
+        trap_channel_id = cfg.Config.config["trap_channel_id"]
+        trap_timeout_duration_minutes = cfg.Config.config[
+            "trap_timeout_duration_minutes"
+        ]
+        staff_ids = cfg.Config.config.get("staff", [])
+
+        if (
+            message.channel.id == trap_channel_id
+            and not message.author.bot
+            and message.author.id not in staff_ids
+        ):
+            member = message.author
+            await member.timeout(timedelta(minutes=trap_timeout_duration_minutes))
+            asyncio.create_task(self.delete_recent_messages(message.author))
 
     @commands.command()
     @commands.guild_only()
