@@ -159,22 +159,9 @@ async def fetch(ctx, number: int, flag: str = ""):
     else:
         # Create the message to send
         try:
-            # if there is image link, just send it out
-            image_link = check_for_image_link(potd_row)
-            if image_link and "t" not in flag:
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(image_link) as resp:
-                        if resp.status != 200:
-                            return await ctx.send("Could not download file...")
-                        data = io.BytesIO(await resp.read())
-                        if "s" not in flag:
-                            await ctx.send(file=discord.File(data, f"potd{number}.png"))
-                        else:
-                            await ctx.send(
-                                file=discord.File(data, f"SPOILER_potd{number}.png")
-                            )
-            # if no image link, send tex
-            else:
+            # raw LaTeX?
+            if "t" not in flag:
+                # spoiler?
                 if "s" not in flag:
                     if flag.isdigit():
                         await ctx.send("Did you mean ``-search``?")
@@ -194,39 +181,39 @@ async def fetch(ctx, number: int, flag: str = ""):
                         + "||"
                     )
                 await ctx.send(output, delete_after=10)
+            else:
+                if "s" not in flag:
+                    output = "```tex\n" + await texify_potd(ctx, potd_row, True) + "```"
+                else:
+                    output = "||```tex\n" + await texify_potd(ctx, potd_row, True) + "```||"
+                await ctx.send(output)
         except IndexError:
             await ctx.send(f"There is no potd for day {number}. ")
             return
 
 
-def check_for_image_link(potd_row) -> Optional[str]:
-    if len(potd_row) >= 19 and potd_row[
-        cfg.Config.config["potd_sheet_image_link_col"]
-    ] not in [None, ""]:
-        return potd_row[cfg.Config.config["potd_sheet_image_link_col"]]
-    else:
-        return None
-
-
-async def texify_potd(ctx, potd_row) -> str:
+async def texify_potd(ctx, potd_row, raw=False) -> str:
     indents = await settings.get_setting(ctx, "indents")
-    return (
-        "```tex\n\\textbf{Day "
-        + str(potd_row[cfg.Config.config["potd_sheet_id_col"]])
-        + "} --- "
-        + str(potd_row[cfg.Config.config["potd_sheet_day_col"]])
-        + " "
-        + str(potd_row[cfg.Config.config["potd_sheet_date_col"]])
-        + "\\vspace{11pt}\\\\"
-        + (
-            "\\setlength\\parindent{1.5em}"
-            if indents == "on"
-            # from https://web.evanchen.cc/faq-latex.html#L-18
-            else "\\setlength{\\parskip}{1.3ex}\\setlength{\\parindent}{0pt}"
+    if raw:
+        return str(potd_row[cfg.Config.config["potd_sheet_statement_col"]])
+    else:
+        return (
+            "```tex\n\\textbf{Day "
+            + str(potd_row[cfg.Config.config["potd_sheet_id_col"]])
+            + "} --- "
+            + str(potd_row[cfg.Config.config["potd_sheet_day_col"]])
+            + " "
+            + str(potd_row[cfg.Config.config["potd_sheet_date_col"]])
+            + "\\vspace{11pt}\\\\"
+            + (
+                "\\setlength\\parindent{1.5em}"
+                if indents == "on"
+                # from https://web.evanchen.cc/faq-latex.html#L-18
+                else "\\setlength{\\parskip}{1.3ex}\\setlength{\\parindent}{0pt}"
+            )
+            + str(potd_row[cfg.Config.config["potd_sheet_statement_col"]])
+            + "```"
         )
-        + str(potd_row[cfg.Config.config["potd_sheet_statement_col"]])
-        + "```"
-    )
 
 
 def pick_potd(
