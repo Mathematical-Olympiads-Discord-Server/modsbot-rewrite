@@ -134,7 +134,7 @@ def create_config_copy_with_essential_changes() -> None:
 
     shutil.copyfile("config/modsbot_config.yml", "config/config.yml")
 
-    yaml = YAML(typ='safe', pure=True)
+    yaml = YAML(typ="safe", pure=True)
     with open("config/config.yml") as config_file_read:
         config = yaml.load(config_file_read)
 
@@ -146,7 +146,7 @@ def create_config_copy_with_essential_changes() -> None:
 
 
 def write_token_file() -> None:
-    yaml = YAML(typ='safe', pure=True)
+    yaml = YAML(typ="safe", pure=True)
     with open("config/config.yml") as config_file:
         config = yaml.load(config_file)
 

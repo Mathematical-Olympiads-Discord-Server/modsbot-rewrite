@@ -58,7 +58,7 @@ class Config(Cog):
     service = discovery.build("sheets", "v4", credentials=credentials)
 
     def __init__(self, bot):
-        yaml = YAML(typ='safe', pure=True)
+        yaml = YAML(typ="safe", pure=True)
 
         # Load main config
         with open("config/config.yml") as f:
