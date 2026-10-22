@@ -6,7 +6,7 @@ import bidict
 from apiclient import discovery
 from discord.ext import commands
 from google.oauth2 import service_account
-from ruamel import yaml
+from ruamel.yaml import YAML
 
 Cog = commands.Cog
 db = sqlite3.connect("data/modsdb.db")
@@ -58,15 +58,17 @@ class Config(Cog):
     service = discovery.build("sheets", "v4", credentials=credentials)
 
     def __init__(self, bot):
+        yaml = YAML(typ='safe', pure=True)
+
         # Load main config
         with open("config/config.yml") as f:
-            main_config = yaml.safe_load(f)
+            main_config = yaml.load(f)
 
         # Overlay local config if it exists
         local_path = "config/config.local.yml"
         if os.path.exists(local_path):
             with open(local_path) as f:
-                local_config = yaml.safe_load(f)
+                local_config = yaml.load(f)
             main_config.update(local_config)
             print(
                 f"[Config] Loaded local config, "

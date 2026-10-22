@@ -10,10 +10,10 @@ import discord
 import matplotlib
 import schedule
 from discord.ext import commands
-from ruamel import yaml
+from ruamel.yaml import YAML
 
 cfgfile = open("config/config.yml")
-config = yaml.safe_load(cfgfile)
+config = YAML(typ='safe', pure=True).safe_load(cfgfile)
 
 matplotlib.use("agg")
 logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)

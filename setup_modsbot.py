@@ -2,7 +2,7 @@ import os
 import shutil
 import sqlite3
 
-from ruamel import yaml  # type: ignore
+from ruamel.yaml import YAML  # type: ignore
 
 DATABASES_TO_CREATE = [
     """
@@ -134,8 +134,9 @@ def create_config_copy_with_essential_changes() -> None:
 
     shutil.copyfile("config/modsbot_config.yml", "config/config.yml")
 
+    yaml = YAML(typ='safe', pure=True)
     with open("config/config.yml") as config_file_read:
-        config = yaml.safe_load(config_file_read)
+        config = yaml.load(config_file_read)
 
     config["mods_guild"] = guild_id
     config["tech_garage"] = channel_id
@@ -145,8 +146,9 @@ def create_config_copy_with_essential_changes() -> None:
 
 
 def write_token_file() -> None:
+    yaml = YAML(typ='safe', pure=True)
     with open("config/config.yml") as config_file:
-        config = yaml.safe_load(config_file)
+        config = yaml.load(config_file)
 
     token_file_name = config["token"]
 
